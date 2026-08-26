@@ -512,6 +512,11 @@ async function loadResults(){
     </table>
   `;
 }
+
+// Service worker — nécessaire pour que le navigateur propose l'installation
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 </script>
 
 </body>
