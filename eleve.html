@@ -91,7 +91,7 @@ async function init(){
 
   if(!quiz){
     card.innerHTML = `
-      <img src="icons/icon-192.png" alt="">
+      <img src="icon-192.png?v=2" alt="">
       <p class="class-name">${cls.name}</p>
       <p class="status">Aucun quiz disponible pour le moment. Attends que ta prof en active un.</p>
     `;
@@ -99,7 +99,7 @@ async function init(){
   }
 
   card.innerHTML = `
-    <img src="icons/icon-192.png" alt="">
+    <img src="icon-192.png?v=2" alt="">
     <p class="class-name">${cls.name}</p>
     <p class="quiz-name">${quiz.title}</p>
     <p class="quiz-meta">${quiz.total_questions} questions · évalué</p>

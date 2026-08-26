@@ -1,10 +1,10 @@
-const CACHE_NAME = 'quiz-admin-v1';
+const CACHE_NAME = 'quiz-admin-v2';
 const ASSETS = [
   'admin.html',
   'manifest.json',
-  'icon-192.png',
-  'icon-512.png',
-  'icon-180.png'
+  'icon-192.png?v=2',
+  'icon-512.png?v=2',
+  'icon-180.png?v=2'
 ];
 
 self.addEventListener('install', (event) => {
