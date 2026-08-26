@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Admin</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="theme-color" content="#7B5FE0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Baloo+2:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --ink:#1A1D23; --ink-soft:#5B6270; --line:#E7E4F2; --paper:#FAF9FC; --white:#FFFFFF;
+    --purple:#7B5FE0; --purple-dark:#4A3580; --purple-deep:#3D2B66; --purple-light:#F1EDFC;
+    --violet-1:#8A6DF0; --violet-2:#6B4FD6; --bubble-bg:#FFF9EF;
+    --yellow-light:#FFF3D6; --pink:#FF5C7A; --pink-light:#FFE3E8; --blue-light:#E4F5FC;
+    --green:#2E8B57; --green-light:#E7F5EC; --amber:#B8860B; --amber-light:#FBF3DF; --red:#C0392B;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;}
+  .hidden{display:none !important;}
+
+  /* ---- Login ---- */
+  .login-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;}
+  .login-card{width:100%; max-width:320px; text-align:center;}
+  .login-logo{width:64px; height:64px; margin:0 auto 16px; border-radius:22%;}
+  .login-card h1{font-family:'Baloo 2',sans-serif; font-size:20px; font-weight:700; color:var(--purple-deep); margin:0 0 6px;}
+  .login-card p{font-size:13.5px; color:var(--ink-soft); margin:0 0 26px;}
+  .field{margin-bottom:14px; text-align:left;}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
+  .field input{width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:8px; font-family:'Inter',sans-serif; font-size:14px; background:var(--paper);}
+  .field input:focus{outline:none; border-color:var(--purple);}
+  .btn-primary{width:100%; background:var(--purple); color:#fff; border:none; border-radius:8px; padding:12px; font-weight:600; font-size:14px; cursor:pointer;}
+  .btn-primary:disabled{opacity:0.6; cursor:default;}
+  .login-error{font-size:12.5px; color:var(--red); margin-top:10px; display:none;}
+
+  /* ---- App shell ---- */
+  .app-shell{display:flex; min-height:100vh;}
+  .sidebar{width:196px; flex-shrink:0; background:linear-gradient(180deg, var(--violet-1), var(--violet-2)); padding:20px 14px; display:flex; flex-direction:column; position:sticky; top:0; height:100vh;}
+  .sidebar-brand{display:flex; align-items:center; gap:10px; padding:4px 8px 22px;}
+  .sidebar-brand-icon{width:32px; height:32px; border-radius:22%; flex-shrink:0;}
+  .sidebar-brand-name{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:14.5px; color:#fff;}
+  .nav-item{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:9px; font-size:13.5px; font-weight:600; color:rgba(255,255,255,0.78); cursor:pointer; margin-bottom:4px;}
+  .nav-item svg{flex-shrink:0; opacity:0.9;}
+  .nav-item.active{background:rgba(255,255,255,0.18); color:#fff;}
+  .nav-item:not(.active):hover{background:rgba(255,255,255,0.08); color:#fff;}
+  .sidebar-footer{margin-top:auto; display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.18);}
+  .sidebar-user{display:flex; align-items:center; gap:10px;}
+  .sidebar-avatar{width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,0.25); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff;}
+  .sidebar-user-name{font-size:12.5px; font-weight:600; color:#fff;}
+  .logout-btn{background:transparent; border:none; color:rgba(255,255,255,0.65); cursor:pointer; font-size:12px;}
+  .logout-btn:hover{color:#fff;}
+
+  .main-col{flex:1; min-width:0;}
+  .header-block{padding:22px 24px 18px; border-bottom:1px solid var(--line);}
+  .bubble-title{position:relative; display:inline-flex; align-items:center; gap:8px; background:var(--bubble-bg); color:var(--purple-deep); font-family:'Baloo 2',sans-serif; font-weight:700; font-size:19px; padding:10px 20px; border-radius:14px; margin:0 0 4px;}
+  .bubble-title::after{content:''; position:absolute; left:22px; bottom:-7px; width:14px; height:14px; background:var(--bubble-bg); clip-path:polygon(0 0, 100% 0, 0 100%);}
+  .bubble-sub{font-size:12.5px; color:var(--ink-soft); margin:12px 0 0;}
+  .body-pad{padding:22px 24px;}
+
+  .stat-row{display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:12px; margin-bottom:24px;}
+  .stat-card{border-radius:12px; padding:14px 16px;}
+  .stat-card.c-purple{background:var(--purple-light);}
+  .stat-card.c-yellow{background:var(--yellow-light);}
+  .stat-card.c-blue{background:var(--blue-light);}
+  .stat-card.c-pink{background:var(--pink-light);}
+  .stat-num{font-family:'Baloo 2',sans-serif; font-size:24px; font-weight:700; color:var(--purple-deep);}
+  .stat-label{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+
+  .section-label{font-size:11.5px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 12px;}
+  .class-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(210px,1fr)); gap:12px;}
+  .class-card{border:1px solid var(--line); border-radius:12px; padding:16px; cursor:pointer; transition:border-color .15s, box-shadow .15s;}
+  .class-card:hover{border-color:var(--purple); box-shadow:0 2px 10px rgba(123,95,224,0.10);}
+  .class-card-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px;}
+  .class-name{font-size:14.5px; font-weight:700; color:var(--purple-deep);}
+  .badge-live{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; background:var(--green-light); color:var(--green); padding:3px 9px; border-radius:20px; white-space:nowrap;}
+  .badge-off{font-size:11px; font-weight:600; background:var(--paper); color:var(--ink-soft); padding:3px 9px; border-radius:20px; white-space:nowrap;}
+  .class-meta{font-size:12.5px; color:var(--ink-soft); min-height:18px;}
+  .class-qr-btn{margin-top:12px; width:100%; background:var(--purple-light); border:none; border-radius:8px; padding:9px; font-size:12.5px; font-weight:700; color:var(--purple-dark); cursor:pointer;}
+  .class-qr-btn:hover{background:var(--purple); color:#fff;}
+
+  .back-row{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-soft); cursor:pointer; margin-bottom:18px;}
+  .quiz-row{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border:1px solid var(--line); border-radius:12px; margin-bottom:10px;}
+  .quiz-row-left{display:flex; align-items:center; gap:12px;}
+  .quiz-icon{width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .quiz-row.is-active .quiz-icon{background:var(--green-light); color:var(--green);}
+  .quiz-row:not(.is-active) .quiz-icon{background:var(--paper); color:var(--ink-soft);}
+  .quiz-title{font-size:14px; font-weight:600;}
+  .quiz-sub{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .toggle{position:relative; width:40px; height:22px; background:var(--line); border-radius:20px; cursor:pointer; flex-shrink:0; transition:background .15s;}
+  .toggle.on{background:var(--green);}
+  .toggle-knob{position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition:left .15s; box-shadow:0 1px 2px rgba(0,0,0,0.15);}
+  .toggle.on .toggle-knob{left:20px;}
+  .toggle-note{display:flex; align-items:flex-start; gap:10px; font-size:12.5px; color:var(--purple-dark); background:var(--purple-light); border-radius:10px; padding:12px 14px; margin-bottom:18px;}
+  .empty-note{font-size:13px; color:var(--ink-soft); padding:20px 0;}
+
+  /* ---- QR modal ---- */
+  .qr-modal{position:fixed; inset:0; background:linear-gradient(180deg, var(--violet-1), var(--violet-2)); z-index:50; display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:20px;}
+  .qr-class-name{font-family:'Baloo 2',sans-serif; font-size:clamp(24px,5vw,34px); font-weight:700; color:#fff; margin-bottom:4px;}
+  .qr-quiz-name{font-size:15px; color:rgba(255,255,255,0.75); margin-bottom:28px;}
+  .qr-box{width:260px; height:260px; background:#fff; border-radius:16px; display:flex; align-items:center; justify-content:center; margin-bottom:20px;}
+  .qr-url{font-size:12.5px; color:rgba(255,255,255,0.65); font-family:monospace; margin-bottom:26px;}
+  .qr-close{background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.3); color:#fff; border-radius:8px; padding:10px 20px; font-size:13px; font-weight:600; cursor:pointer;}
+
+  .filter-row{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
+  .filter-row select{padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; background:var(--white);}
+  .result-table{width:100%; border-collapse:collapse; font-size:13px;}
+  .result-table th{text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-soft); padding:8px 10px; border-bottom:1px solid var(--line);}
+  .result-table td{padding:10px; border-bottom:1px solid var(--line);}
+  .score-pill{display:inline-block; font-size:12px; font-weight:700; padding:3px 9px; border-radius:20px;}
+  .score-good{background:var(--green-light); color:var(--green);}
+  .score-mid{background:var(--amber-light); color:var(--amber);}
+  .score-low{background:var(--pink-light); color:var(--red);}
+  .flag-cheat{display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--red); font-weight:700;}
+  .loading-note{font-size:13px; color:var(--ink-soft); padding:20px;}
+</style>
+</head>
+<body>
+
+<!-- ============ CONFIG — remplace par tes vraies valeurs Supabase ============ -->
+<script>
+  const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+</script>
+<!-- ============================================================================ -->
+
+<div id="login-screen" class="login-wrap">
+  <div class="login-card">
+    <img class="login-logo" src="icons/icon-192.png" alt="">
+    <h1>Quiz Admin</h1>
+    <p>Connexion prof</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <input type="password" id="login-password" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" id="login-btn">Se connecter</button>
+    <p class="login-error" id="login-error">Identifiants incorrects.</p>
+  </div>
+</div>
+
+<div id="app-shell" class="app-shell hidden">
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <img class="sidebar-brand-icon" src="icons/icon-192.png" alt="">
+      <span class="sidebar-brand-name">Quiz Admin</span>
+    </div>
+    <div class="nav-item active" data-view="dashboard">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      Mes classes
+    </div>
+    <div class="nav-item" data-view="results">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-4"/></svg>
+      Résultats
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="user-avatar">--</div>
+        <span class="sidebar-user-name" id="user-name">...</span>
+      </div>
+      <button class="logout-btn" id="logout-btn">Sortir</button>
+    </div>
+  </div>
+
+  <div class="main-col">
+
+    <!-- DASHBOARD VIEW -->
+    <div id="view-dashboard">
+      <div class="header-block">
+        <div class="bubble-title">Mes classes</div>
+        <p class="bubble-sub">Choisis une classe pour activer un quiz ou afficher son QR code.</p>
+      </div>
+      <div class="body-pad">
+        <div class="stat-row" id="stat-row"></div>
+        <p class="section-label">Classes</p>
+        <div class="class-grid" id="class-grid">
+          <p class="loading-note">Chargement...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLASS DETAIL VIEW -->
+    <div id="view-class" class="hidden">
+      <div class="header-block">
+        <div class="bubble-title" id="class-title">Classe</div>
+        <p class="bubble-sub" id="class-sub"></p>
+      </div>
+      <div class="body-pad">
+        <div class="back-row" id="back-to-dashboard">← Retour à mes classes</div>
+        <div class="toggle-note">Un seul quiz peut être actif à la fois par classe. Active un quiz : les autres se désactivent automatiquement.</div>
+        <p class="section-label">Quiz de cette classe</p>
+        <div id="quiz-list"><p class="loading-note">Chargement...</p></div>
+      </div>
+    </div>
+
+    <!-- RESULTS VIEW -->
+    <div id="view-results" class="hidden">
+      <div class="header-block">
+        <div class="bubble-title">Résultats</div>
+        <p class="bubble-sub">Historique complet des tentatives, toutes classes confondues.</p>
+      </div>
+      <div class="body-pad">
+        <div class="filter-row">
+          <select id="filter-class"><option value="">Toutes les classes</option></select>
+          <select id="filter-quiz"><option value="">Tous les quiz</option></select>
+        </div>
+        <div id="results-table-wrap"><p class="loading-note">Chargement...</p></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="qr-modal" class="qr-modal hidden">
+  <div class="qr-class-name" id="qr-class-name"></div>
+  <div class="qr-quiz-name" id="qr-quiz-name"></div>
+  <div class="qr-box" id="qr-box"></div>
+  <div class="qr-url" id="qr-url"></div>
+  <button class="qr-close" id="qr-close-btn">← Retour</button>
+</div>
+
+<script>
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// -------- utils --------
+function normalizeName(s){
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+}
+function scoreClass(score, total){
+  if(total === 0 || score === null) return '';
+  const pct = score / total;
+  if(pct >= 0.7) return 'score-good';
+  if(pct >= 0.45) return 'score-mid';
+  return 'score-low';
+}
+function fmtDate(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
+}
+
+// -------- auth --------
+document.getElementById('login-btn').addEventListener('click', doLogin);
+document.getElementById('login-password').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Connexion...';
+
+  const { data, error } = await supa.auth.signInWithPassword({ email, password });
+
+  btn.disabled = false; btn.textContent = 'Se connecter';
+  if(error){
+    errEl.style.display = 'block';
+    return;
+  }
+  enterApp(data.user);
+}
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  await supa.auth.signOut();
+  location.reload();
+});
+
+async function enterApp(user){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  const name = (user.email || '?').split('@')[0];
+  document.getElementById('user-name').textContent = name;
+  document.getElementById('user-avatar').textContent = name.slice(0,2).toUpperCase();
+  await loadDashboard();
+}
+
+// check existing session on load
+(async () => {
+  const { data } = await supa.auth.getSession();
+  if(data.session){
+    enterApp(data.session.user);
+  }
+})();
+
+// -------- nav --------
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    showView(item.dataset.view);
+  });
+});
+document.getElementById('back-to-dashboard').addEventListener('click', () => {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  document.querySelector('[data-view="dashboard"]').classList.add('active');
+  showView('dashboard');
+});
+
+function showView(view){
+  ['dashboard','class','results'].forEach(v => {
+    document.getElementById('view-'+v).classList.toggle('hidden', v !== view);
+  });
+  if(view === 'dashboard') loadDashboard();
+  if(view === 'results') loadResults();
+}
+
+// -------- dashboard --------
+let CLASSES = [];
+let QUIZZES = [];
+
+async function loadDashboard(){
+  const { data: classes } = await supa.from('classes').select('*').order('name');
+  const { data: quizzes } = await supa.from('quizzes').select('*');
+  CLASSES = classes || [];
+  QUIZZES = quizzes || [];
+
+  const activeCount = QUIZZES.filter(q => q.active).length;
+  const { count: cancelledCount } = await supa
+    .from('attempts')
+    .select('*', { count: 'exact', head: true })
+    .eq('cancelled', true)
+    .gte('created_at', new Date(Date.now() - 7*24*3600*1000).toISOString());
+
+  document.getElementById('stat-row').innerHTML = `
+    <div class="stat-card c-purple"><div class="stat-num">${CLASSES.length}</div><div class="stat-label">Classes</div></div>
+    <div class="stat-card c-yellow"><div class="stat-num">${activeCount}</div><div class="stat-label">Quiz en ligne</div></div>
+    <div class="stat-card c-blue"><div class="stat-num">${QUIZZES.length}</div><div class="stat-label">Quiz au total</div></div>
+    <div class="stat-card c-pink"><div class="stat-num">${cancelledCount || 0}</div><div class="stat-label">Tentatives annulées (7j)</div></div>
+  `;
+
+  const grid = document.getElementById('class-grid');
+  if(CLASSES.length === 0){
+    grid.innerHTML = '<p class="empty-note">Aucune classe. Ajoute-en dans Supabase (table classes).</p>';
+    return;
+  }
+  grid.innerHTML = CLASSES.map(c => {
+    const classQuizzes = QUIZZES.filter(q => q.class_id === c.id);
+    const activeQuiz = classQuizzes.find(q => q.active);
+    return `
+      <div class="class-card" data-class-id="${c.id}">
+        <div class="class-card-top">
+          <span class="class-name">${c.name}</span>
+          ${activeQuiz ? '<span class="badge-live">● En ligne</span>' : '<span class="badge-off">Aucun quiz actif</span>'}
+        </div>
+        <p class="class-meta">${activeQuiz ? activeQuiz.title : classQuizzes.length + ' quiz disponible' + (classQuizzes.length > 1 ? 's' : '')}</p>
+        <button class="class-qr-btn" data-qr-class="${c.id}">Afficher le QR code</button>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.class-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if(e.target.closest('.class-qr-btn')) return;
+      openClass(card.dataset.classId);
+    });
+  });
+  grid.querySelectorAll('[data-qr-class]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openQr(btn.dataset.qrClass);
+    });
+  });
+}
+
+// -------- class detail --------
+async function openClass(classId){
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  showView('class');
+
+  const cls = CLASSES.find(c => c.id === classId);
+  document.getElementById('class-title').textContent = cls.name;
+
+  const { data: quizzes } = await supa.from('quizzes').select('*').eq('class_id', classId).order('created_at');
+  const activeQuiz = (quizzes || []).find(q => q.active);
+  document.getElementById('class-sub').textContent = activeQuiz
+    ? `1 quiz actif — les élèves qui scannent le QR code voient "${activeQuiz.title}".`
+    : 'Aucun quiz actif — les élèves ne voient rien pour le moment.';
+
+  const list = document.getElementById('quiz-list');
+  if(!quizzes || quizzes.length === 0){
+    list.innerHTML = '<p class="empty-note">Aucun quiz pour cette classe. Ajoute-en dans Supabase (table quizzes).</p>';
+    return;
+  }
+  list.innerHTML = quizzes.map(q => `
+    <div class="quiz-row ${q.active ? 'is-active' : ''}" data-quiz-id="${q.id}">
+      <div class="quiz-row-left">
+        <div class="quiz-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <div>
+          <div class="quiz-title">${q.title}</div>
+          <div class="quiz-sub">${q.total_questions} questions · évalué</div>
+        </div>
+      </div>
+      <div class="toggle ${q.active ? 'on' : ''}" data-toggle-quiz="${q.id}"><div class="toggle-knob"></div></div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('[data-toggle-quiz]').forEach(t => {
+    t.addEventListener('click', () => toggleQuiz(t.dataset.toggleQuiz, classId));
+  });
+}
+
+async function toggleQuiz(quizId, classId){
+  const target = QUIZZES.find(q => q.id === quizId);
+  const turningOn = !target.active;
+
+  if(turningOn){
+    // désactive tous les autres quiz de la classe, active celui-ci
+    await supa.from('quizzes').update({ active: false }).eq('class_id', classId);
+    await supa.from('quizzes').update({ active: true }).eq('id', quizId);
+  } else {
+    await supa.from('quizzes').update({ active: false }).eq('id', quizId);
+  }
+  openClass(classId);
+}
+
+// -------- QR modal --------
+function openQr(classId){
+  const cls = CLASSES.find(c => c.id === classId);
+  const activeQuiz = QUIZZES.find(q => q.class_id === classId && q.active);
+  const url = `${location.origin}${location.pathname.replace('admin.html','')}eleve.html?classe=${cls.slug}`;
+
+  document.getElementById('qr-class-name').textContent = cls.name;
+  document.getElementById('qr-quiz-name').textContent = activeQuiz ? activeQuiz.title : 'Aucun quiz actif pour le moment';
+  document.getElementById('qr-url').textContent = url;
+
+  const box = document.getElementById('qr-box');
+  box.innerHTML = '';
+  new QRCode(box, { text: url, width: 220, height: 220, colorDark: '#1A1D23', colorLight: '#ffffff' });
+
+  document.getElementById('qr-modal').classList.remove('hidden');
+}
+document.getElementById('qr-close-btn').addEventListener('click', () => {
+  document.getElementById('qr-modal').classList.add('hidden');
+});
+
+// -------- results --------
+async function loadResults(){
+  const filterClass = document.getElementById('filter-class').value;
+  const filterQuiz = document.getElementById('filter-quiz').value;
+
+  if(document.getElementById('filter-class').options.length <= 1){
+    document.getElementById('filter-class').innerHTML += CLASSES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    document.getElementById('filter-quiz').innerHTML += QUIZZES.map(q => `<option value="${q.id}">${q.title}</option>`).join('');
+    document.getElementById('filter-class').addEventListener('change', loadResults);
+    document.getElementById('filter-quiz').addEventListener('change', loadResults);
+  }
+
+  let query = supa.from('attempts').select('*').order('created_at', { ascending: false }).limit(200);
+  if(filterClass) query = query.eq('class_id', filterClass);
+  if(filterQuiz) query = query.eq('quiz_id', filterQuiz);
+
+  const { data: attempts, error } = await query;
+  const wrap = document.getElementById('results-table-wrap');
+
+  if(error){
+    wrap.innerHTML = '<p class="empty-note">Erreur de chargement.</p>';
+    return;
+  }
+  if(!attempts || attempts.length === 0){
+    wrap.innerHTML = '<p class="empty-note">Aucune tentative enregistrée pour le moment.</p>';
+    return;
+  }
+
+  const classById = Object.fromEntries(CLASSES.map(c => [c.id, c.name]));
+  const quizById = Object.fromEntries(QUIZZES.map(q => [q.id, q.title]));
+
+  wrap.innerHTML = `
+    <table class="result-table">
+      <tr><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th></tr>
+      ${attempts.map(a => `
+        <tr>
+          <td>${a.student_name_raw}</td>
+          <td>${classById[a.class_id] || '—'}</td>
+          <td>${quizById[a.quiz_id] || '—'}</td>
+          <td>${a.cancelled ? '—' : `<span class="score-pill ${scoreClass(a.score, a.total)}">${a.score}/${a.total}</span>`}</td>
+          <td>${fmtDate(a.created_at)}</td>
+          <td>${a.cancelled ? '<span class="flag-cheat">⚠ tentative annulée</span>' : ''}</td>
+        </tr>
+      `).join('')}
+    </table>
+  `;
+}
+</script>
+
+</body>
+</html>

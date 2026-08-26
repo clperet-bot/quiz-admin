@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Baloo+2:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#1A1D23; --ink-soft:#5B6270; --line:#E7E4F2; --paper:#FAF9FC; --white:#FFFFFF;
+    --purple:#7B5FE0; --purple-deep:#3D2B66; --purple-light:#F1EDFC;
+    --violet-1:#8A6DF0; --violet-2:#6B4FD6;
+    --green:#2E8B57; --red:#C0392B; --pink-light:#FFE3E8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:linear-gradient(180deg, var(--violet-1), var(--violet-2));
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .card{
+    width:100%; max-width:380px;
+    background:var(--white);
+    border-radius:18px;
+    padding:32px 28px;
+    text-align:center;
+  }
+  .card img{width:56px; height:56px; border-radius:22%; margin-bottom:14px;}
+  .class-name{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:20px; color:var(--purple-deep); margin:0 0 4px;}
+  .status{font-size:13px; color:var(--ink-soft); margin:0 0 24px;}
+  .quiz-name{font-size:16px; font-weight:600; margin:0 0 4px;}
+  .quiz-meta{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px;}
+  .field{text-align:left; margin-bottom:12px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
+  .field input{width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:8px; font-family:'Inter',sans-serif; font-size:14px; background:var(--paper);}
+  .field input:focus{outline:none; border-color:var(--purple);}
+  .btn-primary{width:100%; background:var(--purple); color:#fff; border:none; border-radius:8px; padding:13px; font-weight:600; font-size:14.5px; cursor:pointer; margin-top:6px;}
+  .btn-primary:disabled{opacity:0.6; cursor:default;}
+  .error-note{font-size:12.5px; color:var(--red); background:var(--pink-light); border-radius:8px; padding:12px 14px; margin-top:12px; display:none; text-align:left;}
+  .empty-note{font-size:14px; color:var(--ink-soft); padding:10px 0;}
+  .loading-note{font-size:14px; color:var(--ink-soft); padding:20px 0;}
+</style>
+</head>
+<body>
+
+<!-- ============ CONFIG — remplace par tes vraies valeurs Supabase ============ -->
+<script>
+  const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+</script>
+<!-- ============================================================================ -->
+
+<div class="card" id="card">
+  <p class="loading-note">Chargement...</p>
+</div>
+
+<script>
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function normalizeName(s){
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+}
+function todayBounds(){
+  const start = new Date(); start.setHours(0,0,0,0);
+  const end = new Date(); end.setHours(23,59,59,999);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
+const params = new URLSearchParams(location.search);
+const slug = params.get('classe');
+const card = document.getElementById('card');
+
+async function init(){
+  if(!slug){
+    card.innerHTML = '<p class="empty-note">Lien invalide. Demande à ta prof de rescanner le bon QR code.</p>';
+    return;
+  }
+
+  const { data: cls, error: clsErr } = await supa.from('classes').select('*').eq('slug', slug).maybeSingle();
+  if(clsErr || !cls){
+    card.innerHTML = '<p class="empty-note">Classe introuvable.</p>';
+    return;
+  }
+
+  const { data: quiz } = await supa.from('quizzes').select('*').eq('class_id', cls.id).eq('active', true).maybeSingle();
+
+  if(!quiz){
+    card.innerHTML = `
+      <img src="icons/icon-192.png" alt="">
+      <p class="class-name">${cls.name}</p>
+      <p class="status">Aucun quiz disponible pour le moment. Attends que ta prof en active un.</p>
+    `;
+    return;
+  }
+
+  card.innerHTML = `
+    <img src="icons/icon-192.png" alt="">
+    <p class="class-name">${cls.name}</p>
+    <p class="quiz-name">${quiz.title}</p>
+    <p class="quiz-meta">${quiz.total_questions} questions · évalué</p>
+    <div class="field">
+      <label>Prénom</label>
+      <input type="text" id="firstname" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Nom</label>
+      <input type="text" id="lastname" autocomplete="off">
+    </div>
+    <button class="btn-primary" id="start-btn">Commencer le quiz</button>
+    <div class="error-note" id="error-note"></div>
+  `;
+
+  document.getElementById('start-btn').addEventListener('click', () => startAttempt(cls, quiz));
+}
+
+async function startAttempt(cls, quiz){
+  const first = document.getElementById('firstname').value.trim();
+  const last = document.getElementById('lastname').value.trim();
+  const errBox = document.getElementById('error-note');
+  const btn = document.getElementById('start-btn');
+  errBox.style.display = 'none';
+
+  if(!first || !last){
+    errBox.textContent = "Merci de renseigner ton prénom et ton nom.";
+    errBox.style.display = 'block';
+    return;
+  }
+
+  const rawName = `${first} ${last}`;
+  const normalized = normalizeName(rawName);
+  btn.disabled = true; btn.textContent = "Vérification...";
+
+  const { start, end } = todayBounds();
+  const { data: existing } = await supa
+    .from('attempts')
+    .select('id')
+    .eq('class_id', cls.id)
+    .eq('quiz_id', quiz.id)
+    .eq('student_name_normalized', normalized)
+    .gte('created_at', start)
+    .lte('created_at', end)
+    .limit(1);
+
+  if(existing && existing.length > 0){
+    btn.disabled = false; btn.textContent = "Commencer le quiz";
+    errBox.textContent = "Tu as déjà fait ce quiz aujourd'hui. Reviens demain, après avoir revu tes erreurs !";
+    errBox.style.display = 'block';
+    return;
+  }
+
+  // Lien vers le quiz, avec les infos nécessaires pour qu'il remonte le score
+  const quizUrl = new URL(quiz.url);
+  quizUrl.searchParams.set('student', rawName);
+  quizUrl.searchParams.set('class_id', cls.id);
+  quizUrl.searchParams.set('quiz_id', quiz.id);
+  location.href = quizUrl.toString();
+}
+
+init();
+</script>
+
+</body>
+</html>
