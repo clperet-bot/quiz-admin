@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ma correction</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Baloo+2:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#1A1D23; --ink-soft:#5B6270; --line:#E7E4F2; --paper:#FAF9FC; --white:#FFFFFF;
+    --purple:#7B5FE0; --purple-deep:#3D2B66; --purple-light:#F1EDFC;
+    --violet-1:#8A6DF0; --violet-2:#6B4FD6;
+    --green:#2E8B57; --green-light:#E7F5EC;
+    --red:#C0392B; --red-light:#FFE3E8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:linear-gradient(180deg, var(--violet-1), var(--violet-2));
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:520px; margin:0 auto;}
+  .card{background:var(--white); border-radius:18px; padding:28px 24px; text-align:center; margin-bottom:16px;}
+  .card img{width:48px; height:48px; border-radius:22%; margin-bottom:12px;}
+  .class-name{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:19px; color:var(--purple-deep); margin:0 0 4px;}
+  .status{font-size:13px; color:var(--ink-soft); margin:0 0 20px;}
+  .field{text-align:left; margin-bottom:12px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
+  .field input{width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:8px; font-family:'Inter',sans-serif; font-size:14px; background:var(--paper);}
+  .btn-primary{width:100%; background:var(--purple); color:#fff; border:none; border-radius:8px; padding:13px; font-weight:600; font-size:14.5px; cursor:pointer; margin-top:6px;}
+  .btn-primary:disabled{opacity:0.6; cursor:default;}
+  .empty-note{font-size:14px; color:var(--ink-soft);}
+
+  .result-card{background:var(--white); border-radius:16px; padding:22px 20px; margin-bottom:16px; text-align:left;}
+  .result-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .result-title{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:16px; color:var(--purple-deep);}
+  .result-score{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:20px; color:var(--purple);}
+
+  .qa-item{padding:12px 0; border-bottom:1px solid var(--line);}
+  .qa-item:last-child{border-bottom:none;}
+  .qa-prompt{font-size:14px; font-weight:600; margin-bottom:8px;}
+  .qa-row{font-size:13px; margin-bottom:3px;}
+  .qa-given{color:var(--red);}
+  .qa-given.correct{color:var(--green);}
+  .qa-correct{color:var(--green);}
+  .qa-explain{font-size:12.5px; color:var(--ink-soft); margin-top:6px; font-style:italic;}
+
+  .writing-block{margin-top:20px; padding-top:16px; border-top:1px solid var(--line);}
+  .writing-block h4{font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); margin:0 0 8px;}
+  .writing-text{font-size:13.5px; background:var(--paper); border-radius:8px; padding:10px 12px; margin-bottom:10px; white-space:pre-wrap;}
+  .writing-correction{font-size:13.5px; background:var(--purple-light); border-radius:8px; padding:12px 14px; white-space:pre-wrap; line-height:1.6;}
+
+  .loading-note{color:var(--white); text-align:center; padding:40px 0;}
+</style>
+</head>
+<body>
+
+<!-- ============ CONFIG — mêmes valeurs que admin.html / eleve.html ============ -->
+<script>
+  const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+</script>
+<!-- ============================================================================ -->
+
+<div class="wrap" id="wrap">
+  <p class="loading-note">Chargement...</p>
+</div>
+
+<script>
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function normalizeName(s){
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+}
+
+const params = new URLSearchParams(location.search);
+const slug = params.get('classe');
+const wrap = document.getElementById('wrap');
+
+async function init(){
+  if(!slug){
+    wrap.innerHTML = '<div class="card"><p class="empty-note">Lien invalide. Demande à ta prof de rescanner le bon QR code.</p></div>';
+    return;
+  }
+
+  const { data: cls } = await supa.from('classes').select('*').eq('slug', slug).maybeSingle();
+  if(!cls){
+    wrap.innerHTML = '<div class="card"><p class="empty-note">Classe introuvable.</p></div>';
+    return;
+  }
+
+  wrap.innerHTML = `
+    <div class="card">
+      <img src="icon-192.png?v=2" alt="">
+      <p class="class-name">${cls.name}</p>
+      <p class="status">Entre ton prénom et ton nom pour voir ta correction.</p>
+      <div class="field">
+        <label>Prénom</label>
+        <input type="text" id="firstname" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Nom</label>
+        <input type="text" id="lastname" autocomplete="off">
+      </div>
+      <button class="btn-primary" id="show-btn">Voir ma correction</button>
+    </div>
+  `;
+  document.getElementById('show-btn').addEventListener('click', () => loadCorrections(cls));
+}
+
+async function loadCorrections(cls){
+  const first = document.getElementById('firstname').value.trim();
+  const last = document.getElementById('lastname').value.trim();
+  const btn = document.getElementById('show-btn');
+  if(!first || !last) return;
+
+  const normalized = normalizeName(`${first} ${last}`);
+  btn.disabled = true; btn.textContent = "Recherche...";
+
+  const { data: quizzes } = await supa
+    .from('quizzes')
+    .select('*')
+    .eq('class_id', cls.id)
+    .eq('corrections_unlocked', true);
+
+  if(!quizzes || quizzes.length === 0){
+    wrap.insertAdjacentHTML('beforeend', '<div class="card"><p class="empty-note">Aucune correction disponible pour le moment. Ta prof ne l\'a pas encore débloquée.</p></div>');
+    return;
+  }
+
+  let anyFound = false;
+
+  for(const quiz of quizzes){
+    const { data: attempts } = await supa
+      .from('attempts')
+      .select('*')
+      .eq('quiz_id', quiz.id)
+      .eq('class_id', cls.id)
+      .eq('student_name_normalized', normalized)
+      .eq('cancelled', false)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if(!attempts || attempts.length === 0) continue;
+    anyFound = true;
+    renderCorrection(quiz, attempts[0]);
+  }
+
+  if(!anyFound){
+    wrap.insertAdjacentHTML('beforeend', '<div class="card"><p class="empty-note">Aucune tentative trouvée pour ce nom sur les quiz débloqués. Vérifie l\'orthographe de ton prénom/nom.</p></div>');
+  }
+}
+
+function renderCorrection(quiz, attempt){
+  const answers = attempt.answers_detail || [];
+  const qaHtml = answers.map(a => `
+    <div class="qa-item">
+      <p class="qa-prompt">${a.question}</p>
+      <p class="qa-row qa-given ${a.is_correct ? 'correct' : ''}">Ta réponse : ${a.given}</p>
+      ${!a.is_correct ? `<p class="qa-row qa-correct">Bonne réponse : ${a.correct_answer}</p>` : ''}
+      ${a.explanation ? `<p class="qa-explain">${a.explanation}</p>` : ''}
+    </div>
+  `).join('');
+
+  const writingHtml = attempt.writing_text ? `
+    <div class="writing-block">
+      <h4>Ta production écrite</h4>
+      <div class="writing-text">${attempt.writing_text}</div>
+      ${attempt.writing_correction ? `<h4>Correction</h4><div class="writing-correction">${attempt.writing_correction}</div>` : ''}
+    </div>
+  ` : '';
+
+  wrap.insertAdjacentHTML('beforeend', `
+    <div class="result-card">
+      <div class="result-head">
+        <span class="result-title">${quiz.title}</span>
+        <span class="result-score">${attempt.score}/${attempt.total}</span>
+      </div>
+      ${qaHtml}
+      ${writingHtml}
+    </div>
+  `);
+}
+
+init();
+</script>
+
+</body>
+</html>
