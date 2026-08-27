@@ -680,6 +680,7 @@ function handleAnswer(e){
 
 function goTo(i){
   if(i >= QUESTIONS.length){
+    document.querySelectorAll('.question').forEach(d => d.classList.remove('active'));
     showWriting();
     return;
   }
