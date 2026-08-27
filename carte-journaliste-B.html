@@ -6,20 +6,20 @@
 <title>Client Brief to Shop Sign — Quiz</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Caveat:wght@600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Special+Elite&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
-    --ink:#241A12;
-    --ink-soft:#3a2c1e;
-    --paper:#F7F1E4;
-    --paper-dim:#EFE6D3;
-    --brass:#B8892B;
-    --brass-light:#D8B65C;
-    --terracotta:#BF5B34;
-    --sage:#7C8863;
-    --white:#FFFDF8;
-    --line:rgba(36,26,18,0.14);
+    --ink:#221F1A;
+    --ink-soft:#5C5648;
+    --paper:#F3EEE1;
+    --paper-dim:#E8E0CC;
+    --brass:#B3241C;
+    --brass-light:#8A1B15;
+    --terracotta:#B3241C;
+    --sage:#3A6E4A;
+    --white:#FFFCF5;
+    --line:rgba(34,31,26,0.15);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -63,7 +63,7 @@
     background:var(--ink);
   }
   h1{
-    font-family:'Cormorant Garamond',serif;
+    font-family:'Playfair Display',serif;
     font-weight:700;
     font-size:clamp(30px,6vw,48px);
     margin:0;
@@ -72,10 +72,32 @@
   }
   .tag{
     display:block;
-    font-family:'Caveat',cursive;
+    font-family:'Special Elite',monospace;
     font-size:20px;
     color:var(--terracotta);
     margin-top:2px;
+  }
+  .kicker{
+    font-family:'Special Elite',monospace;
+    font-size:12px;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:var(--terracotta);
+    margin-bottom:10px;
+  }
+  header h1{
+    font-family:'Playfair Display',serif;
+    font-weight:800;
+    font-size:clamp(28px,6vw,42px);
+    margin:0;
+    color:var(--ink);
+  }
+  .eval-badge{
+    display:inline-block;
+    margin-top:14px;
+    background:var(--terracotta); color:var(--white);
+    font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+    padding:5px 14px; border-radius:20px;
   }
   .subtitle{
     color:var(--ink-soft);
@@ -100,7 +122,7 @@
     font-size:14px;
   }
   .scorebar .label{color:var(--ink-soft); text-transform:uppercase; font-size:11px; letter-spacing:0.1em; opacity:0.7;}
-  .scorebar .value{font-family:'Cormorant Garamond',serif; font-weight:700; color:var(--terracotta); font-size:22px;}
+  .scorebar .value{font-family:'Playfair Display',serif; font-weight:700; color:var(--terracotta); font-size:22px;}
 
   .text-panel{
     display:none;
@@ -114,7 +136,7 @@
   .text-panel.show{display:block;}
   .text-panel .caption{
     display:block;
-    font-family:'Caveat',cursive;
+    font-family:'Special Elite',monospace;
     font-size:18px;
     color:var(--terracotta);
     margin-bottom:8px;
@@ -134,7 +156,7 @@
   @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
   .q-meta{display:flex; align-items:center; gap:10px; margin-bottom:16px;}
   .q-number{
-    font-family:'Cormorant Garamond',serif;
+    font-family:'Playfair Display',serif;
     font-weight:700;
     font-size:17px;
     color:var(--white);
@@ -147,7 +169,7 @@
   .q-track{flex:1; height:3px; background:var(--line); position:relative; overflow:hidden;}
   .q-track-fill{height:100%; background:var(--brass); transition:width .3s ease;}
   .prompt{
-    font-family:'Cormorant Garamond',serif;
+    font-family:'Playfair Display',serif;
     font-size:clamp(20px,4vw,25px);
     font-weight:600;
     margin:0 0 22px;
@@ -179,7 +201,7 @@
   }
   .feedback.show{display:block;}
   .feedback .verdict{
-    font-family:'Cormorant Garamond',serif;
+    font-family:'Playfair Display',serif;
     font-weight:700;
     font-size:15px;
     display:block;
@@ -268,14 +290,14 @@
   .report-head{
     background:var(--ink);
     color:var(--white);
-    font-family:'Cormorant Garamond',serif;
+    font-family:'Playfair Display',serif;
     font-weight:700;
     padding:16px;
     font-size:19px;
     letter-spacing:0.02em;
   }
   .report-body{padding:28px 22px;}
-  .big-score{font-family:'Cormorant Garamond',serif; font-weight:700; font-size:60px; color:var(--terracotta); line-height:1; margin-bottom:6px;}
+  .big-score{font-family:'Playfair Display',serif; font-weight:700; font-size:60px; color:var(--terracotta); line-height:1; margin-bottom:6px;}
   .big-score span{font-size:26px; color:var(--ink-soft);}
   .verdict-final{
     display:inline-block;
@@ -310,7 +332,7 @@
   .writing-head{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
   .writing-head .q-number{background:var(--terracotta);}
   .writing-title{
-    font-family:'Cormorant Garamond',serif;
+    font-family:'Playfair Display',serif;
     font-weight:700;
     font-size:19px;
     color:var(--terracotta);
@@ -396,12 +418,10 @@
 <div id="quiz-wrapper" style="display:none;">
 
 <header>
-  <div class="hook"></div>
-  <div class="signboard">
-    <h1>Shop Sign<span class="tag">Design Brief — Quiz</span></h1>
-  </div>
+  <div class="kicker">Français 2nde — Formation journaliste</div>
+  <h1>Carte de journaliste</h1>
   <span class="eval-badge">Quiz évalué</span>
-  <p class="subtitle">Vocabulaire du design et compréhension d'un nouveau brief client.</p>
+  <p class="subtitle">Contrôle final : info ou intox, les 5W, écrire comme un journaliste, relecture, types d'articles, rédaction.</p>
 </header>
 
 <main>
@@ -411,38 +431,24 @@
     <div style="text-align:right"><span class="label">Score</span><br><span class="value" id="q-score">0</span></div>
   </div>
 
-  <div class="text-panel" id="text-panel">
-    <span class="caption">New Message</span>
-    <p class="email-meta"><strong>From:</strong> Amara Osei – Owner of "Chapter One Books"</p>
-    <p class="email-meta"><strong>Subject:</strong> New sign for the bookshop</p>
-    <p>Hi,</p>
-    <p>My bookshop needs a new sign.</p>
-    <p>I'd like something modern and minimalist, easy to read from across the street.</p>
-    <p>The sign must be black and copper, with a metal or wood look.</p>
-    <p>Please avoid bright colours and plastic.</p>
-    <p>The text should be:<br>"Chapter One – Books &amp; Coffee."</p>
-    <p class="sig">Thanks for your help,<br>Amara Osei</p>
-  </div>
-
   <div id="quiz-area"></div>
 
   <div id="writing">
     <div class="writing-head">
       <div class="q-number">✏️</div>
-      <span class="writing-title">My design choices</span>
+      <span class="writing-title">Épreuve pratique</span>
     </div>
     <p class="writing-instructions">
-      Imagine ton propre projet d'enseigne (n'importe quel commerce). Rédige <strong>3 à 4 phrases en anglais</strong>
-      pour expliquer les couleurs et matériaux que tu choisirais, et pourquoi.
+      Le lycée va installer des bornes de recharge pour vélos et trottinettes électriques d'ici la fin du trimestre.
+      Rédige un article de presse complet sur ce sujet.
     </p>
-    <span class="writing-starter">Commence par : "I chose... because..."</span>
-    <textarea id="writing-input" placeholder="I chose... because..."></textarea>
+    <textarea id="writing-input" placeholder="Rédige ton article ici..." style="min-height:200px;"></textarea>
     <button id="finish-btn">Terminer et voir ma note →</button>
   </div>
 
   <div id="results">
     <div class="report">
-      <div class="report-head">My Design Brief — Result</div>
+      <div class="report-head">Carte de journaliste — Résultat</div>
       <div class="report-body">
         <div class="big-score" id="final-score">0<span>/20</span></div>
         <p style="color:var(--ink-soft); margin-top:0;">Note enregistrée</p>
@@ -540,26 +546,26 @@ async function cancelAttempt(){
 function runQuiz(){
 
 const QUESTIONS = [
-{prompt:"« Résistant, durable » se dit en anglais...", options:["durable","easy to read","elegant","shiny"], correct:0, explanation:"Résistant, durable = durable.", referencesText:false},
-{prompt:"« Brillant » se dit en anglais...", options:["transparent","solid","shiny","mat"], correct:2, explanation:"Brillant = shiny.", referencesText:false},
-{prompt:"« Le métal » se dit en anglais...", options:["wood","glass","plastic","metal"], correct:3, explanation:"Le métal = metal.", referencesText:false},
-{prompt:"« Une police d'écriture » se dit en anglais...", options:["a logo","a font","a colour","a material"], correct:1, explanation:"Une police d'écriture = a font.", referencesText:false},
-{prompt:"« Un matériau » se dit en anglais...", options:["a message","an invoice","a material","a quote"], correct:2, explanation:"Un matériau = material.", referencesText:false},
-{prompt:"« Facile à lire de loin » se dit en anglais...", options:["easy to read from across the street","hard to see","too colourful","handwritten"], correct:0, explanation:"Facile à lire de loin = easy to read from across the street.", referencesText:false},
-{prompt:"« La demande du client » se dit en anglais...", options:["the client's name","the client's brief","the shop's address","the final price"], correct:1, explanation:"La demande du client = the client's brief (ou request).", referencesText:false},
-{prompt:"« Sobre, épuré » se dit en anglais...", options:["vintage","colourful","loud, very decorated","minimalist"], correct:3, explanation:"Sobre, épuré = minimalist.", referencesText:false},
-{prompt:"D'après le mail, quel commerce a besoin d'une nouvelle enseigne ?", options:["Un fleuriste","Une librairie","Une boulangerie","Un café seul"], correct:1, explanation:"Amara Osei est propriétaire de Chapter One Books, une librairie.", referencesText:true},
-{prompt:"D'après le mail, quel style Amara veut-elle ?", options:["Coloré et ludique","Moderne et minimaliste","Rustique","Vintage et chargé"], correct:1, explanation:"Elle demande quelque chose de moderne et minimaliste.", referencesText:true},
-{prompt:"D'après le mail, quelles couleurs doit avoir l'enseigne ?", options:["Noir et cuivre","Rose et doré","Bleu et argent","Vert et blanc"], correct:0, explanation:"L'enseigne doit être noire et cuivre.", referencesText:true},
-{prompt:"D'après le mail, quel matériau est demandé ?", options:["Verre dépoli","Carton recyclé","Métal ou bois","Plastique brillant"], correct:2, explanation:"Elle demande un aspect métal ou bois.", referencesText:true},
-{prompt:"D'après le mail, qu'est-ce qu'Amara veut éviter ?", options:["Le bois et le métal","Les lettres lisibles","Les couleurs vives et le plastique","Le noir et le cuivre"], correct:2, explanation:"Elle veut éviter les couleurs vives et le plastique.", referencesText:true},
-{prompt:"D'après le mail, quel texte doit apparaître sur l'enseigne ?", options:["\"Chapter One – Books & Coffee.\"","\"Books For Everyone\"","\"Amara's Bookshop\"","\"Chapter One Books – Open\""], correct:0, explanation:"Le texte demandé est : \"Chapter One – Books & Coffee.\"", referencesText:true},
-{prompt:"« Élégant, raffiné » se dit en anglais...", options:["handmade","cheap","loud","elegant"], correct:3, explanation:"Élégant, raffiné = elegant.", referencesText:false},
-{type:"translate", prompt:"Traduis en anglais : « résistant, durable »", answers:["durable"], explanation:"Résistant, durable = durable.", referencesText:false},
-{type:"translate", prompt:"Traduis en anglais : « élégant »", answers:["elegant"], explanation:"Élégant = elegant.", referencesText:false},
-{type:"translate", prompt:"Traduis en anglais : « le bois »", answers:["wood"], explanation:"Le bois = wood.", referencesText:false},
-{type:"translate", prompt:"Traduis en anglais : « une police d'écriture »", answers:["font","a font"], explanation:"Une police d'écriture = a font.", referencesText:false},
-{type:"translate", prompt:"Traduis en anglais : « un matériau »", answers:["material","a material"], explanation:"Un matériau = a material.", referencesText:false}
+{prompt:"« La cantine proposera un menu végétarien chaque semaine, selon l'annonce affichée par l'intendance. » Il s'agit...", options:["D'une anecdote","D'une information","D'une opinion","D'une rumeur"], correct:1, explanation:"Un fait annoncé par une source officielle est une information."},
+{prompt:"« Il paraît que le voyage scolaire en Espagne serait annulé, mais personne n'a rien confirmé. » Il s'agit...", options:["D'une opinion","D'une information","D'une anecdote","D'une rumeur"], correct:3, explanation:"Une affirmation non confirmée qui circule est une rumeur."},
+{prompt:"« Les casiers sont beaucoup trop petits, franchement. » Il s'agit...", options:["D'une opinion","D'une anecdote","D'une information","D'une rumeur"], correct:0, explanation:"Un avis personnel non vérifiable est une opinion."},
+{prompt:"« L'année dernière, un professeur avait oublié ses clés dans la salle et tout le monde avait dû attendre dehors sous la pluie. » Il s'agit...", options:["D'une opinion","D'une information","D'une rumeur","D'une anecdote"], correct:3, explanation:"Un petit fait vécu, raconté à titre personnel, est une anecdote."},
+{prompt:"Dans la règle des 5W, quelle question permet de savoir qui est concerné par un événement ?", options:["Why","Who","Where","When"], correct:1, explanation:"Who = Qui : identifie les personnes ou groupes concernés."},
+{prompt:"Dans la règle des 5W, quelle question permet de connaître la cause d'un événement ?", options:["Who","Where","Why","What"], correct:2, explanation:"Why = Pourquoi : donne la raison ou la cause."},
+{prompt:"« La kermesse aura lieu samedi 14 juin, dans la cour principale. » Cette phrase répond principalement à quelle question des 5W ?", options:["When","What","Who","Why"], correct:0, explanation:"When = Quand : la phrase donne la date de l'événement."},
+{prompt:"« C'est le foyer socio-éducatif qui a financé le nouveau baby-foot. » Cette phrase répond principalement à quelle question des 5W ?", options:["When","Who","Why","Where"], correct:1, explanation:"Who = Qui : la phrase identifie qui est à l'origine de l'action."},
+{prompt:"Pour commencer un article de façon journalistique, quelle formulation est la plus adaptée ?", options:["Jeudi après-midi, une alerte incendie a interrompu les cours pendant une heure.","Y'a eu un souci apparemment.","Bon bref, il s'est passé un truc.","En vrai on sait même pas comment résumer ça."], correct:0, explanation:"Un bon début d'article donne un fait précis, daté, dans un style neutre."},
+{prompt:"Pour intégrer correctement un témoignage dans un article, quelle formulation convient ?", options:["Il paraît qu'un surveillant a trouvé ça n'importe quoi.","Un surveillant aurait dit un truc du genre que ça allait.","Selon un surveillant présent, « l'évacuation s'est déroulée calmement ».","On raconte qu'un surveillant était pas content."], correct:2, explanation:"« Selon [nom/fonction]... » suivi d'une citation entre guillemets est la structure attendue."},
+{prompt:"Pour exprimer une cause dans un article, quelle formulation est correcte ?", options:["Enfin bref, c'est la vie.","L'alerte aurait été déclenchée par un problème technique.","Et du coup voilà ce qui s'est passé.","On sait pas trop pourquoi en fait."], correct:1, explanation:"« [Événement] aurait été déclenché par... » exprime une cause avec la prudence journalistique du conditionnel."},
+{prompt:"Pour conclure un article en évoquant la suite des événements, quelle formulation convient le mieux ?", options:["Franchement difficile à dire pour la suite.","Voilà, c'est à peu près tout.","La direction annoncera de nouvelles consignes de sécurité dans les prochains jours.","Bref, on verra bien."], correct:2, explanation:"Une bonne conclusion évoque la suite de façon factuelle et précise, souvent au futur."},
+{prompt:"D'après la grille de relecture, quel type de phrases faut-il privilégier dans un article ?", options:["Des phrases courtes et claires","Des phrases longues avec beaucoup de détails","Des phrases à la première personne","Des phrases très techniques"], correct:0, explanation:"Des phrases courtes et claires facilitent la lecture et la compréhension."},
+{prompt:"Quel ton un article d'information doit-il adopter ?", options:["Un ton engagé et militant","Un ton très familier","Un ton humoristique","Un ton neutre et objectif"], correct:3, explanation:"Un article d'information doit rester neutre et objectif, sans opinion personnelle."},
+{prompt:"Sur la grille de relecture, quel critère concerne le choix des mots utilisés ?", options:["Texte facile et lisible","Vocabulaire adapté au style journalistique","Informations bien organisées","Grammaire correcte"], correct:1, explanation:"« Vocabulaire adapté » évalue le choix des mots, distinct de la lisibilité générale ou de la grammaire."},
+{prompt:"Pourquoi doit-on vérifier l'orthographe et la grammaire avant de rendre un article ?", options:["Parce que les fautes nuisent au sérieux et à la crédibilité de l'article","Parce que le correcteur automatique ne sert à rien","Parce que ça n'a aucune importance pour un article","Parce que c'est noté sur 20 automatiquement"], correct:0, explanation:"Un article mal orthographié perd en sérieux et en crédibilité auprès des lecteurs."},
+{prompt:"Un article très court, qui donne une information rapide sans développement, s'appelle...", options:["Une critique / revue","Un article de fond","Une brève / annonce","Un éditorial"], correct:2, explanation:"La brève (ou annonce) est un texte court et rapide à lire."},
+{prompt:"Un article qui donne un avis personnel assumé sur un sujet, signé par son auteur, s'appelle...", options:["Une interview","Un article d'information","Un éditorial / une tribune","Une brève"], correct:2, explanation:"L'éditorial (ou tribune) exprime un point de vue assumé par l'auteur."},
+{prompt:"Un article qui rapporte un fait de façon neutre, sans opinion, s'appelle...", options:["Un éditorial","Une chronique","Une critique","Un article d'information"], correct:3, explanation:"L'article d'information rapporte les faits de façon neutre."},
+{prompt:"Un article construit à partir de questions posées à une personne, suivies de ses réponses, s'appelle...", options:["Une critique","Une chronique","Un éditorial","Une interview"], correct:3, explanation:"L'interview est structurée en questions/réponses avec une personne interrogée."}
 ];
 
 let current = 0;
@@ -572,7 +578,6 @@ const qPos = document.getElementById('q-pos');
 const qScore = document.getElementById('q-score');
 const resultsEl = document.getElementById('results');
 const writingEl = document.getElementById('writing');
-const textPanel = document.getElementById('text-panel');
 
 function renderAll(){
   quizArea.innerHTML = '';
@@ -622,16 +627,6 @@ function renderAll(){
     });
   });
 
-  updateTextPanel(0);
-}
-
-function updateTextPanel(i){
-  const q = QUESTIONS[i];
-  if(q && q.referencesText){
-    textPanel.classList.add('show');
-  } else {
-    textPanel.classList.remove('show');
-  }
 }
 
 function recordAnswer(qi, givenText, correctText, isCorrect){
@@ -692,12 +687,10 @@ function goTo(i){
   document.getElementById('q'+i).classList.add('active');
   current = i;
   qPos.textContent = (i+1) + ' / ' + QUESTIONS.length;
-  updateTextPanel(i);
 }
 
 function showWriting(){
   document.querySelectorAll('.question').forEach(d => d.classList.remove('active'));
-  textPanel.classList.remove('show');
   writingEl.classList.add('show');
   qPos.textContent = QUESTIONS.length + ' / ' + QUESTIONS.length;
 }
@@ -713,21 +706,20 @@ function showResults(){
 }
 
 async function generateWritingCorrection(text){
-  const prompt = `Tu es un professeur d'anglais bienveillant pour des élèves de niveau A1-A2 en filière professionnelle (design/enseigne). Un élève a écrit ce texte en anglais pour justifier ses choix de couleurs et matériaux pour une enseigne de magasin, en réponse à "I chose... because...".
+  const prompt = `Tu es un professeur de français bienveillant pour des élèves de 2nde en filière professionnelle, qui évalue une épreuve pratique sur le journalisme (obtention de la "carte de journaliste"). Un(e) élève a rédigé un article de presse complet sur le sujet suivant : « Le lycée va installer des bornes de recharge pour vélos et trottinettes électriques d'ici la fin du trimestre. »
 
-Consigne donnée à l'élève : rédiger 3 à 4 phrases complètes.
-
-Texte de l'élève :
+Article de l'élève :
 """
 ${text}
 """
 
-Évalue trois aspects, dans cet ordre :
-1. Longueur et organisation : le texte fait-il bien 3 à 4 phrases ? Est-il structuré (une idée par phrase, pas une liste de mots ou une seule phrase fourre-tout) ? Si le texte est trop court, trop long, ou mal structuré, dis-le clairement et explique ce qui manque.
-2. Grammaire, vocabulaire, orthographe : corrige les erreurs, explique brièvement chacune en français.
-3. Une phrase d'encouragement pour finir.
+Évalue quatre aspects, dans cet ordre :
+1. Les 5W : l'article répond-il clairement à Qui ? Quoi ? Où ? Quand ? Pourquoi ?
+2. La structure : y a-t-il un titre accrocheur, une accroche, un développement clair ?
+3. Le style : phrases courtes, ton neutre et objectif, pas de répétitions inutiles.
+4. Grammaire, orthographe : signale les erreurs principales.
 
-Réponds uniquement en français sauf pour les mots/phrases en anglais que tu cites. Reste concis (180 mots maximum).`;
+Termine par une note globale sur 10 (cohérente avec la qualité du travail), clairement indiquée (ex. "Note : 7/10"), et une phrase d'encouragement. Réponds en français. Reste concis (200 mots maximum).`;
 
   try {
     const response = await fetch('https://ia-proxy.clperet.workers.dev/', {
@@ -735,7 +727,7 @@ Réponds uniquement en français sauf pour les mots/phrases en anglais que tu ci
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 500,
+        max_tokens: 600,
         messages: [{role: 'user', content: prompt}]
       })
     });
