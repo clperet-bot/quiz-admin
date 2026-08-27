@@ -437,8 +437,7 @@
     </p>
     <span class="writing-starter">Commence par : "I chose... because..."</span>
     <textarea id="writing-input" placeholder="I chose... because..."></textarea>
-    <button id="correction-btn">✏️ Correction</button>
-    <div class="correction-result" id="correction-result"></div>
+    <button id="finish-btn">Terminer et voir ma note →</button>
   </div>
 
   <div id="results">
@@ -484,7 +483,7 @@ if(!studentName || !classId || !quizId){
   runQuiz();
 }
 
-async function submitScore(score, total){
+async function submitScore(score, total, answersDetail, writingText, writingCorrection){
   try{
     await supa.from('attempts').insert({
       quiz_id: quizId,
@@ -493,7 +492,10 @@ async function submitScore(score, total){
       student_name_normalized: normalizeName(studentName),
       score: score,
       total: total,
-      cancelled: false
+      cancelled: false,
+      answers_detail: answersDetail || null,
+      writing_text: writingText || null,
+      writing_correction: writingCorrection || null
     });
   } catch(e){ /* silencieux : la note reste affichée à l'élève même si l'envoi échoue */ }
 }
@@ -563,6 +565,7 @@ const QUESTIONS = [
 let current = 0;
 let score = 0;
 let answered = [];
+let answersDetail = [];
 
 const quizArea = document.getElementById('quiz-area');
 const qPos = document.getElementById('q-pos');
@@ -585,26 +588,10 @@ function renderAll(){
           <button class="submit-translate" data-submit="${i}">Valider</button>
         </div>
         <span class="translate-hint">Une seule réponse attendue, en anglais.</span>
-        <div class="feedback" id="fb${i}">
-          <span class="verdict"></span>
-          <span class="explanation"></span>
-        </div>
-        <div class="nav-row">
-          <span></span>
-          <button class="next" data-next="${i}">Suivant →</button>
-        </div>
       `
       : `
         <div class="options">
           ${q.options.map((opt, oi) => `<button class="option" data-i="${oi}">${opt}</button>`).join('')}
-        </div>
-        <div class="feedback" id="fb${i}">
-          <span class="verdict"></span>
-          <span class="explanation"></span>
-        </div>
-        <div class="nav-row">
-          <span></span>
-          <button class="next" data-next="${i}">Suivant →</button>
         </div>
       `;
 
@@ -621,9 +608,6 @@ function renderAll(){
 
   document.querySelectorAll('.option').forEach(btn => {
     btn.addEventListener('click', handleAnswer);
-  });
-  document.querySelectorAll('[data-next]').forEach(btn => {
-    btn.addEventListener('click', () => goTo(parseInt(btn.dataset.next) + 1));
   });
   document.querySelectorAll('[data-submit]').forEach(btn => {
     btn.addEventListener('click', () => handleTranslateAnswer(parseInt(btn.dataset.submit)));
@@ -650,6 +634,17 @@ function updateTextPanel(i){
   }
 }
 
+function recordAnswer(qi, givenText, correctText, isCorrect){
+  const q = QUESTIONS[qi];
+  answersDetail[qi] = {
+    question: q.prompt,
+    given: givenText,
+    correct_answer: correctText,
+    is_correct: isCorrect,
+    explanation: q.explanation
+  };
+}
+
 function handleTranslateAnswer(qi){
   if(answered[qi] !== undefined) return;
 
@@ -660,18 +655,13 @@ function handleTranslateAnswer(qi){
 
   answered[qi] = correct;
   if(correct) score++;
+  recordAnswer(qi, input.value.trim(), q.answers[0], correct);
 
   input.disabled = true;
   document.querySelector(`[data-submit="${qi}"]`).disabled = true;
-  input.classList.add(correct ? 'correct' : 'incorrect');
-
-  const fb = document.getElementById('fb'+qi);
-  fb.classList.add('show', correct ? 'ok' : 'ko');
-  fb.querySelector('.verdict').textContent = correct ? "Exact !" : "Pas tout à fait.";
-  fb.querySelector('.explanation').textContent = q.explanation;
-
-  document.querySelector(`#q${qi} .next`).classList.add('show');
   qScore.textContent = score;
+
+  setTimeout(() => goTo(qi + 1), 200);
 }
 
 function handleAnswer(e){
@@ -685,20 +675,12 @@ function handleAnswer(e){
   const correct = chosen === q.correct;
   answered[qi] = correct;
   if(correct) score++;
+  recordAnswer(qi, q.options[chosen], q.options[q.correct], correct);
 
-  qDiv.querySelectorAll('.option').forEach((o, oi) => {
-    o.disabled = true;
-    if(oi === q.correct) o.classList.add('correct');
-    else if(oi === chosen) o.classList.add('incorrect');
-  });
-
-  const fb = document.getElementById('fb'+qi);
-  fb.classList.add('show', correct ? 'ok' : 'ko');
-  fb.querySelector('.verdict').textContent = correct ? "Exact !" : "Pas tout à fait.";
-  fb.querySelector('.explanation').textContent = q.explanation;
-
-  qDiv.querySelector('.next').classList.add('show');
+  qDiv.querySelectorAll('.option').forEach(o => o.disabled = true);
   qScore.textContent = score;
+
+  setTimeout(() => goTo(qi + 1), 150);
 }
 
 function goTo(i){
@@ -728,25 +710,9 @@ function showResults(){
   if(score >= 16){ v.textContent = 'Excellent brief !'; v.className = 'verdict-final great'; }
   else if(score >= 11){ v.textContent = 'Bien, continue comme ça'; v.className = 'verdict-final ok'; }
   else { v.textContent = 'À retravailler'; v.className = 'verdict-final retry'; }
-  submitScore(score, QUESTIONS.length);
 }
 
-document.getElementById('correction-btn').addEventListener('click', async () => {
-  const input = document.getElementById('writing-input');
-  const resultBox = document.getElementById('correction-result');
-  const btn = document.getElementById('correction-btn');
-  const text = input.value.trim();
-
-  if(text.length < 5){
-    resultBox.classList.add('show');
-    resultBox.textContent = "Écris d'abord tes phrases avant de demander la correction.";
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = "Correction en cours...";
-  resultBox.classList.remove('show');
-
+async function generateWritingCorrection(text){
   const prompt = `Tu es un professeur d'anglais bienveillant pour des élèves de niveau A1-A2 en filière professionnelle (design/enseigne). Un élève a écrit ce texte en anglais pour justifier ses choix de couleurs et matériaux pour une enseigne de magasin, en réponse à "I chose... because...".
 
 Consigne donnée à l'élève : rédiger 3 à 4 phrases complètes.
@@ -773,33 +739,27 @@ Réponds uniquement en français sauf pour les mots/phrases en anglais que tu ci
         messages: [{role: 'user', content: prompt}]
       })
     });
-
-    if(!response.ok) throw new Error('Erreur réseau');
+    if(!response.ok) throw new Error('network');
     const data = await response.json();
-    const textOut = (data.content || [])
-      .map(block => block.text || '')
-      .filter(Boolean)
-      .join('\n');
-
-    resultBox.textContent = textOut || "Pas de réponse reçue, réessaie.";
-    resultBox.classList.add('show');
+    return (data.content || []).map(b => b.text || '').filter(Boolean).join('\n') || null;
   } catch(err){
-    resultBox.textContent = "La correction n'a pas pu être générée (problème de connexion). Réessaie dans un instant.";
-    resultBox.classList.add('show');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "✏️ Correction";
+    return null;
   }
-});
+}
 
-(function addFinishButton(){
-  const finishBtn = document.createElement('button');
-  finishBtn.className = 'retry-btn';
-  finishBtn.textContent = 'Voir mon rapport final →';
-  finishBtn.style.marginTop = '22px';
-  finishBtn.addEventListener('click', showResults);
-  writingEl.appendChild(finishBtn);
-})();
+document.getElementById('finish-btn').addEventListener('click', async () => {
+  const input = document.getElementById('writing-input');
+  const btn = document.getElementById('finish-btn');
+  const text = input.value.trim();
+
+  btn.disabled = true;
+  btn.textContent = "Enregistrement...";
+
+  const writingCorrection = text.length >= 5 ? await generateWritingCorrection(text) : null;
+  await submitScore(score, QUESTIONS.length, answersDetail, text, writingCorrection);
+
+  showResults();
+});
 
 renderAll();
 
