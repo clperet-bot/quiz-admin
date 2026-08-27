@@ -128,6 +128,36 @@
   .score-low{background:var(--pink-light); color:var(--red);}
   .flag-cheat{display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--red); font-weight:700;}
   .loading-note{font-size:13px; color:var(--ink-soft); padding:20px;}
+
+  /* ---- Mobile ---- */
+  @media (max-width: 720px){
+    .app-shell{flex-direction:column; min-height:auto;}
+    .sidebar{
+      width:100%; height:auto; position:static;
+      flex-direction:row; align-items:center; flex-wrap:wrap;
+      padding:12px 14px; gap:6px;
+    }
+    .sidebar-brand{padding:2px 4px; margin-right:auto;}
+    .sidebar-brand-name{font-size:13px;}
+    .nav-item{margin-bottom:0; padding:8px 10px; font-size:12.5px;}
+    .sidebar-footer{
+      margin-top:0; border-top:none; padding-top:0;
+      width:auto; margin-left:auto;
+    }
+    .sidebar-user-name{display:none;}
+    .header-block{padding:16px 16px 14px;}
+    .bubble-title{font-size:16px; padding:8px 16px;}
+    .body-pad{padding:16px;}
+    .stat-row{grid-template-columns:repeat(2, 1fr);}
+    .class-grid{grid-template-columns:1fr;}
+    .result-table{font-size:12px;}
+    .result-table th, .result-table td{padding:7px 6px;}
+    .filter-row{flex-direction:column;}
+    .filter-row select{width:100%;}
+    .quiz-row{flex-wrap:wrap; gap:10px;}
+    .quiz-row-toggles{width:100%; justify-content:flex-end;}
+    body{overflow-x:hidden;}
+  }
 </style>
 </head>
 <body>
