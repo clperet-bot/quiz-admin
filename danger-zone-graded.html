@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Danger Zone — Safety Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#1A1A1A;
+    --ink-soft:#5B5B5B;
+    --paper:#F5F3EE;
+    --white:#FFFFFF;
+    --yellow:#F5B700;
+    --yellow-dark:#D99A00;
+    --black:#111111;
+    --red:#C0392B;
+    --green:#2E8B57;
+    --line:#E2DFD6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    line-height:1.5;
+  }
+  .stripes{
+    height:14px;
+    background:repeating-linear-gradient(135deg, var(--yellow), var(--yellow) 18px, var(--black) 18px, var(--black) 36px);
+  }
+  header{
+    padding:36px 20px 28px;
+    text-align:center;
+    background:var(--black);
+    color:var(--white);
+  }
+  .badge{
+    display:inline-block;
+    background:var(--yellow);
+    color:var(--black);
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    padding:5px 14px;
+    border-radius:3px;
+    margin-bottom:14px;
+  }
+  h1{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    font-size:clamp(28px,6vw,40px);
+    margin:0;
+    letter-spacing:0.02em;
+  }
+  .subtitle{color:#C9C9C9; font-size:14px; margin-top:8px;}
+  main{max-width:640px; margin:0 auto; padding:28px 18px 100px;}
+  .scorebar{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--white); border:1px solid var(--line); border-left:5px solid var(--yellow);
+    padding:14px 18px; margin-bottom:24px; font-size:14px; border-radius:4px;
+  }
+  .section{
+    background:var(--white); border:1px solid var(--line); border-radius:6px;
+    padding:22px 20px; margin-bottom:20px;
+  }
+  .section-num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:28px; height:28px; background:var(--yellow); color:var(--black);
+    font-family:'Oswald',sans-serif; font-weight:700; border-radius:50%; margin-right:10px; font-size:14px;
+  }
+  .section-title{
+    font-family:'Oswald',sans-serif; font-weight:600; font-size:17px; display:inline-flex; align-items:center;
+  }
+  .section-points{float:right; font-size:12.5px; color:var(--ink-soft); font-weight:600;}
+  .section-instructions{font-size:14px; color:var(--ink-soft); margin:12px 0 16px;}
+  .photo{width:100%; border-radius:4px; margin-bottom:16px; display:block;}
+  .sentence-row{margin-bottom:12px;}
+  .sentence-row label{display:block; font-size:13px; color:var(--ink-soft); margin-bottom:4px; font-weight:600;}
+  input[type=text]{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:5px;
+    font-family:'Inter',sans-serif; font-size:14.5px; background:var(--paper);
+  }
+  input[type=text]:focus{outline:none; border-color:var(--yellow-dark);}
+  table.match-table{width:100%; border-collapse:collapse; margin-top:6px;}
+  table.match-table td{padding:8px 6px; border-bottom:1px solid var(--line); font-size:14px; vertical-align:middle;}
+  table.match-table td.icon-cell{width:34%; font-weight:600;}
+  table.match-table td.input-cell{width:66%;}
+  table.match-table input{padding:8px 10px; font-size:14px;}
+  .translate-grid{display:grid; grid-template-columns:1fr; gap:10px; margin-top:6px;}
+  .translate-row{display:flex; align-items:center; gap:10px;}
+  .translate-row .fr{width:150px; flex-shrink:0; font-size:14px; font-weight:600;}
+  .translate-row input{flex:1;}
+  .cbr-row{margin-bottom:16px; padding-bottom:14px; border-bottom:1px dashed var(--line);}
+  .cbr-row:last-child{border-bottom:none; margin-bottom:0;}
+  .cbr-line{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14.5px;}
+  .cbr-line span{color:var(--ink-soft);}
+  .cbr-line input.the-word{width:150px;}
+  .cbr-line input.because{flex:1; min-width:160px;}
+  #submit-btn{
+    width:100%; margin-top:6px;
+    font-family:'Oswald',sans-serif; font-weight:600; font-size:15px; letter-spacing:0.03em; text-transform:uppercase;
+    background:var(--black); color:var(--white); border:none; padding:16px; border-radius:5px; cursor:pointer;
+  }
+  #submit-btn:hover{background:var(--red);}
+  #submit-btn:disabled{background:var(--ink-soft); cursor:wait;}
+  .cheat-banner{
+    display:none; position:sticky; top:0; z-index:999;
+    background:var(--red); color:var(--white); text-align:center; padding:10px 16px; font-size:13px; font-weight:600;
+  }
+  .cheat-banner.show{display:block;}
+  .access-gate{
+    display:none; min-height:100vh; align-items:center; justify-content:center;
+    padding:40px 20px; text-align:center; font-size:15px; color:var(--ink-soft);
+  }
+  .access-gate.show{display:flex;}
+  .cancelled-screen{
+    display:none; min-height:60vh; align-items:center; justify-content:center; padding:40px 20px; text-align:center;
+  }
+  .cancelled-screen.show{display:flex;}
+  .cancelled-screen p{font-size:16px; color:var(--red); max-width:400px;}
+  .results-screen{display:none; text-align:center; padding:20px 0;}
+  .results-screen.show{display:block;}
+  .final-score{
+    font-family:'Oswald',sans-serif; font-weight:700; font-size:64px; color:var(--black); margin:10px 0 0;
+  }
+  .final-score span{font-size:28px; color:var(--ink-soft);}
+  .final-note{
+    background:var(--white); border:1px solid var(--line); border-radius:6px; padding:16px 18px; margin-top:20px;
+    font-size:14px; color:var(--ink-soft); text-align:left;
+  }
+  .pending-note{
+    background:#FFF6DC; border:1px solid var(--yellow); border-radius:6px; padding:14px 16px; margin-top:16px;
+    font-size:13.5px; text-align:left;
+  }
+  footer{text-align:center; padding:24px; color:var(--ink-soft); font-size:12px; opacity:0.7;}
+</style>
+</head>
+<body>
+
+<div id="cheat-banner" class="cheat-banner">⚠ Si tu quittes cette page, ta prof sera notifiée et tes réponses seront effacées.</div>
+
+<div id="access-gate" class="access-gate">
+  <p>Ce quiz est évalué. Accède-y uniquement via le lien donné par ta prof (QR code de ta classe).</p>
+</div>
+
+<div id="quiz-wrapper" style="display:none;">
+
+<div class="stripes"></div>
+<header>
+  <span class="badge">Contrôle évalué · Danger Zone</span>
+  <h1>Safety Check</h1>
+  <p class="subtitle" id="student-label"></p>
+</header>
+<div class="stripes"></div>
+
+<main>
+
+  <div id="form-screen">
+
+  <div class="scorebar">
+    <span>Note finale sur <strong>20</strong></span>
+    <span>4 parties</span>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section">
+    <div class="section-points">8 points</div>
+    <div class="section-title"><span class="section-num">1</span>Look at the picture</div>
+    <p class="section-instructions">Write 4 sentences about the hazards you can see (ex: <em>I can see cables on the floor.</em>)</p>
+    <img class="photo" src="danger-zone-photo.jpg" alt="Workshop with several safety hazards">
+    <div class="sentence-row"><label>1.</label><input type="text" id="s1-1" autocomplete="off"></div>
+    <div class="sentence-row"><label>2.</label><input type="text" id="s1-2" autocomplete="off"></div>
+    <div class="sentence-row"><label>3.</label><input type="text" id="s1-3" autocomplete="off"></div>
+    <div class="sentence-row"><label>4.</label><input type="text" id="s1-4" autocomplete="off"></div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section">
+    <div class="section-points">4 points</div>
+    <div class="section-title"><span class="section-num">2</span>PPE and Hazards</div>
+    <p class="section-instructions">Write the hazard that matches each PPE.</p>
+    <table class="match-table">
+      <tr><td class="icon-cell">Gloves</td><td class="input-cell"><input type="text" id="s2-1" autocomplete="off"></td></tr>
+      <tr><td class="icon-cell">Safety boots</td><td class="input-cell"><input type="text" id="s2-2" autocomplete="off"></td></tr>
+      <tr><td class="icon-cell">Goggles</td><td class="input-cell"><input type="text" id="s2-3" autocomplete="off"></td></tr>
+      <tr><td class="icon-cell">Helmet</td><td class="input-cell"><input type="text" id="s2-4" autocomplete="off"></td></tr>
+    </table>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="section">
+    <div class="section-points">4 points</div>
+    <div class="section-title"><span class="section-num">3</span>Translate into English</div>
+    <div class="translate-grid">
+      <div class="translate-row"><span class="fr">1. échelle</span><input type="text" id="s3-1" autocomplete="off"></div>
+      <div class="translate-row"><span class="fr">2. casque</span><input type="text" id="s3-2" autocomplete="off"></div>
+      <div class="translate-row"><span class="fr">3. gants</span><input type="text" id="s3-3" autocomplete="off"></div>
+      <div class="translate-row"><span class="fr">4. sol mouillé</span><input type="text" id="s3-4" autocomplete="off"></div>
+      <div class="translate-row"><span class="fr">5. panneau électrique</span><input type="text" id="s3-5" autocomplete="off"></div>
+      <div class="translate-row"><span class="fr">6. lunettes de protection</span><input type="text" id="s3-6" autocomplete="off"></div>
+      <div class="translate-row"><span class="fr">7. chaussures de sécurité</span><input type="text" id="s3-7" autocomplete="off"></div>
+      <div class="translate-row"><span class="fr">8. câble</span><input type="text" id="s3-8" autocomplete="off"></div>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="section">
+    <div class="section-points">4 points</div>
+    <div class="section-title"><span class="section-num">4</span>Complete the sentences</div>
+    <p class="section-instructions">Name a hazard, then explain why it is dangerous.</p>
+
+    <div class="cbr-row">
+      <div class="cbr-line"><span>The</span><input type="text" class="the-word" id="s4-1-word" autocomplete="off"><span>is dangerous because</span><input type="text" class="because" id="s4-1-why" autocomplete="off"></div>
+    </div>
+    <div class="cbr-row">
+      <div class="cbr-line"><span>The</span><input type="text" class="the-word" id="s4-2-word" autocomplete="off"><span>is dangerous because</span><input type="text" class="because" id="s4-2-why" autocomplete="off"></div>
+    </div>
+    <div class="cbr-row">
+      <div class="cbr-line"><span>The</span><input type="text" class="the-word" id="s4-3-word" autocomplete="off"><span>is dangerous because</span><input type="text" class="because" id="s4-3-why" autocomplete="off"></div>
+    </div>
+    <div class="cbr-row">
+      <div class="cbr-line"><span>The</span><input type="text" class="the-word" id="s4-4-word" autocomplete="off"><span>is dangerous because</span><input type="text" class="because" id="s4-4-why" autocomplete="off"></div>
+    </div>
+  </div>
+
+  <button id="submit-btn">Rendre le contrôle</button>
+
+  </div>
+  <!-- fin form-screen -->
+
+  <div id="results-screen" class="results-screen">
+    <p style="font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); font-size:13px;">Ta note</p>
+    <div class="final-score" id="final-score">–<span>/20</span></div>
+    <div id="pending-box"></div>
+    <div class="final-note">Ta note a été transmise à ta prof. Tu peux fermer cette page.</div>
+  </div>
+
+</main>
+
+<footer>Lycée Godefroy de Bouillon — Danger Zone Safety Check</footer>
+
+</div>
+<!-- fin #quiz-wrapper -->
+
+<script>
+// ============ CONFIG — mêmes valeurs que admin.html / eleve.html ============
+const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+const GRADE_ENDPOINT = SUPABASE_URL + "/functions/v1/grade-advanced";
+// ==============================================================================
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const params = new URLSearchParams(location.search);
+const studentName = params.get('student');
+const classId = params.get('class_id');
+const quizId = params.get('quiz_id');
+
+function normalizeName(s){
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+}
+function normalizeAnswer(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+}
+
+if(!studentName || !classId || !quizId){
+  document.getElementById('access-gate').classList.add('show');
+} else {
+  document.getElementById('quiz-wrapper').style.display = 'block';
+  document.getElementById('cheat-banner').classList.add('show');
+  document.getElementById('student-label').textContent = studentName;
+}
+
+// ============ ANTI-TRICHE ============
+let cheatTriggered = false;
+let awayTimer = null;
+document.addEventListener('visibilitychange', () => {
+  if(cheatTriggered) return;
+  if(document.hidden){
+    awayTimer = Date.now();
+  } else if(awayTimer){
+    const awaySeconds = (Date.now() - awayTimer) / 1000;
+    awayTimer = null;
+    if(awaySeconds > 4){
+      cheatTriggered = true;
+      cancelAttempt();
+    } else {
+      document.getElementById('cheat-banner').textContent = "⚠ Tu es sorti(e) du quiz. Si tu recommences, tes réponses seront effacées et ta prof sera notifiée.";
+    }
+  }
+});
+
+async function cancelAttempt(){
+  document.getElementById('quiz-wrapper').innerHTML = `
+    <div class="cancelled-screen show">
+      <p>Tentative annulée : tu as quitté le quiz. Ta prof a été notifiée. Reviens demain pour réessayer.</p>
+    </div>
+  `;
+  try{
+    await supa.from('attempts').insert({
+      quiz_id: quizId, class_id: classId,
+      student_name_raw: studentName, student_name_normalized: normalizeName(studentName),
+      score: null, total: null, cancelled: true
+    });
+  } catch(e){}
+}
+
+// ============ CORRECTION SECTIONS 2 & 3 (côté client) ============
+const SECTION2_ANSWERS = [
+  { field:'s2-1', accepted:['open panel','electrical panel','open electrical panel','panel'] },      // Gloves
+  { field:'s2-2', accepted:['wet floor','wet','floor is wet'] },                                       // Safety boots
+  { field:'s2-3', accepted:['sparks','welding','sparks welding','spark'] },                            // Goggles
+  { field:'s2-4', accepted:['ladder','ladders'] }                                                      // Helmet
+];
+const SECTION3_ANSWERS = [
+  { field:'s3-1', accepted:['ladder','ladders'] },
+  { field:'s3-2', accepted:['helmet','hard hat'] },
+  { field:'s3-3', accepted:['gloves','glove'] },
+  { field:'s3-4', accepted:['wet floor','wet ground'] },
+  { field:'s3-5', accepted:['electrical panel','electric panel','electrical board'] },
+  { field:'s3-6', accepted:['goggles','protective glasses','safety glasses'] },
+  { field:'s3-7', accepted:['safety boots','safety shoes'] },
+  { field:'s3-8', accepted:['cable','cables','wire','wires'] }
+];
+
+function gradeExactSection(list, pointsPerItem){
+  let total = 0;
+  const detail = [];
+  list.forEach(item => {
+    const raw = document.getElementById(item.field).value;
+    const norm = normalizeAnswer(raw);
+    const ok = item.accepted.some(a => norm === a || (norm.length > 2 && norm.includes(a)));
+    total += ok ? pointsPerItem : 0;
+    detail.push({ field:item.field, answer: raw, correct: ok });
+  });
+  return { total: Math.round(total*2)/2, detail };
+}
+
+// ============ CORRECTION SECTIONS 1 & 4 (par IA, via edge function sécurisée) ============
+const GRADING_SYSTEM_PROMPT = `Tu es un professeur d'anglais qui corrige un contrôle de vocabulaire pour des élèves de seconde (niveau A2-B1) sur le thème de la sécurité en atelier ("Danger Zone"). Note deux parties de rédaction courte en anglais, avec indulgence sur les erreurs mineures de grammaire mais rigueur sur le sens (le danger doit être correctement identifié et nommé).
+
+CONTEXTE — la photo montrée aux élèves montre un atelier avec ces dangers visibles : un sol mouillé (panneau "CAUTION WET FLOOR"), des câbles/fils électriques au sol, deux échelles appuyées contre le mur, un tableau électrique ouvert en haut à gauche, des étincelles provenant d'une meuleuse utilisée par un ouvrier.
+
+SECTION 1 (4 phrases, "section1_items") — l'élève devait écrire une phrase par danger visible sur la photo (ex attendu : "I can see cables on the floor."). Pour chaque phrase :
+- score 2 : danger correctement identifié ET phrase grammaticalement correcte
+- score 1 : danger correctement identifié mais phrase avec erreurs de grammaire/orthographe
+- score 0 : danger absent de la photo, hors sujet, vide, ou incompréhensible
+Les 4 phrases doivent décrire des dangers différents entre eux ; si un danger est répété, ne compte les points que pour la première occurrence (score 0 pour les répétitions).
+
+SECTION 4 (4 lignes, "section4_items") — l'élève devait compléter "The ___ is dangerous because ___" en nommant un danger puis en donnant une raison. Pour chaque ligne :
+- score 1 : le danger nommé est correct (cohérent avec les dangers listés ci-dessus, ou tout danger générique plausible d'atelier) ET la raison donnée est cohérente et plausible
+- score 0 : sinon (danger incorrect, raison absente ou incohérente, champs vides)
+
+Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
+{"section1_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section4_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"feedback_global":"Une ou deux phrases de synthèse en français pour la prof."}
+
+Les commentaires doivent être courts (moins de 15 mots), en français.`;
+
+function buildUserContent(){
+  const s1 = [1,2,3,4].map(n => document.getElementById('s1-'+n).value.trim());
+  const s4 = [1,2,3,4].map(n => {
+    const word = document.getElementById('s4-'+n+'-word').value.trim();
+    const why = document.getElementById('s4-'+n+'-why').value.trim();
+    return `The ${word} is dangerous because ${why}`;
+  });
+  return `SECTION 1 — Phrases de l'élève :\n${s1.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nSECTION 4 — Phrases de l'élève :\n${s4.map((t,i)=>`${i+1}. ${t}`).join('\n')}`;
+}
+
+async function gradeWithAI(){
+  const body = { systemPrompt: GRADING_SYSTEM_PROMPT, userContent: buildUserContent() };
+  const res = await fetch(GRADE_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if(!res.ok) throw new Error('grade-advanced http error');
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  if(!Array.isArray(data.section1_items) || !Array.isArray(data.section4_items)) throw new Error('malformed response');
+  return data;
+}
+
+// ============ SOUMISSION ============
+document.getElementById('submit-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Correction en cours...';
+
+  const grade2 = gradeExactSection(SECTION2_ANSWERS, 1);
+  const grade3 = gradeExactSection(SECTION3_ANSWERS, 0.5);
+
+  let aiResult = null;
+  let aiError = null;
+  try{
+    aiResult = await gradeWithAI();
+  } catch(e){
+    aiError = String(e);
+  }
+
+  let score1 = null, score4 = null;
+  if(aiResult){
+    score1 = aiResult.section1_items.reduce((a,b)=>a+(Number(b.score)||0),0);
+    score4 = aiResult.section4_items.reduce((a,b)=>a+(Number(b.score)||0),0);
+  }
+
+  const clientTotal = grade2.total + grade3.total;
+  const aiTotal = aiResult ? (score1 + score4) : null;
+  const finalScore = aiResult ? Math.round((clientTotal + aiTotal)*2)/2 : null;
+
+  const answersDetail = {
+    section2: grade2.detail,
+    section3: grade3.detail,
+    section1_ai: aiResult ? aiResult.section1_items : null,
+    section4_ai: aiResult ? aiResult.section4_items : null,
+    feedback_global: aiResult ? aiResult.feedback_global : null,
+    ai_error: aiError,
+    client_subtotal: clientTotal,
+    ai_subtotal: aiTotal
+  };
+
+  const writingText = buildUserContent();
+  const writingCorrection = aiResult ? aiResult.feedback_global : ("Correction IA indisponible — à vérifier manuellement pour les parties 1 et 4. " + (aiError||''));
+
+  try{
+    await supa.from('attempts').insert({
+      quiz_id: quizId, class_id: classId,
+      student_name_raw: studentName, student_name_normalized: normalizeName(studentName),
+      score: finalScore, total: 20, cancelled: false,
+      answers_detail: answersDetail,
+      writing_text: writingText,
+      writing_correction: writingCorrection
+    });
+  } catch(e){}
+
+  document.getElementById('form-screen').style.display = 'none';
+  document.getElementById('results-screen').classList.add('show');
+
+  if(finalScore !== null){
+    document.getElementById('final-score').innerHTML = finalScore + '<span>/20</span>';
+  } else {
+    document.getElementById('final-score').innerHTML = clientTotal + '<span>/8 (partiel)</span>';
+    document.getElementById('pending-box').innerHTML = '<div class="pending-note">⚠ La correction automatique des parties 1 et 4 n\\'a pas pu se faire. Ta prof va vérifier ces deux parties manuellement et complétera ta note.</div>';
+  }
+});
+</script>
+
+</body>
+</html>
