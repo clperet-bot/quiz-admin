@@ -173,7 +173,7 @@
   <div class="section">
     <div class="section-points">8 points</div>
     <div class="section-title"><span class="section-num">1</span>Look at the picture</div>
-    <p class="section-instructions">Write 4 sentences about the hazards you can see (ex: <em>I can see cables on the floor.</em>)</p>
+    <p class="section-instructions">Write 4 sentences about the hazards you can see (format: <em>I can see [hazard] on/in the [place].</em>)</p>
     <img class="photo" src="danger-zone-photo.jpg" alt="Workshop with several safety hazards">
     <div class="sentence-row"><label>1.</label><input type="text" id="s1-1" autocomplete="off"></div>
     <div class="sentence-row"><label>2.</label><input type="text" id="s1-2" autocomplete="off"></div>
@@ -331,13 +331,44 @@ const SECTION3_ANSWERS = [
   { field:'s3-8', accepted:['cable','cables','wire','wires'] }
 ];
 
+function levenshtein(a, b){
+  const m = a.length, n = b.length;
+  if(m === 0) return n;
+  if(n === 0) return m;
+  const dp = Array.from({length: m+1}, (_, i) => [i, ...Array(n).fill(0)]);
+  for(let j=0; j<=n; j++) dp[0][j] = j;
+  for(let i=1; i<=m; i++){
+    for(let j=1; j<=n; j++){
+      dp[i][j] = a[i-1] === b[j-1]
+        ? dp[i-1][j-1]
+        : 1 + Math.min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+function fuzzyTolerance(len){
+  if(len <= 4) return 1;
+  if(len <= 9) return 2;
+  return 3;
+}
+function isCloseEnough(norm, accepted){
+  if(norm === accepted || (norm.length > 2 && norm.includes(accepted))) return true;
+  // tolère les fautes de frappe/orthographe mot à mot
+  const normWords = norm.split(' ');
+  const accWords = accepted.split(' ');
+  if(normWords.length === accWords.length){
+    return normWords.every((w, i) => levenshtein(w, accWords[i]) <= fuzzyTolerance(accWords[i].length));
+  }
+  return levenshtein(norm, accepted) <= fuzzyTolerance(accepted.length);
+}
+
 function gradeExactSection(list, pointsPerItem){
   let total = 0;
   const detail = [];
   list.forEach(item => {
     const raw = document.getElementById(item.field).value;
     const norm = normalizeAnswer(raw);
-    const ok = item.accepted.some(a => norm === a || (norm.length > 2 && norm.includes(a)));
+    const ok = item.accepted.some(a => isCloseEnough(norm, a));
     total += ok ? pointsPerItem : 0;
     detail.push({ field:item.field, answer: raw, correct: ok });
   });
@@ -347,35 +378,40 @@ function gradeExactSection(list, pointsPerItem){
 // ============ CORRECTION SECTIONS 1 & 4 (par IA, via edge function sécurisée) ============
 const GRADING_SYSTEM_PROMPT = `Tu es un professeur d'anglais qui corrige un contrôle de vocabulaire pour des élèves de seconde (niveau A2-B1) sur le thème de la sécurité en atelier ("Danger Zone"). Note deux parties de rédaction courte en anglais, avec indulgence sur les erreurs mineures de grammaire mais rigueur sur le sens (le danger doit être correctement identifié et nommé).
 
-CONTEXTE — la photo montrée aux élèves montre un atelier avec ces dangers visibles : un sol mouillé (panneau "CAUTION WET FLOOR"), des câbles/fils électriques au sol, deux échelles appuyées contre le mur, un tableau électrique ouvert en haut à gauche, des étincelles provenant d'une meuleuse utilisée par un ouvrier.
+CONTEXTE — la photo montrée aux élèves montre un atelier avec ces dangers visibles : un sol mouillé (panneau "CAUTION WET FLOOR"), des câbles/fils électriques au sol, deux échelles appuyées contre le mur, un tableau électrique ouvert en haut à gauche, des étincelles provenant d'une meuleuse utilisée par un ouvrier, une paire de gants posée/abandonnée au sol près du panneau de sol mouillé. Cette liste n'est PAS exhaustive : accepte comme correcte toute autre observation raisonnable et plausible sur les dangers d'un atelier (par ex. objets au sol qui peuvent faire trébucher, absence de protection portée, désordre autour d'un poste de travail), même si elle n'est pas listée ci-dessus — ne pénalise jamais un élève simplement parce que son observation n'apparaît pas dans cette liste.
 
 SECTION 1 (4 phrases, "section1_items") — l'élève devait écrire une phrase par danger visible sur la photo (ex attendu : "I can see cables on the floor."). Pour chaque phrase :
-- score 2 : danger correctement identifié ET phrase grammaticalement correcte
+- score 2 : danger correctement identifié (visible sur la photo ou plausible pour ce type d'atelier) ET phrase grammaticalement correcte
 - score 1 : danger correctement identifié mais phrase avec erreurs de grammaire/orthographe
-- score 0 : danger absent de la photo, hors sujet, vide, ou incompréhensible
-Les 4 phrases doivent décrire des dangers différents entre eux ; si un danger est répété, ne compte les points que pour la première occurrence (score 0 pour les répétitions).
+- score 0 : danger clairement absent/incompatible avec la photo, hors sujet, vide, ou incompréhensible
+Les 4 phrases doivent décrire des dangers différents entre eux ; si un danger est répété, ne compte les points que pour la première occurrence (score 0 pour les répétitions). En cas de doute sur la pertinence d'un danger, donne le bénéfice du doute à l'élève.
 
 SECTION 4 (4 lignes, "section4_items") — l'élève devait compléter "The ___ is dangerous because ___" en nommant un danger puis en donnant une raison. Pour chaque ligne :
-- score 1 : le danger nommé est correct (cohérent avec les dangers listés ci-dessus, ou tout danger générique plausible d'atelier) ET la raison donnée est cohérente et plausible
-- score 0 : sinon (danger incorrect, raison absente ou incohérente, champs vides)
+- score 1 : le danger nommé est plausible pour cet atelier ET la raison donnée est cohérente et plausible
+- score 0 : sinon (danger incohérent, raison absente ou incohérente, champs vides)
+En cas de doute, donne le bénéfice du doute à l'élève.
 
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
 {"section1_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section4_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"feedback_global":"Une ou deux phrases de synthèse en français pour la prof."}
 
 Les commentaires doivent être courts (moins de 15 mots), en français.`;
 
-function buildUserContent(){
+function getFreeTextAnswers(){
   const s1 = [1,2,3,4].map(n => document.getElementById('s1-'+n).value.trim());
   const s4 = [1,2,3,4].map(n => {
     const word = document.getElementById('s4-'+n+'-word').value.trim();
     const why = document.getElementById('s4-'+n+'-why').value.trim();
     return `The ${word} is dangerous because ${why}`;
   });
+  return { s1, s4 };
+}
+
+function buildUserContent(s1, s4){
   return `SECTION 1 — Phrases de l'élève :\n${s1.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nSECTION 4 — Phrases de l'élève :\n${s4.map((t,i)=>`${i+1}. ${t}`).join('\n')}`;
 }
 
-async function gradeWithAI(){
-  const body = { systemPrompt: GRADING_SYSTEM_PROMPT, userContent: buildUserContent() };
+async function gradeWithAI(s1, s4){
+  const body = { systemPrompt: GRADING_SYSTEM_PROMPT, userContent: buildUserContent(s1, s4) };
   const res = await fetch(GRADE_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -396,11 +432,12 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
 
   const grade2 = gradeExactSection(SECTION2_ANSWERS, 1);
   const grade3 = gradeExactSection(SECTION3_ANSWERS, 0.5);
+  const { s1, s4 } = getFreeTextAnswers();
 
   let aiResult = null;
   let aiError = null;
   try{
-    aiResult = await gradeWithAI();
+    aiResult = await gradeWithAI(s1, s4);
   } catch(e){
     aiError = String(e);
   }
@@ -416,34 +453,42 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   const finalScore = aiResult ? Math.round((clientTotal + aiTotal)*2)/2 : null;
 
   const answersDetail = {
+    section1_ai: aiResult ? aiResult.section1_items.map((item, i) => ({ ...item, answer: s1[i] })) : s1.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
     section2: grade2.detail,
     section3: grade3.detail,
-    section1_ai: aiResult ? aiResult.section1_items : null,
-    section4_ai: aiResult ? aiResult.section4_items : null,
+    section4_ai: aiResult ? aiResult.section4_items.map((item, i) => ({ ...item, answer: s4[i] })) : s4.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
     feedback_global: aiResult ? aiResult.feedback_global : null,
     ai_error: aiError,
     client_subtotal: clientTotal,
     ai_subtotal: aiTotal
   };
 
-  const writingText = buildUserContent();
+  const writingText = buildUserContent(s1, s4);
   const writingCorrection = aiResult ? aiResult.feedback_global : ("Correction IA indisponible — à vérifier manuellement pour les parties 1 et 4. " + (aiError||''));
 
-  try{
-    await supa.from('attempts').insert({
-      quiz_id: quizId, class_id: classId,
-      student_name_raw: studentName, student_name_normalized: normalizeName(studentName),
-      score: finalScore, total: 20, cancelled: false,
-      answers_detail: answersDetail,
-      writing_text: writingText,
-      writing_correction: writingCorrection
-    });
-  } catch(e){}
+  let saveOk = false;
+  for(let tryN = 0; tryN < 2 && !saveOk; tryN++){
+    try{
+      const { error } = await supa.from('attempts').insert({
+        quiz_id: quizId, class_id: classId,
+        student_name_raw: studentName, student_name_normalized: normalizeName(studentName),
+        score: finalScore, total: 20, cancelled: false,
+        answers_detail: answersDetail,
+        writing_text: writingText,
+        writing_correction: writingCorrection
+      });
+      if(!error) saveOk = true;
+    } catch(e){}
+    if(!saveOk && tryN === 0) await new Promise(r => setTimeout(r, 1200));
+  }
 
   document.getElementById('form-screen').style.display = 'none';
   document.getElementById('results-screen').classList.add('show');
 
-  if(PENDING_VALIDATION_CLASSES.includes(classId)){
+  if(!saveOk){
+    document.getElementById('final-score').innerHTML = (finalScore !== null ? finalScore : clientTotal) + '<span>/20</span>';
+    document.getElementById('pending-box').innerHTML = "<div class=\"pending-note\" style=\"background:#FDE2E2;border-color:var(--red);\">⚠ Ta copie n'a PAS pu être envoyée à ta prof (problème de connexion). Ne ferme pas cette page : fais une photo de cet écran et montre-la à ta prof.</div>";
+  } else if(PENDING_VALIDATION_CLASSES.includes(classId)){
     document.getElementById('final-score').innerHTML = '<span style="font-size:22px;">En attente de validation</span>';
     document.getElementById('pending-box').innerHTML = "<div class=\"pending-note\">Ta copie a bien été envoyée. Ta prof valide chaque copie avant d'afficher la note — tu la retrouveras plus tard.</div>";
   } else if(finalScore !== null){
