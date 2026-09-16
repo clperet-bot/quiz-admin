@@ -111,6 +111,27 @@
 
   /* ---- QR modal ---- */
   .qr-modal{position:fixed; inset:0; background:linear-gradient(180deg, var(--violet-1), var(--violet-2)); z-index:50; display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:20px;}
+
+  /* ---- Report modal (compte rendu) ---- */
+  .report-modal{position:fixed; inset:0; background:rgba(26,29,35,0.55); z-index:60; display:flex; align-items:center; justify-content:center; padding:20px;}
+  .report-panel{background:var(--white); border-radius:14px; max-width:560px; width:100%; max-height:86vh; display:flex; flex-direction:column; overflow:hidden;}
+  .report-head{background:linear-gradient(135deg, var(--violet-1), var(--violet-2)); color:#fff; padding:20px 22px;}
+  .report-head-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .report-student{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:18px;}
+  .report-score-pill{background:rgba(255,255,255,0.22); font-weight:700; font-size:13px; padding:5px 12px; border-radius:20px; flex-shrink:0;}
+  .report-meta{font-size:12.5px; opacity:0.85; margin-top:4px;}
+  .report-body{padding:18px 22px; overflow-y:auto; flex:1;}
+  .report-block{margin-bottom:16px;}
+  .report-block:last-child{margin-bottom:0;}
+  .report-block h4{font-size:12.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); margin:0 0 8px; font-weight:700;}
+  .report-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:7px;}
+  .report-list li{font-size:13.5px; line-height:1.45; background:var(--paper); border-radius:7px; padding:8px 10px;}
+  .report-mark{margin-right:4px;}
+  .report-expected{color:var(--ink-soft); font-size:12.5px;}
+  .report-text{font-size:13.5px; line-height:1.55; background:var(--paper); border-radius:7px; padding:10px 12px; white-space:pre-wrap;}
+  .report-close{position:sticky; bottom:0; width:100%; background:var(--white); border-top:1px solid var(--line); padding:12px; font-weight:600; font-size:14px; color:var(--purple); border:none; cursor:pointer;}
+  .result-table tr[data-report]{cursor:pointer;}
+  .result-table tr[data-report]:hover{background:var(--purple-light);}
   .qr-class-name{font-family:'Baloo 2',sans-serif; font-size:clamp(24px,5vw,34px); font-weight:700; color:#fff; margin-bottom:4px;}
   .qr-quiz-name{font-size:15px; color:rgba(255,255,255,0.75); margin-bottom:28px;}
   .qr-box{width:260px; height:260px; background:#fff; border-radius:16px; display:flex; align-items:center; justify-content:center; margin-bottom:20px;}
@@ -271,6 +292,20 @@
   <div class="qr-box" id="qr-box"></div>
   <div class="qr-url" id="qr-url"></div>
   <button class="qr-close" id="qr-close-btn">← Retour</button>
+</div>
+
+<div id="report-modal" class="report-modal hidden">
+  <div class="report-panel">
+    <div class="report-head">
+      <div class="report-head-top">
+        <div class="report-student" id="report-student"></div>
+        <div class="report-score-pill" id="report-score-pill"></div>
+      </div>
+      <div class="report-meta" id="report-meta"></div>
+    </div>
+    <div class="report-body" id="report-body"></div>
+    <button class="report-close" id="report-close-btn">Fermer</button>
+  </div>
 </div>
 
 <script>
@@ -547,12 +582,13 @@ async function loadResults(){
 
   const classById = Object.fromEntries(CLASSES.map(c => [c.id, c.name]));
   const quizById = Object.fromEntries(QUIZZES.map(q => [q.id, q.title]));
+  currentAttempts = attempts;
 
   wrap.innerHTML = `
     <table class="result-table">
       <tr><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th></tr>
-      ${attempts.map(a => `
-        <tr>
+      ${attempts.map((a, i) => `
+        <tr ${a.cancelled ? '' : `data-report="${i}"`}>
           <td>${a.student_name_raw}</td>
           <td>${classById[a.class_id] || '—'}</td>
           <td>${quizById[a.quiz_id] || '—'}</td>
@@ -563,7 +599,83 @@ async function loadResults(){
       `).join('')}
     </table>
   `;
+
+  wrap.querySelectorAll('[data-report]').forEach(row => {
+    row.addEventListener('click', () => openReport(currentAttempts[parseInt(row.dataset.report)]));
+  });
 }
+
+// -------- report modal (compte rendu) --------
+let currentAttempts = [];
+
+function reportLabelForKey(k){
+  const labels = {
+    section1_ai:'Partie 1 (corrigée par IA)', section4_ai:'Partie 4 (corrigée par IA)',
+    section2:'Partie 2', section3:'Partie 3',
+    feedback_global:'Synthèse pour la prof', client_subtotal:'Sous-total auto-corrigé',
+    ai_subtotal:'Sous-total IA', ai_error:'Erreur de correction IA'
+  };
+  return labels[k] || k;
+}
+
+function reportRenderItem(item){
+  if(item === null || item === undefined) return '';
+  if(typeof item !== 'object') return `<li>${item}</li>`;
+  let mark = '';
+  if(item.is_correct !== undefined) mark = item.is_correct ? '✅' : '❌';
+  else if(item.correct !== undefined) mark = item.correct ? '✅' : '❌';
+  else if(item.score !== undefined) mark = `${item.score} pt`;
+  const label = item.question || item.field || '';
+  const given = item.given !== undefined ? item.given : item.answer;
+  const expected = item.correct_answer ? ` <span class="report-expected">(attendu : ${item.correct_answer})</span>` : '';
+  const note = (item.comment || item.explanation) ? ` — <em>${item.comment || item.explanation}</em>` : '';
+  return `<li><span class="report-mark">${mark}</span>${label ? `<strong>${label}</strong> — ` : ''}${given !== undefined && given !== '' ? given : '<span class="report-expected">(vide)</span>'}${expected}${note}</li>`;
+}
+
+function reportRenderDetail(detail){
+  if(!detail) return '';
+  if(Array.isArray(detail)){
+    return `<div class="report-block"><h4>Réponses</h4><ul class="report-list">${detail.map(reportRenderItem).join('')}</ul></div>`;
+  }
+  return Object.entries(detail).filter(([,v]) => v !== null && v !== undefined && v !== '').map(([key, val]) => {
+    if(Array.isArray(val)){
+      return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4><ul class="report-list">${val.map(reportRenderItem).join('')}</ul></div>`;
+    }
+    if(typeof val === 'object'){
+      return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4><pre class="report-text">${JSON.stringify(val, null, 1)}</pre></div>`;
+    }
+    return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4><p class="report-text">${val}</p></div>`;
+  }).join('');
+}
+
+function openReport(a){
+  if(!a) return;
+  document.getElementById('report-student').textContent = a.student_name_raw;
+  document.getElementById('report-score-pill').textContent = `${a.score}/${a.total}`;
+  const classe = CLASSES.find(c => c.id === a.class_id);
+  const quiz = QUIZZES.find(q => q.id === a.quiz_id);
+  document.getElementById('report-meta').textContent = `${quiz ? quiz.title : ''} · ${classe ? classe.name : ''} · ${fmtDate(a.created_at)}`;
+
+  let html = '';
+  html += reportRenderDetail(a.answers_detail);
+  if(a.writing_text){
+    html += `<div class="report-block"><h4>Réponse rédigée</h4><p class="report-text">${a.writing_text}</p></div>`;
+  }
+  if(a.writing_correction){
+    html += `<div class="report-block"><h4>Correction / retour</h4><p class="report-text">${a.writing_correction}</p></div>`;
+  }
+  if(!html){
+    html = '<p class="empty-note">Aucun détail enregistré pour cette tentative.</p>';
+  }
+  document.getElementById('report-body').innerHTML = html;
+  document.getElementById('report-modal').classList.remove('hidden');
+}
+document.getElementById('report-close-btn').addEventListener('click', () => {
+  document.getElementById('report-modal').classList.add('hidden');
+});
+document.getElementById('report-modal').addEventListener('click', (e) => {
+  if(e.target.id === 'report-modal') document.getElementById('report-modal').classList.add('hidden');
+});
 
 // Service worker — nécessaire pour que le navigateur propose l'installation
 if('serviceWorker' in navigator){
