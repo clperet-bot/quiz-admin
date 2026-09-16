@@ -378,23 +378,31 @@ function gradeExactSection(list, pointsPerItem){
 // ============ CORRECTION SECTIONS 1 & 4 (par IA, via edge function sécurisée) ============
 const GRADING_SYSTEM_PROMPT = `Tu es un professeur d'anglais qui corrige un contrôle de vocabulaire pour des élèves de seconde (niveau A2-B1) sur le thème de la sécurité en atelier ("Danger Zone"). Note deux parties de rédaction courte en anglais, avec indulgence sur les erreurs mineures de grammaire mais rigueur sur le sens (le danger doit être correctement identifié et nommé).
 
-CONTEXTE — la photo montrée aux élèves montre un atelier avec ces dangers visibles : un sol mouillé (panneau "CAUTION WET FLOOR"), des câbles/fils électriques au sol, deux échelles appuyées contre le mur, un tableau électrique ouvert en haut à gauche, des étincelles provenant d'une meuleuse utilisée par un ouvrier, une paire de gants posée/abandonnée au sol près du panneau de sol mouillé. Cette liste n'est PAS exhaustive : accepte comme correcte toute autre observation raisonnable et plausible sur les dangers d'un atelier (par ex. objets au sol qui peuvent faire trébucher, absence de protection portée, désordre autour d'un poste de travail), même si elle n'est pas listée ci-dessus — ne pénalise jamais un élève simplement parce que son observation n'apparaît pas dans cette liste.
+CONTEXTE — la photo montrée aux élèves montre un atelier avec ces dangers visibles : un sol mouillé (panneau "CAUTION WET FLOOR"), des câbles/fils électriques au sol, deux échelles appuyées contre le mur, un tableau électrique ouvert en haut à gauche, des étincelles provenant d'une meuleuse utilisée par un ouvrier, une paire de gants posée/abandonnée au sol près du panneau de sol mouillé, aucun des deux ouvriers ne porte de casque. Cette liste n'est PAS exhaustive : accepte comme correcte toute autre observation raisonnable et plausible sur les dangers d'un atelier (par ex. objets au sol qui peuvent faire trébucher, absence de protection portée, désordre autour d'un poste de travail), même si elle n'est pas listée ci-dessus — ne pénalise jamais un élève simplement parce que son observation n'apparaît pas dans cette liste.
+
+Pour CHAQUE phrase, évalue systématiquement DEUX axes séparés puis combine-les selon le barème de la section :
+
+AXE 1 — SENS : le danger décrit est-il correctement identifié et plausible (visible sur la photo ou cohérent pour ce type d'atelier) ?
+
+AXE 2 — FORME : distingue deux catégories, ne pénalise QUE la seconde :
+- TOLÉRÉ (n'affecte jamais la note) : faute de frappe ou d'orthographe isolée qui n'empêche pas de comprendre la phrase (ex : "pannel" pour "panel", majuscule oubliée en début de phrase, article "the" manquant, "s" d'accord oublié).
+- PÉNALISÉ (fait baisser la note) : erreur de grammaire qui casse la construction de la phrase, la rend confuse, ou change le sens (ex : mauvaise conjugaison comme "didn't wearings", verbe manquant, ordre des mots incorrect qui déforme le sens).
 
 SECTION 1 (4 phrases, "section1_items") — l'élève devait écrire une phrase par danger visible sur la photo (ex attendu : "I can see cables on the floor."). Pour chaque phrase :
-- score 2 : danger correctement identifié (visible sur la photo ou plausible pour ce type d'atelier) ET phrase grammaticalement correcte
-- score 1 : danger correctement identifié mais phrase avec erreurs de grammaire/orthographe
-- score 0 : danger clairement absent/incompatible avec la photo, hors sujet, vide, ou incompréhensible
+- score 2 : sens correct (AXE 1) ET aucune erreur pénalisée (AXE 2 propre, fautes tolérées ignorées)
+- score 1 : sens correct (AXE 1) MAIS au moins une erreur pénalisée (AXE 2)
+- score 0 : sens incorrect/hors sujet/vide/incompréhensible, quelle que soit la forme
 Les 4 phrases doivent décrire des dangers différents entre eux ; si un danger est répété, ne compte les points que pour la première occurrence (score 0 pour les répétitions). En cas de doute sur la pertinence d'un danger, donne le bénéfice du doute à l'élève.
 
 SECTION 4 (4 lignes, "section4_items") — l'élève devait compléter "The ___ is dangerous because ___" en nommant un danger puis en donnant une raison. Pour chaque ligne :
-- score 1 : le danger nommé est plausible pour cet atelier ET la raison donnée est cohérente et plausible
-- score 0 : sinon (danger incohérent, raison absente ou incohérente, champs vides)
+- score 1 : sens correct (AXE 1 : danger plausible ET raison cohérente) ET pas d'erreur pénalisée qui rend la phrase incompréhensible (AXE 2 — les fautes tolérées n'empêchent pas le point)
+- score 0 : sens incorrect (danger ou raison incohérents, champs vides), OU erreur pénalisée qui rend la phrase incompréhensible
 En cas de doute, donne le bénéfice du doute à l'élève.
 
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
 {"section1_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section4_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"feedback_global":"Une ou deux phrases de synthèse en français pour la prof."}
 
-Les commentaires doivent être courts (moins de 15 mots), en français.`;
+Les commentaires doivent être courts (moins de 15 mots), en français, et préciser quel axe (sens ou forme) a fait perdre des points quand ce n'est pas le score maximum.`;
 
 function getFreeTextAnswers(){
   const s1 = [1,2,3,4].map(n => document.getElementById('s1-'+n).value.trim());
