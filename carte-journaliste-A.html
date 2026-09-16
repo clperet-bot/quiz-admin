@@ -469,6 +469,8 @@
 // ============ CONFIG — mêmes valeurs que admin.html / eleve.html ============
 const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+// Classes pour lesquelles la note n'est PAS affichée à l'élève à la fin (en attente de validation manuelle) :
+const PENDING_VALIDATION_CLASSES = ["312b1566-e893-4cf1-8765-a6668b60347f"]; // 2nde TNE
 // ==============================================================================
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -699,8 +701,14 @@ function showWriting(){
 function showResults(){
   writingEl.classList.remove('show');
   resultsEl.classList.add('show');
-  document.getElementById('final-score').innerHTML = score + '<span>/'+QUESTIONS.length+'</span>';
   const v = document.getElementById('final-verdict');
+  if(PENDING_VALIDATION_CLASSES.includes(classId)){
+    document.getElementById('final-score').innerHTML = '<span style="font-size:20px;">En attente de validation</span>';
+    v.textContent = "Ta copie a bien été envoyée. Ta prof valide chaque copie avant d'afficher la note.";
+    v.className = 'verdict-final ok';
+    return;
+  }
+  document.getElementById('final-score').innerHTML = score + '<span>/'+QUESTIONS.length+'</span>';
   if(score >= 16){ v.textContent = 'Excellent brief !'; v.className = 'verdict-final great'; }
   else if(score >= 11){ v.textContent = 'Bien, continue comme ça'; v.className = 'verdict-final ok'; }
   else { v.textContent = 'À retravailler'; v.className = 'verdict-final retry'; }
