@@ -138,7 +138,9 @@
   .qr-url{font-size:12.5px; color:rgba(255,255,255,0.65); font-family:monospace; margin-bottom:26px;}
   .qr-close{background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.3); color:#fff; border-radius:8px; padding:10px 20px; font-size:13px; font-weight:600; cursor:pointer;}
 
-  .filter-row{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
+  .filter-row{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;}
+  .btn-danger-outline{margin-left:auto; background:var(--white); color:var(--red); border:1px solid var(--red); border-radius:8px; padding:9px 14px; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap;}
+  .btn-danger-outline:hover{background:var(--pink-light);}
   .filter-row select{padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; background:var(--white);}
   .result-table{width:100%; border-collapse:collapse; font-size:13px;}
   .result-table th{text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-soft); padding:8px 10px; border-bottom:1px solid var(--line);}
@@ -278,6 +280,7 @@
         <div class="filter-row">
           <select id="filter-class"><option value="">Toutes les classes</option></select>
           <select id="filter-quiz"><option value="">Tous les quiz</option></select>
+          <button id="reset-results-btn" class="btn-danger-outline">Réinitialiser tous les résultats</button>
         </div>
         <div id="results-table-wrap"><p class="loading-note">Chargement...</p></div>
       </div>
@@ -658,10 +661,12 @@ function openReport(a){
 
   let html = '';
   html += reportRenderDetail(a.answers_detail);
-  if(a.writing_text){
+  const hasItemizedFreeText = a.answers_detail && (a.answers_detail.section1_ai || a.answers_detail.section4_ai);
+  const hasFeedbackInDetail = a.answers_detail && a.answers_detail.feedback_global;
+  if(a.writing_text && !hasItemizedFreeText){
     html += `<div class="report-block"><h4>Réponse rédigée</h4><p class="report-text">${a.writing_text}</p></div>`;
   }
-  if(a.writing_correction){
+  if(a.writing_correction && !hasFeedbackInDetail){
     html += `<div class="report-block"><h4>Correction / retour</h4><p class="report-text">${a.writing_correction}</p></div>`;
   }
   if(!html){
@@ -675,6 +680,17 @@ document.getElementById('report-close-btn').addEventListener('click', () => {
 });
 document.getElementById('report-modal').addEventListener('click', (e) => {
   if(e.target.id === 'report-modal') document.getElementById('report-modal').classList.add('hidden');
+});
+
+document.getElementById('reset-results-btn').addEventListener('click', async () => {
+  const step1 = confirm("Supprimer TOUTES les tentatives enregistrées, dans toutes les classes et tous les quiz ? Cette action est irréversible (utile en début d'année scolaire).");
+  if(!step1) return;
+  const typed = prompt('Pour confirmer, tape SUPPRIMER en majuscules :');
+  if(typed !== 'SUPPRIMER'){ alert('Annulé — texte incorrect, rien n\'a été supprimé.'); return; }
+  const { error } = await supa.from('attempts').delete().not('id', 'is', null);
+  if(error){ alert('Erreur pendant la suppression : ' + error.message); return; }
+  alert('Toutes les tentatives ont été supprimées.');
+  loadResults();
 });
 
 // Service worker — nécessaire pour que le navigateur propose l'installation
