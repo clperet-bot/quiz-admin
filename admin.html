@@ -125,9 +125,11 @@
   .report-block:last-child{margin-bottom:0;}
   .report-block h4{font-size:12.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); margin:0 0 8px; font-weight:700;}
   .report-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:7px;}
-  .report-list li{font-size:13.5px; line-height:1.45; background:var(--paper); border-radius:7px; padding:8px 10px;}
+  .report-list li{font-size:13.5px; line-height:1.5; background:var(--paper); border-radius:7px; padding:9px 11px;}
   .report-mark{margin-right:4px;}
   .report-expected{color:var(--ink-soft); font-size:12.5px;}
+  .report-answer{color:var(--ink); font-weight:500;}
+  .report-comment{display:block; margin-top:3px; color:var(--purple-dark); font-style:italic; font-size:12.5px;}
   .report-text{font-size:13.5px; line-height:1.55; background:var(--paper); border-radius:7px; padding:10px 12px; white-space:pre-wrap;}
   .report-close{position:sticky; bottom:0; width:100%; background:var(--white); border-top:1px solid var(--line); padding:12px; font-weight:600; font-size:14px; color:var(--purple); border:none; cursor:pointer;}
   .result-table tr[data-report]{cursor:pointer;}
@@ -613,13 +615,15 @@ let currentAttempts = [];
 
 function reportLabelForKey(k){
   const labels = {
-    section1_ai:'Partie 1 (corrigée par IA)', section4_ai:'Partie 4 (corrigée par IA)',
-    section2:'Partie 2', section3:'Partie 3',
+    section1_ai:'Partie 1', section2:'Partie 2', section3:'Partie 3', section4_ai:'Partie 4 (corrigée par IA)',
     feedback_global:'Synthèse pour la prof', client_subtotal:'Sous-total auto-corrigé',
     ai_subtotal:'Sous-total IA', ai_error:'Erreur de correction IA'
   };
   return labels[k] || k;
 }
+// Ordre d'affichage forcé (partie 1 → 2 → 3 → 4), quel que soit l'ordre d'enregistrement en base.
+// Toute clé non listée ici est affichée après, dans son ordre d'origine.
+const REPORT_KEY_ORDER = ['section1_ai', 'section2', 'section3', 'section4_ai'];
 
 function reportRenderItem(item){
   if(item === null || item === undefined) return '';
@@ -627,12 +631,14 @@ function reportRenderItem(item){
   let mark = '';
   if(item.is_correct !== undefined) mark = item.is_correct ? '✅' : '❌';
   else if(item.correct !== undefined) mark = item.correct ? '✅' : '❌';
-  else if(item.score !== undefined) mark = `${item.score} pt`;
+  else if(item.score !== undefined && item.score !== null) mark = `${item.score} pt`;
+  else if(item.score === null) mark = '⏳';
   const label = item.question || item.field || '';
   const given = item.given !== undefined ? item.given : item.answer;
   const expected = item.correct_answer ? ` <span class="report-expected">(attendu : ${item.correct_answer})</span>` : '';
-  const note = (item.comment || item.explanation) ? ` — <em>${item.comment || item.explanation}</em>` : '';
-  return `<li><span class="report-mark">${mark}</span>${label ? `<strong>${label}</strong> — ` : ''}${given !== undefined && given !== '' ? given : '<span class="report-expected">(vide)</span>'}${expected}${note}</li>`;
+  const note = (item.comment || item.explanation) ? `<span class="report-comment">${item.comment || item.explanation}</span>` : '';
+  const answerHtml = given !== undefined && given !== '' ? `<span class="report-answer">${given}</span>` : '<span class="report-expected">(vide)</span>';
+  return `<li><span class="report-mark">${mark}</span>${label ? `<strong>${label}</strong> — ` : ''}${answerHtml}${expected}${note}</li>`;
 }
 
 function reportRenderDetail(detail){
@@ -640,7 +646,12 @@ function reportRenderDetail(detail){
   if(Array.isArray(detail)){
     return `<div class="report-block"><h4>Réponses</h4><ul class="report-list">${detail.map(reportRenderItem).join('')}</ul></div>`;
   }
-  return Object.entries(detail).filter(([,v]) => v !== null && v !== undefined && v !== '').map(([key, val]) => {
+  const entries = Object.entries(detail).filter(([,v]) => v !== null && v !== undefined && v !== '');
+  const ordered = [
+    ...REPORT_KEY_ORDER.map(k => entries.find(([key]) => key === k)).filter(Boolean),
+    ...entries.filter(([key]) => !REPORT_KEY_ORDER.includes(key))
+  ];
+  return ordered.map(([key, val]) => {
     if(Array.isArray(val)){
       return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4><ul class="report-list">${val.map(reportRenderItem).join('')}</ul></div>`;
     }
@@ -651,6 +662,21 @@ function reportRenderDetail(detail){
   }).join('');
 }
 
+// Reconstruit les réponses ligne par ligne à partir du texte brut enregistré
+// (utile pour les anciennes tentatives où la réponse n'était pas encore rattachée à chaque item).
+// Format attendu : "SECTION 1 — ...:\n1. xxx\n2. xxx\n3. xxx\n4. xxx\n\nSECTION 4 — ...:\n1. xxx\n..."
+function parseFreeTextFallback(writingText){
+  if(!writingText) return { s1: [], s4: [] };
+  const parts = writingText.split(/SECTION 4/);
+  const grab = (block) => (block || '').split('\n')
+    .filter(l => /^\d+\.\s*/.test(l.trim()))
+    .map(l => l.trim().replace(/^\d+\.\s*/, ''));
+  return {
+    s1: parts[0] ? grab(parts[0].split('SECTION 1')[1]) : [],
+    s4: parts[1] ? grab(parts[1]) : []
+  };
+}
+
 function openReport(a){
   if(!a) return;
   document.getElementById('report-student').textContent = a.student_name_raw;
@@ -659,11 +685,28 @@ function openReport(a){
   const quiz = QUIZZES.find(q => q.id === a.quiz_id);
   document.getElementById('report-meta').textContent = `${quiz ? quiz.title : ''} · ${classe ? classe.name : ''} · ${fmtDate(a.created_at)}`;
 
+  // Copie le detail pour ne pas modifier l'objet original, et complète les réponses manquantes.
+  const detail = a.answers_detail ? JSON.parse(JSON.stringify(a.answers_detail)) : null;
+  if(detail && (detail.section1_ai || detail.section4_ai)){
+    const needsFallback = ['section1_ai','section4_ai'].some(k =>
+      Array.isArray(detail[k]) && detail[k].some(it => it && (it.answer === undefined || it.answer === ''))
+    );
+    if(needsFallback && a.writing_text){
+      const { s1, s4 } = parseFreeTextFallback(a.writing_text);
+      if(Array.isArray(detail.section1_ai)) detail.section1_ai.forEach((it, i) => { if(it && !it.answer) it.answer = s1[i] || ''; });
+      if(Array.isArray(detail.section4_ai)) detail.section4_ai.forEach((it, i) => { if(it && !it.answer) it.answer = s4[i] || ''; });
+    }
+  }
+
   let html = '';
-  html += reportRenderDetail(a.answers_detail);
-  const hasItemizedFreeText = a.answers_detail && (a.answers_detail.section1_ai || a.answers_detail.section4_ai);
-  const hasFeedbackInDetail = a.answers_detail && a.answers_detail.feedback_global;
-  if(a.writing_text && !hasItemizedFreeText){
+  html += reportRenderDetail(detail);
+
+  // Le bloc "Réponse rédigée" séparé ne sert que pour les quiz à rédaction unique
+  // (Frankenstein, Carte de journaliste...) qui n'ont pas de section1_ai/section4_ai.
+  const isItemizedFreeText = detail && (detail.section1_ai || detail.section4_ai);
+  const hasFeedbackInDetail = detail && detail.feedback_global;
+
+  if(a.writing_text && !isItemizedFreeText){
     html += `<div class="report-block"><h4>Réponse rédigée</h4><p class="report-text">${a.writing_text}</p></div>`;
   }
   if(a.writing_correction && !hasFeedbackInDetail){
