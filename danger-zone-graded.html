@@ -315,7 +315,7 @@ async function cancelAttempt(){
 
 // ============ CORRECTION SECTIONS 2 & 3 (côté client) ============
 const SECTION2_ANSWERS = [
-  { field:'s2-1', accepted:['open panel','electrical panel','open electrical panel','panel'] },      // Gloves
+  { field:'s2-1', accepted:['open panel','electrical panel','open electrical panel','panel','cable','cables'] },      // Gloves
   { field:'s2-2', accepted:['wet floor','wet','floor is wet'] },                                       // Safety boots
   { field:'s2-3', accepted:['sparks','welding','sparks welding','spark'] },                            // Goggles
   { field:'s2-4', accepted:['ladder','ladders'] }                                                      // Helmet
@@ -327,7 +327,7 @@ const SECTION3_ANSWERS = [
   { field:'s3-4', accepted:['wet floor','wet ground'] },
   { field:'s3-5', accepted:['electrical panel','electric panel','electrical board'] },
   { field:'s3-6', accepted:['goggles','protective glasses','safety glasses'] },
-  { field:'s3-7', accepted:['safety boots','safety shoes'] },
+  { field:'s3-7', accepted:['safety boots','safety shoes','security boots'] },
   { field:'s3-8', accepted:['cable','cables','wire','wires'] }
 ];
 
@@ -384,22 +384,25 @@ Pour CHAQUE phrase, évalue systématiquement DEUX axes séparés puis combine-l
 
 AXE 1 — SENS : le danger décrit est-il correctement identifié et plausible (visible sur la photo ou cohérent pour ce type d'atelier) ?
 
-AXE 2 — FORME : distingue deux catégories, ne pénalise QUE la seconde :
-- TOLÉRÉ (n'affecte jamais la note) : faute de frappe ou d'orthographe isolée qui n'empêche pas de comprendre la phrase (ex : "pannel" pour "panel", majuscule oubliée en début de phrase, article "the" manquant, "s" d'accord oublié, "s" de pluriel manquant comme "cable" pour "cables", accent manquant ou incorrect, inversion mineure de lettres qui ne gêne pas la lecture comme "cabel" pour "cable").
-- PÉNALISÉ (fait baisser la note) : erreur de grammaire qui casse la construction de la phrase, la rend confuse, ou change le sens (ex : mauvaise conjugaison comme "didn't wearings", verbe manquant, ordre des mots incorrect qui déforme le sens).
+AXE 2 — FORME : distingue TROIS catégories, avec un coût de point différent pour chacune :
+- TOLÉRÉ (0 point perdu) : faute de frappe ou d'orthographe isolée qui n'empêche pas de comprendre la phrase (ex : "pannel" pour "panel", majuscule oubliée en début de phrase, "s" d'accord oublié, "s" de pluriel manquant comme "cable" pour "cables", accent manquant ou incorrect, inversion mineure de lettres qui ne gêne pas la lecture comme "cabel" pour "cable").
+- OMISSION MINEURE (0,5 point perdu maximum, jamais plus) : un petit mot grammatical manquant (typiquement un article "the"/"a") MAIS UNIQUEMENT si son absence gêne réellement la clarté ou la compréhension de la phrase. Si la phrase reste parfaitement claire sans lui (cas le plus fréquent pour un article manquant), ne pénalise PAS du tout — traite-le comme TOLÉRÉ (0 point perdu).
+- ERREUR GRAVE (1 point perdu) : erreur de grammaire qui casse la construction de la phrase, la rend confuse, ou change le sens (ex : mauvaise conjugaison comme "didn't wearings", verbe manquant, ordre des mots incorrect qui déforme le sens).
+Si plusieurs petites omissions mineures se cumulent dans une même phrase, elles restent plafonnées à -0,5 au total (jamais additionnées à plus d'un point).
 
-SECTION 1 (4 phrases, "section1_items") — l'élève devait écrire une phrase par danger visible sur la photo (ex attendu : "I can see cables on the floor."). Pour chaque phrase :
-- score 2 : sens correct (AXE 1) ET aucune erreur pénalisée (AXE 2 propre, fautes tolérées ignorées)
-- score 1 : sens correct (AXE 1) MAIS au moins une erreur pénalisée (AXE 2)
+SECTION 1 (4 phrases, "section1_items") — l'élève devait écrire une phrase par danger visible sur la photo (ex attendu : "I can see cables on the floor."). Pour chaque phrase, note de base 2 si le sens est correct (AXE 1), puis retire selon l'AXE 2 :
+- score 2 : sens correct ET forme tolérée uniquement (aucune pénalité)
+- score 1.5 : sens correct MAIS une ou plusieurs omissions mineures (article manquant, etc.)
+- score 1 : sens correct MAIS au moins une erreur grave de forme
 - score 0 : sens incorrect/hors sujet/vide/incompréhensible, quelle que soit la forme
 Les 4 phrases doivent décrire des dangers différents entre eux ; si un danger est répété, ne compte les points que pour la première occurrence (score 0 pour les répétitions). En cas de doute sur la pertinence d'un danger, donne le bénéfice du doute à l'élève.
 
-SECTION 4 (4 lignes, "section4_items") — l'élève devait compléter "The ___ is dangerous because ___" en nommant un danger puis en donnant une raison. Pour chaque ligne :
-- score 1 : sens correct (AXE 1 : danger plausible ET raison cohérente) ET pas d'erreur pénalisée qui rend la phrase incompréhensible (AXE 2 — les fautes tolérées n'empêchent pas le point)
-- score 0 : sens incorrect (danger ou raison incohérents, champs vides), OU erreur pénalisée qui rend la phrase incompréhensible
+SECTION 4 (4 lignes, "section4_items") — l'élève devait compléter "The ___ is dangerous because ___" en nommant un danger puis en donnant une raison. Chaque ligne vaut 1 point maximum (pas de demi-point ici) :
+- score 1 : sens correct (AXE 1 : danger plausible ET raison cohérente) ET pas d'erreur grave de forme (AXE 2 — fautes tolérées et omissions mineures n'empêchent jamais le point)
+- score 0 : sens incorrect (danger ou raison incohérents, champs vides), OU erreur grave de forme qui rend la phrase incompréhensible
 En cas de doute, donne le bénéfice du doute à l'élève.
 
-Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
+Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme (section1_items : scores 0, 1, 1.5 ou 2 uniquement ; section4_items : scores 0 ou 1 uniquement) :
 {"section1_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section4_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"feedback_global":"Une ou deux phrases de synthèse en français pour la prof."}
 
 Les commentaires doivent être courts (moins de 15 mots), en français, et préciser quel axe (sens ou forme) a fait perdre des points quand ce n'est pas le score maximum.`;
