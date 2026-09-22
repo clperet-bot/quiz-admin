@@ -279,6 +279,24 @@ if(!studentName || !classId || !quizId){
   document.getElementById('student-label').textContent = studentName;
 }
 
+// ============ EMPÊCHE LA MISE EN VEILLE DE L'ÉCRAN PENDANT LE QUIZ ============
+// (une mise en veille déclenche le même événement qu'un changement d'onglet et
+// pouvait à tort annuler la tentative d'un élève — voir anti-triche ci-dessous)
+let wakeLock = null;
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e){ /* pas supporté ou refusé : tant pis, le reste du système reste fonctionnel */ }
+}
+if(studentName && classId && quizId){
+  requestWakeLock();
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible' && !wakeLock) requestWakeLock();
+  });
+}
+
 // ============ ANTI-TRICHE ============
 let cheatTriggered = false;
 let awayTimer = null;
@@ -289,7 +307,7 @@ document.addEventListener('visibilitychange', () => {
   } else if(awayTimer){
     const awaySeconds = (Date.now() - awayTimer) / 1000;
     awayTimer = null;
-    if(awaySeconds > 4){
+    if(awaySeconds > 8){
       cheatTriggered = true;
       cancelAttempt();
     } else {
@@ -299,6 +317,17 @@ document.addEventListener('visibilitychange', () => {
 });
 
 async function cancelAttempt(){
+  // Récupère ce que l'élève avait déjà tapé, avant de vider la page — au cas où
+  // ce soit un faux positif (mise en veille, etc.) et qu'il faille vérifier après coup.
+  let partialText = '';
+  try{
+    const s1 = [1,2,3,4].map(n => document.getElementById('s1-'+n).value);
+    const s2 = SECTION2_ANSWERS.map(i => document.getElementById(i.field).value);
+    const s3 = SECTION3_ANSWERS.map(i => document.getElementById(i.field).value);
+    const s4 = [1,2,3,4].map(n => `${document.getElementById('s4-'+n+'-word').value} / ${document.getElementById('s4-'+n+'-why').value}`);
+    partialText = `[Tentative annulée — réponses partielles au moment de la coupure]\n\nSECTION 1 :\n${s1.map((t,i)=>`${i+1}. ${t||'(vide)'}`).join('\n')}\n\nSECTION 2 :\n${s2.map((t,i)=>`${i+1}. ${t||'(vide)'}`).join('\n')}\n\nSECTION 3 :\n${s3.map((t,i)=>`${i+1}. ${t||'(vide)'}`).join('\n')}\n\nSECTION 4 :\n${s4.map((t,i)=>`${i+1}. ${t}`).join('\n')}`;
+  } catch(e){}
+
   document.getElementById('quiz-wrapper').innerHTML = `
     <div class="cancelled-screen show">
       <p>Tentative annulée : tu as quitté le quiz. Ta prof a été notifiée. Reviens demain pour réessayer.</p>
@@ -308,17 +337,18 @@ async function cancelAttempt(){
     await supa.from('attempts').insert({
       quiz_id: quizId, class_id: classId,
       student_name_raw: studentName, student_name_normalized: normalizeName(studentName),
-      score: null, total: null, cancelled: true
+      score: null, total: null, cancelled: true,
+      writing_text: partialText || null
     });
   } catch(e){}
 }
 
 // ============ CORRECTION SECTIONS 2 & 3 (côté client) ============
 const SECTION2_ANSWERS = [
-  { field:'s2-1', accepted:['open panel','electrical panel','open electrical panel','panel','cable','cables'] },      // Gloves
-  { field:'s2-2', accepted:['wet floor','wet','floor is wet'] },                                       // Safety boots
-  { field:'s2-3', accepted:['sparks','welding','sparks welding','spark'] },                            // Goggles
-  { field:'s2-4', accepted:['ladder','ladders'] }                                                      // Helmet
+  { field:'s2-1', label:'Gloves', accepted:['open panel','electrical panel','open electrical panel','panel','cable','cables'] },
+  { field:'s2-2', label:'Safety boots', accepted:['wet floor','wet','floor is wet'] },
+  { field:'s2-3', label:'Goggles', accepted:['sparks','welding','sparks welding','spark'] },
+  { field:'s2-4', label:'Helmet', accepted:['ladder','ladders'] }
 ];
 const SECTION3_ANSWERS = [
   { field:'s3-1', accepted:['ladder','ladders'] },
@@ -370,7 +400,7 @@ function gradeExactSection(list, pointsPerItem){
     const norm = normalizeAnswer(raw);
     const ok = item.accepted.some(a => isCloseEnough(norm, a));
     total += ok ? pointsPerItem : 0;
-    detail.push({ field:item.field, answer: raw, correct: ok });
+    detail.push({ field:item.field, label:item.label, answer: raw, correct: ok });
   });
   return { total: Math.round(total*2)/2, detail };
 }
@@ -402,8 +432,15 @@ SECTION 4 (4 lignes, "section4_items") — l'élève devait compléter "The ___ 
 - score 0 : sens incorrect (danger ou raison incohérents, champs vides), OU erreur grave de forme qui rend la phrase incompréhensible
 En cas de doute, donne le bénéfice du doute à l'élève.
 
-Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme (section1_items : scores 0, 1, 1.5 ou 2 uniquement ; section4_items : scores 0 ou 1 uniquement) :
-{"section1_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section4_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"feedback_global":"Une ou deux phrases de synthèse en français pour la prof."}
+SECTION 2 (4 lignes, "section2_items") — l'élève devait indiquer, pour chaque équipement de protection (EPI) donné, le danger auquel il correspond. Deux formulations sont valables et équivalentes :
+(a) le nom du danger lui-même (ex : "open panel", "wet floor", "sparks", "ladder")
+(b) une phrase décrivant une conséquence/blessure plausible que cet EPI permet d'éviter (ex : pour "Gloves", "cut his finger" est valide car les gants protègent contre les coupures ; pour "Helmet", "something falls on your head" est valide)
+Pour chaque ligne, tu reçois : l'EPI concerné, la réponse de l'élève, et si elle a déjà été validée par une correspondance de mots-clés ("déjà validé": true/false).
+- Si "déjà validé" est true, réponds TOUJOURS score 1 pour cette ligne sans la rejuger.
+- Si "déjà validé" est false, juge toi-même : score 1 si le lien logique EPI↔danger est cohérent et plausible (formulation (a) ou (b)), score 0 sinon (réponse vide, incohérente, ou EPI/danger sans rapport).
+
+Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme (section1_items : scores 0, 1, 1.5 ou 2 uniquement ; section2_items et section4_items : scores 0 ou 1 uniquement) :
+{"section1_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section2_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section4_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"feedback_global":"Une ou deux phrases de synthèse en français pour la prof."}
 
 Les commentaires doivent être courts (moins de 15 mots), en français, et préciser quel axe (sens ou forme) a fait perdre des points quand ce n'est pas le score maximum.`;
 
@@ -417,12 +454,18 @@ function getFreeTextAnswers(){
   return { s1, s4 };
 }
 
-function buildUserContent(s1, s4){
-  return `SECTION 1 — Phrases de l'élève :\n${s1.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nSECTION 4 — Phrases de l'élève :\n${s4.map((t,i)=>`${i+1}. ${t}`).join('\n')}`;
+function buildSection2Block(section2Detail){
+  return section2Detail.map((d, i) =>
+    `${i+1}. EPI: ${d.label} | Réponse : ${d.answer || '(vide)'} | Déjà validé : ${d.correct ? 'true' : 'false'}`
+  ).join('\n');
 }
 
-async function gradeWithAI(s1, s4){
-  const body = { systemPrompt: GRADING_SYSTEM_PROMPT, userContent: buildUserContent(s1, s4) };
+function buildUserContent(s1, s4, section2Detail){
+  return `SECTION 1 — Phrases de l'élève :\n${s1.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nSECTION 2 — Correspondances EPI/danger :\n${buildSection2Block(section2Detail)}\n\nSECTION 4 — Phrases de l'élève :\n${s4.map((t,i)=>`${i+1}. ${t}`).join('\n')}`;
+}
+
+async function gradeWithAI(s1, s4, section2Detail){
+  const body = { systemPrompt: GRADING_SYSTEM_PROMPT, userContent: buildUserContent(s1, s4, section2Detail) };
   const res = await fetch(GRADE_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -431,7 +474,7 @@ async function gradeWithAI(s1, s4){
   if(!res.ok) throw new Error('grade-advanced http error');
   const data = await res.json();
   if(data.error) throw new Error(data.error);
-  if(!Array.isArray(data.section1_items) || !Array.isArray(data.section4_items)) throw new Error('malformed response');
+  if(!Array.isArray(data.section1_items) || !Array.isArray(data.section2_items) || !Array.isArray(data.section4_items)) throw new Error('malformed response');
   return data;
 }
 
@@ -445,27 +488,32 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   const grade3 = gradeExactSection(SECTION3_ANSWERS, 0.5);
   const { s1, s4 } = getFreeTextAnswers();
 
+
   let aiResult = null;
   let aiError = null;
   try{
-    aiResult = await gradeWithAI(s1, s4);
+    aiResult = await gradeWithAI(s1, s4, grade2.detail);
   } catch(e){
     aiError = String(e);
   }
 
-  let score1 = null, score4 = null;
+  let score1 = null, score2 = null, score4 = null;
   if(aiResult){
     score1 = aiResult.section1_items.reduce((a,b)=>a+(Number(b.score)||0),0);
+    score2 = aiResult.section2_items.reduce((a,b)=>a+(Number(b.score)||0),0);
     score4 = aiResult.section4_items.reduce((a,b)=>a+(Number(b.score)||0),0);
   }
 
-  const clientTotal = grade2.total + grade3.total;
+  // Section 2 : score IA si dispo (accepte aussi les phrases décrivant une conséquence plausible),
+  // sinon repli sur la correspondance de mots-clés.
+  const section2Total = aiResult ? score2 : grade2.total;
+  const clientTotal = section2Total + grade3.total;
   const aiTotal = aiResult ? (score1 + score4) : null;
   const finalScore = aiResult ? Math.round((clientTotal + aiTotal)*2)/2 : null;
 
   const answersDetail = {
     section1_ai: aiResult ? aiResult.section1_items.map((item, i) => ({ ...item, answer: s1[i] })) : s1.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
-    section2: grade2.detail,
+    section2: aiResult ? aiResult.section2_items.map((item, i) => ({ score: item.score, comment: item.comment, field: grade2.detail[i].field, label: grade2.detail[i].label, answer: grade2.detail[i].answer, correct: Number(item.score) > 0 })) : grade2.detail,
     section3: grade3.detail,
     section4_ai: aiResult ? aiResult.section4_items.map((item, i) => ({ ...item, answer: s4[i] })) : s4.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
     feedback_global: aiResult ? aiResult.feedback_global : null,
@@ -474,7 +522,7 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
     ai_subtotal: aiTotal
   };
 
-  const writingText = buildUserContent(s1, s4);
+  const writingText = buildUserContent(s1, s4, grade2.detail);
   const writingCorrection = aiResult ? aiResult.feedback_global : ("Correction IA indisponible — à vérifier manuellement pour les parties 1 et 4. " + (aiError||''));
 
   let saveOk = false;

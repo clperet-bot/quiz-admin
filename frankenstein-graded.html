@@ -510,6 +510,24 @@ async function submitScore(score, total, answersDetail, writingText, writingCorr
   } catch(e){ /* silencieux : la note reste affichée à l'élève même si l'envoi échoue */ }
 }
 
+// ============ EMPÊCHE LA MISE EN VEILLE DE L'ÉCRAN PENDANT LE QUIZ ============
+// (une mise en veille déclenche le même événement qu'un changement d'onglet et
+// pouvait à tort annuler la tentative d'un élève — voir anti-triche ci-dessous)
+let wakeLock = null;
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e){ /* pas supporté ou refusé : tant pis, le reste du système reste fonctionnel */ }
+}
+if(studentName && classId && quizId){
+  requestWakeLock();
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible' && !wakeLock) requestWakeLock();
+  });
+}
+
 let cheatTriggered = false;
 let awayTimer = null;
 document.addEventListener('visibilitychange', () => {
@@ -519,7 +537,7 @@ document.addEventListener('visibilitychange', () => {
   } else if(awayTimer){
     const awaySeconds = (Date.now() - awayTimer) / 1000;
     awayTimer = null;
-    if(awaySeconds > 4){
+    if(awaySeconds > 8){
       cheatTriggered = true;
       cancelAttempt();
     } else {
@@ -529,6 +547,14 @@ document.addEventListener('visibilitychange', () => {
 });
 
 async function cancelAttempt(){
+  // Récupère ce que l'élève avait déjà fait, avant de vider la page — au cas où
+  // ce soit un faux positif (mise en veille, etc.) et qu'il faille vérifier après coup.
+  let partialWriting = '';
+  try{
+    const wEl = document.getElementById('writing-input');
+    if(wEl) partialWriting = wEl.value || '';
+  } catch(e){}
+
   document.getElementById('quiz-wrapper').innerHTML = `
     <div class="cancelled-screen show">
       <p>Tentative annulée : tu as quitté le quiz. Ta prof a été notifiée. Reviens demain pour réessayer.</p>
@@ -542,7 +568,9 @@ async function cancelAttempt(){
       student_name_normalized: normalizeName(studentName),
       score: null,
       total: null,
-      cancelled: true
+      cancelled: true,
+      answers_detail: answersDetail && answersDetail.length ? answersDetail : null,
+      writing_text: partialWriting ? '[Tentative annulée — réponse partielle au moment de la coupure]\n\n' + partialWriting : null
     });
   } catch(e){}
 }
