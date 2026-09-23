@@ -271,12 +271,47 @@ function normalizeAnswer(s){
   return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
 }
 
+const ALL_FIELD_IDS = [
+  's1-1','s1-2','s1-3','s1-4',
+  's2-1','s2-2','s2-3','s2-4',
+  's3-1','s3-2','s3-3','s3-4','s3-5','s3-6','s3-7','s3-8',
+  's4-1-word','s4-1-why','s4-2-word','s4-2-why','s4-3-word','s4-3-why','s4-4-word','s4-4-why'
+];
+function captureRawFields(){
+  const out = {};
+  ALL_FIELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) out[id] = el.value;
+  });
+  return out;
+}
+async function tryResumePreviousAnswers(){
+  const resumeFrom = params.get('resume_from');
+  if(!resumeFrom) return;
+  try{
+    const { data } = await supa.from('attempts').select('answers_detail').eq('id', resumeFrom).maybeSingle();
+    const raw = data && data.answers_detail && data.answers_detail.raw_fields;
+    if(raw){
+      ALL_FIELD_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if(el && raw[id]) el.value = raw[id];
+      });
+      const note = document.createElement('div');
+      note.className = 'pending-note';
+      note.style.marginBottom = '16px';
+      note.textContent = "Tes réponses précédentes ont été restaurées — vérifie-les avant de continuer.";
+      document.getElementById('form-screen').prepend(note);
+    }
+  } catch(e){}
+}
+
 if(!studentName || !classId || !quizId){
   document.getElementById('access-gate').classList.add('show');
 } else {
   document.getElementById('quiz-wrapper').style.display = 'block';
   document.getElementById('cheat-banner').classList.add('show');
   document.getElementById('student-label').textContent = studentName;
+  tryResumePreviousAnswers();
 }
 
 // ============ EMPÊCHE LA MISE EN VEILLE DE L'ÉCRAN PENDANT LE QUIZ ============
@@ -318,15 +353,11 @@ document.addEventListener('visibilitychange', () => {
 
 async function cancelAttempt(){
   // Récupère ce que l'élève avait déjà tapé, avant de vider la page — au cas où
-  // ce soit un faux positif (mise en veille, etc.) et qu'il faille vérifier après coup.
-  let partialText = '';
-  try{
-    const s1 = [1,2,3,4].map(n => document.getElementById('s1-'+n).value);
-    const s2 = SECTION2_ANSWERS.map(i => document.getElementById(i.field).value);
-    const s3 = SECTION3_ANSWERS.map(i => document.getElementById(i.field).value);
-    const s4 = [1,2,3,4].map(n => `${document.getElementById('s4-'+n+'-word').value} / ${document.getElementById('s4-'+n+'-why').value}`);
-    partialText = `[Tentative annulée — réponses partielles au moment de la coupure]\n\nSECTION 1 :\n${s1.map((t,i)=>`${i+1}. ${t||'(vide)'}`).join('\n')}\n\nSECTION 2 :\n${s2.map((t,i)=>`${i+1}. ${t||'(vide)'}`).join('\n')}\n\nSECTION 3 :\n${s3.map((t,i)=>`${i+1}. ${t||'(vide)'}`).join('\n')}\n\nSECTION 4 :\n${s4.map((t,i)=>`${i+1}. ${t}`).join('\n')}`;
-  } catch(e){}
+  // ce soit un faux positif (mise en veille, etc.) : la prof pourra autoriser une reprise
+  // et l'élève retrouvera ces mêmes réponses en rescannant.
+  const rawFields = captureRawFields();
+  const partialText = `[Tentative annulée — réponses partielles au moment de la coupure]\n\n` +
+    ALL_FIELD_IDS.map(id => `${id}: ${rawFields[id] || '(vide)'}`).join('\n');
 
   document.getElementById('quiz-wrapper').innerHTML = `
     <div class="cancelled-screen show">
@@ -338,7 +369,8 @@ async function cancelAttempt(){
       quiz_id: quizId, class_id: classId,
       student_name_raw: studentName, student_name_normalized: normalizeName(studentName),
       score: null, total: null, cancelled: true,
-      writing_text: partialText || null
+      writing_text: partialText || null,
+      answers_detail: { raw_fields: rawFields, released_for_retry: false }
     });
   } catch(e){}
 }

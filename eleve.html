@@ -139,15 +139,26 @@ async function startAttempt(cls, quiz){
   const { start, end } = todayBounds();
   const { data: existing } = await supa
     .from('attempts')
-    .select('id')
+    .select('id, cancelled, answers_detail')
     .eq('class_id', cls.id)
     .eq('quiz_id', quiz.id)
     .eq('student_name_normalized', normalized)
     .gte('created_at', start)
     .lte('created_at', end)
-    .limit(1);
+    .order('created_at', { ascending: false })
+    .limit(5);
 
-  if(existing && existing.length > 0){
+  // Une tentative non annulée bloque toujours. Une tentative annulée bloque aussi,
+  // SAUF si la prof l'a explicitement autorisée à recommencer (released_for_retry).
+  let releasedAttemptId = null;
+  const blocking = (existing || []).find(a => {
+    if(!a.cancelled) return true;
+    const released = a.answers_detail && a.answers_detail.released_for_retry === true;
+    if(released) releasedAttemptId = a.id;
+    return !released;
+  });
+
+  if(blocking){
     btn.disabled = false; btn.textContent = "Commencer le quiz";
     errBox.textContent = "Tu as déjà fait ce quiz aujourd'hui. Reviens demain, après avoir revu tes erreurs !";
     errBox.style.display = 'block';
@@ -159,6 +170,7 @@ async function startAttempt(cls, quiz){
   quizUrl.searchParams.set('student', rawName);
   quizUrl.searchParams.set('class_id', cls.id);
   quizUrl.searchParams.set('quiz_id', quiz.id);
+  if(releasedAttemptId) quizUrl.searchParams.set('resume_from', releasedAttemptId);
   location.href = quizUrl.toString();
 }
 

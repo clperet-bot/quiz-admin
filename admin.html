@@ -152,6 +152,8 @@
   .score-mid{background:var(--amber-light); color:var(--amber);}
   .score-low{background:var(--pink-light); color:var(--red);}
   .flag-cheat{display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--red); font-weight:700;}
+  .btn-release{margin-left:6px; background:var(--white); color:var(--purple); border:1px solid var(--purple); border-radius:6px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;}
+  .btn-release:hover{background:var(--purple-light);}
   .loading-note{font-size:13px; color:var(--ink-soft); padding:20px;}
 
   /* ---- Mobile ---- */
@@ -592,21 +594,42 @@ async function loadResults(){
   wrap.innerHTML = `
     <table class="result-table">
       <tr><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th></tr>
-      ${attempts.map((a, i) => `
-        <tr ${a.cancelled ? '' : `data-report="${i}"`}>
+      ${attempts.map((a, i) => {
+        const released = a.answers_detail && a.answers_detail.released_for_retry === true;
+        return `
+        <tr data-report="${i}">
           <td>${a.student_name_raw}</td>
           <td>${classById[a.class_id] || '—'}</td>
           <td>${quizById[a.quiz_id] || '—'}</td>
           <td>${a.cancelled ? '—' : `<span class="score-pill ${scoreClass(a.score, a.total)}">${a.score}/${a.total}</span>`}</td>
           <td>${fmtDate(a.created_at)}</td>
-          <td>${a.cancelled ? '<span class="flag-cheat">⚠ tentative annulée</span>' : ''}</td>
-        </tr>
-      `).join('')}
+          <td>${a.cancelled
+            ? (released
+                ? '<span class="flag-cheat" style="color:var(--ink-soft);">⚠ annulée — reprise autorisée</span>'
+                : `<span class="flag-cheat">⚠ tentative annulée</span> <button class="btn-release" data-release="${i}">Autoriser à recommencer</button>`)
+            : ''}</td>
+        </tr>`;
+      }).join('')}
     </table>
   `;
 
   wrap.querySelectorAll('[data-report]').forEach(row => {
-    row.addEventListener('click', () => openReport(currentAttempts[parseInt(row.dataset.report)]));
+    row.addEventListener('click', (e) => {
+      if(e.target.closest('[data-release]')) return; // le bouton gère son propre clic
+      openReport(currentAttempts[parseInt(row.dataset.report)]);
+    });
+  });
+
+  wrap.querySelectorAll('[data-release]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const a = currentAttempts[parseInt(btn.dataset.release)];
+      if(!confirm(`Autoriser ${a.student_name_raw} à recommencer ce quiz ? Il/elle retrouvera ses réponses précédentes en rescannant le QR code.`)) return;
+      const mergedDetail = { ...(a.answers_detail || {}), released_for_retry: true };
+      const { error } = await supa.from('attempts').update({ answers_detail: mergedDetail }).eq('id', a.id);
+      if(error){ alert('Erreur : ' + error.message); return; }
+      loadResults();
+    });
   });
 }
 
@@ -617,7 +640,8 @@ function reportLabelForKey(k){
   const labels = {
     section1_ai:'Partie 1', section2:'Partie 2', section3:'Partie 3', section4_ai:'Partie 4 (corrigée par IA)',
     feedback_global:'Synthèse pour la prof', client_subtotal:'Sous-total auto-corrigé',
-    ai_subtotal:'Sous-total IA', ai_error:'Erreur de correction IA'
+    ai_subtotal:'Sous-total IA', ai_error:'Erreur de correction IA',
+    raw_fields:'Réponses au moment de la coupure'
   };
   return labels[k] || k;
 }
@@ -646,7 +670,7 @@ function reportRenderDetail(detail){
   if(Array.isArray(detail)){
     return `<div class="report-block"><h4>Réponses</h4><ul class="report-list">${detail.map(reportRenderItem).join('')}</ul></div>`;
   }
-  const entries = Object.entries(detail).filter(([,v]) => v !== null && v !== undefined && v !== '');
+  const entries = Object.entries(detail).filter(([k,v]) => k !== 'released_for_retry' && v !== null && v !== undefined && v !== '');
   const ordered = [
     ...REPORT_KEY_ORDER.map(k => entries.find(([key]) => key === k)).filter(Boolean),
     ...entries.filter(([key]) => !REPORT_KEY_ORDER.includes(key))
@@ -680,7 +704,7 @@ function parseFreeTextFallback(writingText){
 function openReport(a){
   if(!a) return;
   document.getElementById('report-student').textContent = a.student_name_raw;
-  document.getElementById('report-score-pill').textContent = `${a.score}/${a.total}`;
+  document.getElementById('report-score-pill').textContent = a.cancelled ? 'Annulée' : `${a.score}/${a.total}`;
   const classe = CLASSES.find(c => c.id === a.class_id);
   const quiz = QUIZZES.find(q => q.id === a.quiz_id);
   document.getElementById('report-meta').textContent = `${quiz ? quiz.title : ''} · ${classe ? classe.name : ''} · ${fmtDate(a.created_at)}`;
