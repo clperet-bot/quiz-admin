@@ -537,7 +537,7 @@ document.addEventListener('visibilitychange', () => {
   } else if(awayTimer){
     const awaySeconds = (Date.now() - awayTimer) / 1000;
     awayTimer = null;
-    if(awaySeconds > 8){
+    if(awaySeconds > 5){
       cheatTriggered = true;
       cancelAttempt();
     } else {
