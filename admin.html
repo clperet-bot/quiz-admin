@@ -154,6 +154,8 @@
   .flag-cheat{display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--red); font-weight:700;}
   .btn-release{margin-left:6px; background:var(--white); color:var(--purple); border:1px solid var(--purple); border-radius:6px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;}
   .btn-release:hover{background:var(--purple-light);}
+  .btn-delete-row{background:none; border:none; color:var(--ink-soft); font-size:16px; cursor:pointer; line-height:1; padding:4px 6px; border-radius:5px;}
+  .btn-delete-row:hover{color:var(--red); background:#FDE2E2;}
   .loading-note{font-size:13px; color:var(--ink-soft); padding:20px;}
 
   /* ---- Mobile ---- */
@@ -593,7 +595,7 @@ async function loadResults(){
 
   wrap.innerHTML = `
     <table class="result-table">
-      <tr><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th></tr>
+      <tr><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th><th></th></tr>
       ${attempts.map((a, i) => {
         const released = a.answers_detail && a.answers_detail.released_for_retry === true;
         return `
@@ -608,6 +610,7 @@ async function loadResults(){
                 ? '<span class="flag-cheat" style="color:var(--ink-soft);">⚠ annulée — reprise autorisée</span>'
                 : `<span class="flag-cheat">⚠ tentative annulée</span> <button class="btn-release" data-release="${i}">Autoriser à recommencer</button>`)
             : ''}</td>
+          <td><button class="btn-delete-row" data-delete="${i}" title="Supprimer cette tentative">✕</button></td>
         </tr>`;
       }).join('')}
     </table>
@@ -615,7 +618,7 @@ async function loadResults(){
 
   wrap.querySelectorAll('[data-report]').forEach(row => {
     row.addEventListener('click', (e) => {
-      if(e.target.closest('[data-release]')) return; // le bouton gère son propre clic
+      if(e.target.closest('[data-release]') || e.target.closest('[data-delete]')) return; // ces boutons gèrent leur propre clic
       openReport(currentAttempts[parseInt(row.dataset.report)]);
     });
   });
@@ -627,6 +630,18 @@ async function loadResults(){
       if(!confirm(`Autoriser ${a.student_name_raw} à recommencer ce quiz ? Il/elle retrouvera ses réponses précédentes en rescannant le QR code.`)) return;
       const mergedDetail = { ...(a.answers_detail || {}), released_for_retry: true };
       const { error } = await supa.from('attempts').update({ answers_detail: mergedDetail }).eq('id', a.id);
+      if(error){ alert('Erreur : ' + error.message); return; }
+      loadResults();
+    });
+  });
+
+  wrap.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const a = currentAttempts[parseInt(btn.dataset.delete)];
+      const label = a.cancelled ? 'cette tentative annulée' : `la tentative de ${a.student_name_raw} (${a.score}/${a.total})`;
+      if(!confirm(`Supprimer ${label} ? Cette action est irréversible.`)) return;
+      const { error } = await supa.from('attempts').delete().eq('id', a.id);
       if(error){ alert('Erreur : ' + error.message); return; }
       loadResults();
     });
