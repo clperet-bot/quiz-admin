@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Carte de journaliste — Rédaction</title>
+<title>Carte de journaliste — Contrôle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -15,8 +15,6 @@
     --paper:#F3EEE1;
     --paper-dim:#E8E0CC;
     --brass:#B3241C;
-    --brass-light:#8A1B15;
-    --sage:#3A6E4A;
     --white:#FFFCF5;
     --line:rgba(34,31,26,0.15);
   }
@@ -40,8 +38,14 @@
   .q-num{color:var(--brass); font-weight:700; margin-right:4px;}
   input[type=text]{width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:5px; font-family:'Inter',sans-serif; font-size:14.5px; background:var(--paper);}
   input[type=text]:focus{outline:none; border-color:var(--brass);}
-  textarea{width:100%; min-height:190px; padding:12px 14px; border:1px solid var(--line); border-radius:5px; font-family:'Inter',sans-serif; font-size:14.5px; background:var(--paper); resize:vertical;}
+  textarea{width:100%; min-height:60px; padding:12px 14px; border:1px solid var(--line); border-radius:5px; font-family:'Inter',sans-serif; font-size:14.5px; background:var(--paper); resize:vertical;}
   textarea:focus{outline:none; border-color:var(--brass);}
+  textarea.article-box{min-height:220px;}
+  .doc-box{border:1px solid var(--line); background:var(--paper); padding:12px 14px; margin-bottom:14px; font-size:13.5px; line-height:1.7; text-align:justify;}
+  .doc-label{font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft); font-weight:700; margin-bottom:4px;}
+  .doc-title{font-family:'Playfair Display',serif; font-weight:700; font-size:14px; margin:2px 0 6px;}
+  .info-list{font-size:13px; color:var(--ink-soft); background:var(--paper); border:1px dashed var(--line); padding:10px 14px; margin-bottom:14px; line-height:1.8;}
+  .type-hint{font-size:12.5px; color:var(--ink-soft); background:var(--paper); border:1px dashed var(--line); padding:8px 12px; margin-bottom:14px;}
   #submit-btn{width:100%; margin-top:4px; font-weight:700; font-size:15px; letter-spacing:0.02em; text-transform:uppercase; background:var(--ink); color:var(--white); border:none; padding:16px; border-radius:5px; cursor:pointer;}
   #submit-btn:hover{background:var(--brass);}
   #submit-btn:disabled{background:var(--ink-soft); cursor:wait;}
@@ -72,7 +76,7 @@
 <div id="quiz-wrapper" style="display:none;">
 
 <header>
-  <span class="badge">Contrôle évalué · Rédaction intégrale</span>
+  <span class="badge">Contrôle évalué · Journalisme</span>
   <h1>Carte de journaliste</h1>
   <p class="subtitle" id="student-label"></p>
 </header>
@@ -82,47 +86,79 @@
 
   <div class="scorebar">
     <span>Note finale sur <strong>20</strong></span>
-    <span>2 parties</span>
+    <span>5 parties</span>
   </div>
 
-  <!-- PARTIE 1 — QUESTIONS -->
+  <!-- PARTIE 1 -->
   <div class="section">
-    <div class="section-head">
-      <div class="section-title">Partie 1 — Questions</div>
-      <div class="section-points">10 pts</div>
-    </div>
-    <p class="section-instructions">Réponds à chaque question avec tes propres mots — aucune liste de choix cette fois. (0,5 pt par question)</p>
-
-    <div class="q-row"><label><span class="q-num">1.</span>« Le CDI a été repeint pendant les vacances, comme confirmé par la direction. » S'agit-il d'une information, d'une rumeur, d'une opinion ou d'une anecdote ?</label><input type="text" id="q1" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">2.</span>« On dit que deux classes vont fusionner l'an prochain, mais rien n'est confirmé. » S'agit-il d'une information, d'une rumeur, d'une opinion ou d'une anecdote ?</label><input type="text" id="q2" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">3.</span>« Le foyer des élèves devrait être plus grand, à mon avis. » S'agit-il d'une information, d'une rumeur, d'une opinion ou d'une anecdote ?</label><input type="text" id="q3" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">4.</span>« Un jour, un surveillant a couru après un ballon échappé jusque dans la cour, tout le monde a ri. » S'agit-il d'une information, d'une rumeur, d'une opinion ou d'une anecdote ?</label><input type="text" id="q4" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">5.</span>Dans la règle des 5W, quel mot anglais permet de connaître le <strong>lieu</strong> d'un événement ?</label><input type="text" id="q5" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">6.</span>Dans la règle des 5W, quel mot anglais permet de connaître la <strong>date</strong> d'un événement ?</label><input type="text" id="q6" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">7.</span>« La coupure d'eau a duré deux heures, provoquée par une fuite. » Cette phrase répond principalement à quel W (en anglais) ?</label><input type="text" id="q7" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">8.</span>« Les délégués de classe ont organisé la réunion. » Cette phrase répond principalement à quel W (en anglais) ?</label><input type="text" id="q8" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">9.</span>Écris toi-même une phrase d'accroche journalistique (factuelle, datée, ton neutre) pour annoncer : un incident a perturbé le fonctionnement de l'internat mardi matin.</label><input type="text" id="q9" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">10.</span>Intègre ce témoignage dans une phrase journalistique correcte : une élève de terminale trouve que « la situation devenait ingérable ».</label><input type="text" id="q10" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">11.</span>Exprime la cause de cet événement de façon journalistique (avec la prudence du conditionnel) : la coupure a été causée par une fuite d'eau.</label><input type="text" id="q11" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">12.</span>Écris une phrase de conclusion journalistique qui évoque la suite des événements : les techniciens vont intervenir demain pour réparer la fuite.</label><input type="text" id="q12" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">13.</span>D'après la grille de relecture, quel type de phrases faut-il privilégier dans un article ?</label><input type="text" id="q13" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">14.</span>Quel ton un article d'information doit-il adopter ?</label><input type="text" id="q14" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">15.</span>Sur la grille de relecture, quel critère concerne la clarté visuelle du texte (pas la grammaire, pas le vocabulaire) ?</label><input type="text" id="q15" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">16.</span>Pourquoi la grille de relecture précise-t-elle « pas de répétitions inutiles » ? (une phrase)</label><input type="text" id="q16" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">17.</span>Comment appelle-t-on un article qui rapporte un événement de façon factuelle, sans opinion ?</label><input type="text" id="q17" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">18.</span>Comment appelle-t-on un article qui exprime clairement l'opinion assumée de son auteur ?</label><input type="text" id="q18" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">19.</span>Comment appelle-t-on un texte très court donnant une information rapide, sans développement ?</label><input type="text" id="q19" autocomplete="off"></div>
-    <div class="q-row"><label><span class="q-num">20.</span>Comment appelle-t-on un article construit autour de questions posées à une personne, suivies de ses réponses ?</label><input type="text" id="q20" autocomplete="off"></div>
+    <div class="section-head"><div class="section-title">Partie 1 — À toi d'écrire</div><div class="section-points">4 pts</div></div>
+    <p class="section-instructions">Rédige un exemple pour chacun. (1 pt par exemple)</p>
+    <div class="q-row"><label><span class="q-num">1.</span>Un exemple d'information :</label><input type="text" id="p1-1" autocomplete="off"></div>
+    <div class="q-row"><label><span class="q-num">2.</span>Un exemple de rumeur :</label><input type="text" id="p1-2" autocomplete="off"></div>
+    <div class="q-row"><label><span class="q-num">3.</span>Un exemple d'opinion :</label><input type="text" id="p1-3" autocomplete="off"></div>
+    <div class="q-row"><label><span class="q-num">4.</span>Un exemple d'anecdote :</label><input type="text" id="p1-4" autocomplete="off"></div>
   </div>
 
-  <!-- PARTIE 2 — ARTICLE -->
+  <!-- PARTIE 2 -->
   <div class="section">
-    <div class="section-head">
-      <div class="section-title">Partie 2 — Épreuve pratique</div>
-      <div class="section-points">10 pts</div>
+    <div class="section-head"><div class="section-title">Partie 2 — Retrouver les 5W</div><div class="section-points">5 pts</div></div>
+    <p class="section-instructions">Lis l'article ci-dessous, puis réponds aux 5 questions. (1 pt par réponse)</p>
+    <div class="doc-box">
+      <div class="doc-label">Article</div>
+      <div class="doc-title">Une fuite d'eau ferme le gymnase</div>
+      Une fuite d'eau a provoqué la fermeture temporaire du gymnase du lycée Godefroy de Bouillon, mardi matin. L'incident s'est produit vers 8h15, dans les vestiaires situés au sous-sol. Selon la direction, une canalisation vétuste serait à l'origine du problème. Les cours d'EPS prévus dans la matinée ont été annulés et les élèves ont été redirigés vers la salle polyvalente. Une équipe de techniciens est intervenue dans l'après-midi pour réparer la fuite. Le gymnase devrait rouvrir dès jeudi, si les réparations se déroulent comme prévu.
     </div>
-    <p class="section-instructions">Le club théâtre du lycée organise sa première représentation publique le mois prochain, ouverte à tous les élèves et à leurs familles. Rédige un article de presse complet sur ce sujet.</p>
-    <textarea id="p2-text" placeholder="Rédige ton article ici..."></textarea>
+    <div class="q-row"><label><span class="q-num">1.</span>Who ? (qui est concerné ?)</label><input type="text" id="p2-1" autocomplete="off"></div>
+    <div class="q-row"><label><span class="q-num">2.</span>What ? (que s'est-il passé ?)</label><input type="text" id="p2-2" autocomplete="off"></div>
+    <div class="q-row"><label><span class="q-num">3.</span>Where ? (où ?)</label><input type="text" id="p2-3" autocomplete="off"></div>
+    <div class="q-row"><label><span class="q-num">4.</span>When ? (quand ?)</label><input type="text" id="p2-4" autocomplete="off"></div>
+    <div class="q-row"><label><span class="q-num">5.</span>Why ? (pourquoi ?)</label><input type="text" id="p2-5" autocomplete="off"></div>
+  </div>
+
+  <!-- PARTIE 3 -->
+  <div class="section">
+    <div class="section-head"><div class="section-title">Partie 3 — Identifier les types d'articles</div><div class="section-points">4 pts</div></div>
+    <p class="section-instructions">Pour chaque texte, écris de quel type d'article il s'agit. (1 pt par texte)</p>
+    <div class="type-hint">interview · article d'information · brève · éditorial / tribune</div>
+
+    <div class="doc-box"><div class="doc-label">Texte A</div>« — Comment avez-vous vécu cette panne ?<br>— On a eu un peu froid, mais on a pris ça avec humour, raconte Léa, élève de 1ère.<br>— Est-ce que les cours ont pu reprendre rapidement ?<br>— Oui, dès l'après-midi, dans une autre salle, précise-t-elle. »</div>
+    <div class="q-row"><label><span class="q-num">1.</span>Type d'article :</label><input type="text" id="p3-1" autocomplete="off"></div>
+
+    <div class="doc-box"><div class="doc-label">Texte B</div>Le foyer des élèves rouvrira ses portes lundi prochain après plusieurs semaines de travaux de rénovation. Un nouveau mobilier et une connexion Wi-Fi ont été installés.</div>
+    <div class="q-row"><label><span class="q-num">2.</span>Type d'article :</label><input type="text" id="p3-2" autocomplete="off"></div>
+
+    <div class="doc-box"><div class="doc-label">Texte C</div>Le CDI restera fermé ce vendredi pour inventaire annuel.</div>
+    <div class="q-row"><label><span class="q-num">3.</span>Type d'article :</label><input type="text" id="p3-3" autocomplete="off"></div>
+
+    <div class="doc-box"><div class="doc-label">Texte D</div>À mon sens, il est temps que notre lycée investisse davantage dans les espaces de détente. Les élèves ont besoin de lieux calmes pour souffler entre deux cours, et je pense sincèrement que cela améliorerait le climat général de l'établissement.</div>
+    <div class="q-row"><label><span class="q-num">4.</span>Type d'article :</label><input type="text" id="p3-4" autocomplete="off"></div>
+  </div>
+
+  <!-- PARTIE 4 -->
+  <div class="section">
+    <div class="section-head"><div class="section-title">Partie 4 — Corriger un article</div><div class="section-points">2 pts</div></div>
+    <p class="section-instructions">L'article ci-dessous contient 2 erreurs de rédaction. Trouve-les et réécris chaque phrase corrigée.</p>
+    <div class="doc-box">
+      <div class="doc-label">Article à corriger</div>
+      <div class="doc-title">Disparitions au bâtiment B</div>
+      Il y a eu un souci avec les casiers du bâtiment B. En tout cas, on sait pas trop ce qui s'est passé exactement, plusieurs élèves affirment que leurs affaires auraient disparu, ce qui a créé beaucoup d'inquiétude et de discussions dans les couloirs, sans compter que certains disent que ça arrive depuis longtemps déjà et que personne n'a jamais rien fait pour régler ce problème vraiment embêtant pour tout le monde. La direction serait au courant.
+    </div>
+    <div class="q-row"><label><span class="q-num">1.</span>Phrase corrigée :</label><input type="text" id="p4-1" autocomplete="off"></div>
+    <div class="q-row"><label><span class="q-num">2.</span>Phrase corrigée :</label><input type="text" id="p4-2" autocomplete="off"></div>
+  </div>
+
+  <!-- PARTIE 5 -->
+  <div class="section">
+    <div class="section-head"><div class="section-title">Partie 5 — Rédiger un article</div><div class="section-points">5 pts</div></div>
+    <p class="section-instructions">Rédige un article de presse complet à partir des informations ci-dessous (titre, accroche, développement, phrase de conclusion). Formule tout avec tes propres mots.</p>
+    <div class="info-list">
+      — Quoi : collecte de vêtements et de fournitures scolaires<br>
+      — Qui : organisée par les élèves du lycée<br>
+      — Où : hall d'entrée du lycée<br>
+      — Quand : la semaine prochaine, du lundi au vendredi<br>
+      — Pourquoi : aider une association locale qui vient en aide à des familles en difficulté
+    </div>
+    <textarea id="p5-text" class="article-box" placeholder="Rédige ton article ici..."></textarea>
   </div>
 
   <button id="submit-btn">Rendre le contrôle</button>
@@ -137,7 +173,7 @@
   </div>
 </main>
 
-<footer>Lycée Godefroy de Bouillon — Carte de journaliste, rédaction intégrale</footer>
+<footer>Lycée Godefroy de Bouillon — Carte de journaliste</footer>
 
 </div>
 
@@ -160,7 +196,19 @@ function normalizeAnswer(s){
   return (s||'').toLowerCase().normalize('NFD').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
 }
 
-const ALL_FIELD_IDS = ['q1','q2','q3','q4','q5','q6','q7','q8','q9','q10','q11','q12','q13','q14','q15','q16','q17','q18','q19','q20','p2-text'];
+let studentHasAccommodation = false;
+async function checkAccommodation(){
+  if(!studentName) return;
+  try{
+    const { data } = await supa.from('accommodations')
+      .select('id')
+      .eq('student_name_normalized', normalizeName(studentName))
+      .maybeSingle();
+    studentHasAccommodation = !!data;
+  } catch(e){}
+}
+
+const ALL_FIELD_IDS = ['p1-1','p1-2','p1-3','p1-4','p2-1','p2-2','p2-3','p2-4','p2-5','p3-1','p3-2','p3-3','p3-4','p4-1','p4-2','p5-text'];
 function captureRawFields(){
   const out = {};
   ALL_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if(el) out[id] = el.value; });
@@ -190,6 +238,7 @@ if(!studentName || !classId || !quizId){
   document.getElementById('cheat-banner').classList.add('show');
   document.getElementById('student-label').textContent = studentName;
   tryResumePreviousAnswers();
+  checkAccommodation();
 }
 
 let wakeLock = null;
@@ -236,7 +285,7 @@ async function cancelAttempt(){
   } catch(e){}
 }
 
-// ============ CORRECTION CÔTÉ CLIENT (questions à réponse courte factuelle) ============
+// ============ CORRECTION PARTIE 3 (côté client — vocabulaire fixe) ============
 function levenshtein(a, b){
   const m = a.length, n = b.length;
   if(m === 0) return n;
@@ -250,7 +299,10 @@ function levenshtein(a, b){
   }
   return dp[m][n];
 }
-function fuzzyTolerance(len){ if(len <= 4) return 1; if(len <= 9) return 2; return 3; }
+function fuzzyTolerance(len){
+  const base = len <= 4 ? 1 : len <= 9 ? 2 : 3;
+  return studentHasAccommodation ? base * 2 + 1 : base;
+}
 function isCloseEnough(norm, accepted){
   if(norm === accepted || (norm.length > 2 && norm.includes(accepted))) return true;
   const normWords = norm.split(' ');
@@ -260,80 +312,77 @@ function isCloseEnough(norm, accepted){
   }
   return levenshtein(norm, accepted) <= fuzzyTolerance(accepted.length);
 }
-
-// Questions à correction automatique déterministe (réponse factuelle courte)
-const SHORT_ANSWERS = {
-  q1: ['information'],
-  q2: ['rumeur'],
-  q3: ['opinion'],
-  q4: ['anecdote'],
-  q5: ['where'],
-  q6: ['when'],
-  q7: ['why'],
-  q8: ['who'],
-  q13: ['phrases courtes et claires','courtes et claires','des phrases courtes et claires'],
-  q14: ['neutre et objectif','un ton neutre et objectif','neutre','objectif'],
-  q15: ['texte facile et lisible','lisibilite','facile et lisible','clarte visuelle'],
-  q17: ['article d information','un article d information','article d information'],
-  q18: ['editorial','tribune','un editorial','une tribune'],
-  q19: ['breve','annonce','une breve','une annonce'],
-  q20: ['interview','une interview']
-};
-// Questions de production, notées par IA (nécessitent un jugement de sens)
-const AI_GRADED_IDS = ['q9','q10','q11','q12','q16'];
-
-function gradeShortAnswers(){
+const PARTIE3_ANSWERS = [
+  { field:'p3-1', accepted:['interview'] },
+  { field:'p3-2', accepted:['article d information','article d info','information'] },
+  { field:'p3-3', accepted:['breve','annonce'] },
+  { field:'p3-4', accepted:['editorial','tribune'] }
+];
+function gradeExactSection(list, pointsPerItem){
   let total = 0;
   const detail = [];
-  Object.entries(SHORT_ANSWERS).forEach(([id, accepted]) => {
-    const raw = document.getElementById(id).value;
+  list.forEach(item => {
+    const raw = document.getElementById(item.field).value;
     const norm = normalizeAnswer(raw);
-    const ok = accepted.some(a => isCloseEnough(norm, a));
-    total += ok ? 0.5 : 0;
-    detail.push({ field:id, answer: raw, correct: ok });
+    const ok = item.accepted.some(a => isCloseEnough(norm, a));
+    total += ok ? pointsPerItem : 0;
+    detail.push({ field:item.field, answer: raw, correct: ok });
   });
   return { total: Math.round(total*2)/2, detail };
 }
 
-// ============ CORRECTION PAR IA (questions de production + article) ============
-const GRADING_SYSTEM_PROMPT = `Tu es un professeur de français bienveillant pour des élèves de 2nde en filière professionnelle (obtention de la "carte de journaliste"). Note deux parties, avec la même logique sens/forme que tes autres contrôles :
+// ============ CORRECTION PAR IA (parties 1, 2, 4, 5) ============
+const GRADING_SYSTEM_PROMPT = `Tu es un professeur de français bienveillant pour des élèves de 2nde en filière professionnelle (obtention de la "carte de journaliste"). Note quatre parties, avec la même logique sens/forme que tes autres contrôles :
 
 AXE 1 — SENS : le contenu demandé est-il présent et correct ?
 AXE 2 — FORME : TROIS catégories, coût différent :
 - TOLÉRÉ (0 point perdu) : faute de frappe/orthographe isolée, accent manquant, majuscule oubliée, inversion mineure de lettres.
 - OMISSION MINEURE (coût faible) : petit mot manquant, UNIQUEMENT si ça gêne vraiment la clarté.
-- ERREUR GRAVE (coût le plus élevé) : erreur qui casse la construction ou change le sens.
-En cas de doute, donne le bénéfice du doute à l'élève.
+- ERREUR GRAVE (coût le plus élevé) : erreur qui casse la construction ou change le sens. Ne classe une erreur comme "grave" que si elle gêne réellement la compréhension — une formulation maladroite mais compréhensible reste TOLÉRÉE.
+En cas de doute, donne le bénéfice du doute à l'élève. Sois généreux.e : en cas d'hésitation entre deux paliers, choisis toujours le plus favorable à l'élève.
 
-PARTIE 1 — 5 questions de production journalistique (0,5 pt chacune, "production_items") :
-- q9 : phrase d'accroche factuelle/datée/neutre pour annoncer un incident à l'internat mardi matin
-- q10 : intégrer un témoignage avec la structure "Selon [fonction]..., « citation »"
-- q11 : exprimer une cause avec la prudence du conditionnel ("aurait été causé par")
-- q12 : phrase de conclusion journalistique évoquant la suite, de façon factuelle
-- q16 : explique en une phrase pourquoi éviter les répétitions inutiles dans un article (réponse attendue en substance : elles alourdissent le texte sans apporter d'information nouvelle)
-Pour chacune, score 0.5 si le sens/la structure attendue est présente (même avec des mots différents), 0.25 si l'idée est là mais maladroite/incomplète, 0 si absent/hors sujet/vide.
+PARTIE 1 (4 items, "partie1_items", 1 pt chacun) — l'élève devait rédiger lui-même un exemple pour : information, rumeur, opinion, anecdote (dans cet ordre). Score 1 si la phrase illustre bien et sans ambiguïté la catégorie demandée (peu importe le sujet choisi, peu importe si c'est en lien avec le lycée ou non), 0 sinon (catégorie non respectée, vide, incompréhensible).
 
-PARTIE 2 — Article de presse complet sur le sujet suivant : « Le club théâtre du lycée organise sa première représentation publique le mois prochain, ouverte à tous les élèves et à leurs familles. » Note sur 10 points ("article"), répartis ainsi :
-- 3 pts : les 5W (Qui ? Quoi ? Où ? Quand ? Pourquoi ? clairement présents)
-- 3 pts : la structure (titre accrocheur, accroche, développement clair)
-- 2 pts : le style (phrases courtes, ton neutre et objectif, pas de répétitions inutiles)
-- 2 pts : grammaire/orthographe (AXE 2 ci-dessus)
-Un article vide ou hors sujet obtient 0.
+PARTIE 2 (5 items, "partie2_items", 1 pt chacun) — l'élève devait répondre aux 5W à partir de cet article :
+"""
+Une fuite d'eau a provoqué la fermeture temporaire du gymnase du lycée Godefroy de Bouillon, mardi matin. L'incident s'est produit vers 8h15, dans les vestiaires situés au sous-sol. Selon la direction, une canalisation vétuste serait à l'origine du problème. Les cours d'EPS prévus dans la matinée ont été annulés et les élèves ont été redirigés vers la salle polyvalente. Une équipe de techniciens est intervenue dans l'après-midi pour réparer la fuite. Le gymnase devrait rouvrir dès jeudi, si les réparations se déroulent comme prévu.
+"""
+Réponses attendues (en substance, formulation libre) : Who = les élèves (du lycée Godefroy de Bouillon) ; What = une fuite d'eau qui a fermé le gymnase ; Where = dans les vestiaires du sous-sol du gymnase ; When = mardi matin, vers 8h15 ; Why = une canalisation vétuste. Score 1 par réponse correcte en substance, 0 sinon.
+
+PARTIE 4 (2 items, "partie4_items", 1 pt chacun) — l'article suivant contient 2 erreurs de rédaction que l'élève devait corriger :
+"""
+Il y a eu un souci avec les casiers du bâtiment B. En tout cas, on sait pas trop ce qui s'est passé exactement, plusieurs élèves affirment que leurs affaires auraient disparu, ce qui a créé beaucoup d'inquiétude et de discussions dans les couloirs, sans compter que certains disent que ça arrive depuis longtemps déjà et que personne n'a jamais rien fait pour régler ce problème vraiment embêtant pour tout le monde. La direction serait au courant.
+"""
+Erreur 1 attendue : la formulation vague "on sait pas trop ce qui s'est passé exactement" — l'élève devait la remplacer par quelque chose de plus précis/factuel ou signaler explicitement le manque de source.
+Erreur 2 attendue : la phrase interminable et imprécise "plusieurs élèves affirment que... embêtant pour tout le monde" — l'élève devait la raccourcir/clarifier.
+Pour chaque item (peu importe l'ordre dans lequel l'élève les a corrigées), score 1 si sa phrase corrigée règle bien l'un des deux problèmes ci-dessus de façon plus précise/claire que l'original, 0 sinon. Si l'élève a corrigé la même erreur deux fois, ne compte qu'une fois (score 0 pour le doublon).
+
+PARTIE 5 (rédaction libre, "partie5", notée sur 5 points) — l'élève devait rédiger un article de presse complet (titre, accroche, développement, conclusion) à partir de ces informations, données seulement sous forme de puces (il devait tout reformuler lui-même) :
+- Quoi : collecte de vêtements et de fournitures scolaires
+- Qui : organisée par les élèves du lycée
+- Où : hall d'entrée du lycée
+- Quand : la semaine prochaine, du lundi au vendredi
+- Pourquoi : aider une association locale qui vient en aide à des familles en difficulté
+Note sur 5 points : 2 pts si les 5W sont présents et correctement repris ; 1,5 pt pour la structure (titre, accroche, développement, conclusion) ; 1,5 pt pour le style et la forme (AXE 2 ci-dessus). Un article vide ou hors sujet obtient 0.
+${studentHasAccommodation ? `
+
+ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Pour TOUTES les parties ci-dessus, ignore totalement l'AXE 2 (forme/orthographe/grammaire), quelle que soit la gravité des fautes — ne fais jamais perdre de point pour la forme, y compris le 1,5 pt de forme en partie 5 (donne-le automatiquement). Note uniquement sur le sens/le contenu.` : ''}
 
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
-{"production_items":{"q9":{"score":0,"comment":"..."},"q10":{"score":0,"comment":"..."},"q11":{"score":0,"comment":"..."},"q12":{"score":0,"comment":"..."},"q16":{"score":0,"comment":"..."}},"article":{"score":0,"feedback":"Retour concis en français (150 mots max) sur les 4 critères, terminé par un encouragement."}}
+{"partie1_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie2_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie4_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie5":{"score":0,"feedback":"Retour concis en français (150 mots max), termine par un encouragement."},"feedback_global":"Une ou deux phrases de synthèse en français pour la prof."}
 Les commentaires doivent être courts (moins de 20 mots), en français.`;
 
-function buildUserContent(prodAnswers, articleText){
-  return `PARTIE 1 — Questions de production :\n${AI_GRADED_IDS.map(id => `${id}: ${prodAnswers[id] || '(vide)'}`).join('\n')}\n\nPARTIE 2 — Article de l'élève :\n${articleText || '(vide)'}`;
+function buildUserContent(p1, p2, p4, p5text){
+  return `PARTIE 1 :\n${p1.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nPARTIE 2 :\n${p2.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nPARTIE 4 :\n${p4.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nPARTIE 5 :\n${p5text || '(vide)'}`;
 }
 
-async function gradeWithAI(prodAnswers, articleText){
-  const body = { systemPrompt: GRADING_SYSTEM_PROMPT, userContent: buildUserContent(prodAnswers, articleText) };
-  const res = await fetch(GRADE_ENDPOINT, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+async function gradeWithAI(p1, p2, p4, p5text){
+  const body = { systemPrompt: GRADING_SYSTEM_PROMPT, userContent: buildUserContent(p1, p2, p4, p5text) };
+  const res = await fetch(GRADE_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   if(!res.ok) throw new Error('grade-advanced http error');
   const data = await res.json();
-  if(data.error || !data.production_items || !data.article) throw new Error('malformed response');
+  if(data.error) throw new Error(data.error);
+  if(!Array.isArray(data.partie1_items) || !Array.isArray(data.partie2_items) || !Array.isArray(data.partie4_items) || !data.partie5) throw new Error('malformed response');
   return data;
 }
 
@@ -343,36 +392,43 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = 'Correction en cours...';
 
-  const shortGrade = gradeShortAnswers();
-  const prodAnswers = {};
-  AI_GRADED_IDS.forEach(id => prodAnswers[id] = document.getElementById(id).value.trim());
-  const articleText = document.getElementById('p2-text').value.trim();
+  await checkAccommodation();
+
+  const grade3 = gradeExactSection(PARTIE3_ANSWERS, 1);
+  const p1 = ['p1-1','p1-2','p1-3','p1-4'].map(id => document.getElementById(id).value.trim());
+  const p2 = ['p2-1','p2-2','p2-3','p2-4','p2-5'].map(id => document.getElementById(id).value.trim());
+  const p4 = ['p4-1','p4-2'].map(id => document.getElementById(id).value.trim());
+  const p5text = document.getElementById('p5-text').value.trim();
 
   let aiResult = null, aiError = null;
-  try{ aiResult = await gradeWithAI(prodAnswers, articleText); } catch(e){ aiError = String(e); }
+  try{ aiResult = await gradeWithAI(p1, p2, p4, p5text); } catch(e){ aiError = String(e); }
 
-  let prodTotal = null, articleScore = null;
+  let p1Total = null, p2Total = null, p4Total = null, p5Score = null;
   if(aiResult){
-    prodTotal = Object.values(aiResult.production_items).reduce((a,b)=>a+(Number(b.score)||0),0);
-    articleScore = Math.max(0, Math.min(10, Number(aiResult.article.score) || 0));
+    p1Total = aiResult.partie1_items.reduce((a,b)=>a+(Number(b.score)||0),0);
+    p2Total = aiResult.partie2_items.reduce((a,b)=>a+(Number(b.score)||0),0);
+    p4Total = aiResult.partie4_items.reduce((a,b)=>a+(Number(b.score)||0),0);
+    p5Score = Math.max(0, Math.min(5, Number(aiResult.partie5.score) || 0));
   }
 
-  const partie1Total = aiResult ? Math.round((shortGrade.total + prodTotal) * 2) / 2 : null;
-  const finalScore = aiResult ? Math.round((partie1Total + articleScore) * 2) / 2 : null;
+  const clientTotal = grade3.total;
+  const aiTotal = aiResult ? (p1Total + p2Total + p4Total + p5Score) : null;
+  const finalScore = aiResult ? Math.round((clientTotal + aiTotal) * 2) / 2 : null;
 
   const answersDetail = {
-    partie1_short: shortGrade.detail,
-    partie1_production: aiResult ? Object.fromEntries(AI_GRADED_IDS.map(id => [id, { ...aiResult.production_items[id], answer: prodAnswers[id] }])) : Object.fromEntries(AI_GRADED_IDS.map(id => [id, { answer: prodAnswers[id], score: null, comment: 'Non corrigé (IA indisponible)' }])),
-    article: aiResult ? { score: articleScore, feedback: aiResult.article.feedback, answer: articleText } : { answer: articleText, score: null, comment: 'Non corrigé (IA indisponible)' },
-    client_subtotal: shortGrade.total,
-    ai_subtotal: aiResult ? (prodTotal + articleScore) : null,
-    ai_error: aiError
+    partie1_ai: aiResult ? aiResult.partie1_items.map((item, i) => ({ ...item, answer: p1[i] })) : p1.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
+    partie2_ai: aiResult ? aiResult.partie2_items.map((item, i) => ({ ...item, answer: p2[i] })) : p2.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
+    partie3: grade3.detail,
+    partie4_ai: aiResult ? aiResult.partie4_items.map((item, i) => ({ ...item, answer: p4[i] })) : p4.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
+    partie5: aiResult ? { score: p5Score, feedback: aiResult.partie5.feedback, answer: p5text } : { answer: p5text, score: null, comment: 'Non corrigé (IA indisponible)' },
+    feedback_global: aiResult ? aiResult.feedback_global : null,
+    ai_error: aiError,
+    client_subtotal: clientTotal,
+    ai_subtotal: aiTotal
   };
 
-  const writingText = buildUserContent(prodAnswers, articleText);
-  const writingCorrection = aiResult
-    ? `Questions courtes : ${shortGrade.total}/7.5\nQuestions de production : ${prodTotal}/2.5\nArticle : ${articleScore}/10\n\n${aiResult.article.feedback}`
-    : "Correction IA indisponible — à vérifier manuellement pour les questions de production et l'article. " + (aiError||'');
+  const writingText = buildUserContent(p1, p2, p4, p5text);
+  const writingCorrection = aiResult ? aiResult.feedback_global : ("Correction IA indisponible — à vérifier manuellement pour les parties 1, 2, 4 et 5. " + (aiError||''));
 
   let saveOk = false;
   for(let tryN = 0; tryN < 2 && !saveOk; tryN++){
@@ -392,7 +448,7 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   document.getElementById('results-screen').classList.add('show');
 
   if(!saveOk){
-    document.getElementById('final-score').innerHTML = (finalScore !== null ? finalScore : shortGrade.total) + '<span>/20</span>';
+    document.getElementById('final-score').innerHTML = (finalScore !== null ? finalScore : clientTotal) + '<span>/20</span>';
     document.getElementById('pending-box').innerHTML = "<div class=\"pending-note\" style=\"background:#FDE2E2;border-color:var(--brass);\">⚠ Ta copie n'a PAS pu être envoyée à ta prof (problème de connexion). Ne ferme pas cette page : fais une photo de cet écran et montre-la à ta prof.</div>";
   } else if(PENDING_VALIDATION_CLASSES.includes(classId)){
     document.getElementById('final-score').innerHTML = '<span style="font-size:20px;">En attente de validation</span>';
@@ -400,8 +456,8 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   } else if(finalScore !== null){
     document.getElementById('final-score').innerHTML = finalScore + '<span>/20</span>';
   } else {
-    document.getElementById('final-score').innerHTML = shortGrade.total + '<span>/10 (partiel)</span>';
-    document.getElementById('pending-box').innerHTML = "<div class=\"pending-note\">⚠ La correction automatique des questions de production et de l'article n'a pas pu se faire. Ta prof va vérifier manuellement et compléter ta note.</div>";
+    document.getElementById('final-score').innerHTML = clientTotal + '<span>/4 (partiel)</span>';
+    document.getElementById('pending-box').innerHTML = "<div class=\"pending-note\">⚠ La correction automatique des parties 1, 2, 4 et 5 n'a pas pu se faire. Ta prof va vérifier manuellement et compléter ta note.</div>";
   }
 });
 </script>
