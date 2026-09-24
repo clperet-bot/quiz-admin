@@ -131,7 +131,7 @@
   .report-answer{color:var(--ink); font-weight:500;}
   .report-comment{display:block; margin-top:3px; color:var(--purple-dark); font-style:italic; font-size:12.5px;}
   .report-text{font-size:13.5px; line-height:1.55; background:var(--paper); border-radius:7px; padding:10px 12px; white-space:pre-wrap;}
-  .report-close{position:sticky; bottom:0; width:100%; background:var(--white); border-top:1px solid var(--line); padding:12px; font-weight:600; font-size:14px; color:var(--purple); border:none; cursor:pointer;}
+  .report-close{position:sticky; bottom:0; flex:1; background:var(--white); border-top:1px solid var(--line); padding:12px; font-weight:600; font-size:14px; color:var(--purple); border:none; cursor:pointer;}
   .result-table tr[data-report]{cursor:pointer;}
   .result-table tr[data-report]:hover{background:var(--purple-light);}
   .qr-class-name{font-family:'Baloo 2',sans-serif; font-size:clamp(24px,5vw,34px); font-weight:700; color:#fff; margin-bottom:4px;}
@@ -156,6 +156,27 @@
   .btn-release:hover{background:var(--purple-light);}
   .btn-delete-row{background:none; border:none; color:var(--ink-soft); font-size:16px; cursor:pointer; line-height:1; padding:4px 6px; border-radius:5px;}
   .btn-delete-row:hover{color:var(--red); background:#FDE2E2;}
+
+  /* ---- Accommodements ---- */
+  .accom-panel{border:1px solid var(--line); border-radius:8px; margin-bottom:16px; overflow:hidden;}
+  .accom-toggle-btn{width:100%; text-align:left; background:var(--purple-light); border:none; padding:12px 16px; font-size:13.5px; font-weight:600; color:var(--purple-deep); cursor:pointer;}
+  .accom-body{padding:14px 16px; background:var(--white);}
+  .accom-note{font-size:12.5px; color:var(--ink-soft); margin:0 0 10px;}
+  .accom-item{display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line); font-size:13.5px;}
+  .accom-item:last-child{border-bottom:none;}
+  .accom-item button{background:none; border:none; color:var(--red); cursor:pointer; font-size:12px;}
+  .accom-add-row{display:flex; gap:8px; margin-top:10px;}
+  .accom-add-row input{flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:13.5px;}
+  .accom-add-row button{background:var(--purple); color:#fff; border:none; border-radius:6px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer;}
+
+  @media print{
+    body *{visibility:hidden;}
+    #report-modal, #report-modal *{visibility:visible;}
+    #report-modal{position:absolute; inset:0; background:#fff; padding:0;}
+    .report-panel{max-width:100%; max-height:none; border-radius:0; box-shadow:none;}
+    .report-body{overflow:visible;}
+    #report-print-btn, #report-close-btn{display:none;}
+  }
   .loading-note{font-size:13px; color:var(--ink-soft); padding:20px;}
 
   /* ---- Mobile ---- */
@@ -283,6 +304,17 @@
         <p class="bubble-sub">Historique complet des tentatives, toutes classes confondues.</p>
       </div>
       <div class="body-pad">
+        <div class="accom-panel">
+          <button id="accom-toggle" class="accom-toggle-btn">📝 Élèves avec accompagnement orthographe (dyslexie/dysorthographie...) <span id="accom-count"></span> ▾</button>
+          <div id="accom-body" class="accom-body hidden">
+            <p class="accom-note">Les élèves listés ici ne sont jamais pénalisés pour l'orthographe/la grammaire dans les corrections IA ou automatiques, sur tous les contrôles notés.</p>
+            <div id="accom-list"></div>
+            <div class="accom-add-row">
+              <input type="text" id="accom-new-name" placeholder="Prénom Nom">
+              <button id="accom-add-btn">Ajouter</button>
+            </div>
+          </div>
+        </div>
         <div class="filter-row">
           <select id="filter-class"><option value="">Toutes les classes</option></select>
           <select id="filter-quiz"><option value="">Tous les quiz</option></select>
@@ -313,7 +345,10 @@
       <div class="report-meta" id="report-meta"></div>
     </div>
     <div class="report-body" id="report-body"></div>
-    <button class="report-close" id="report-close-btn">Fermer</button>
+    <div style="display:flex;">
+      <button class="report-close" id="report-print-btn" style="border-right:1px solid var(--line);">🖨️ Imprimer</button>
+      <button class="report-close" id="report-close-btn">Fermer</button>
+    </div>
   </div>
 </div>
 
@@ -767,9 +802,65 @@ function openReport(a){
 document.getElementById('report-close-btn').addEventListener('click', () => {
   document.getElementById('report-modal').classList.add('hidden');
 });
+document.getElementById('report-print-btn').addEventListener('click', () => {
+  window.print();
+});
 document.getElementById('report-modal').addEventListener('click', (e) => {
   if(e.target.id === 'report-modal') document.getElementById('report-modal').classList.add('hidden');
 });
+
+// -------- accommodements (dyslexie/dysorthographie...) --------
+function normalizeAccomName(s){
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+}
+let ACCOMMODATIONS = [];
+
+async function loadAccommodations(){
+  const { data } = await supa.from('accommodations').select('*').order('student_name_display');
+  ACCOMMODATIONS = data || [];
+  document.getElementById('accom-count').textContent = `(${ACCOMMODATIONS.length})`;
+  const list = document.getElementById('accom-list');
+  if(ACCOMMODATIONS.length === 0){
+    list.innerHTML = '<p class="empty-note" style="font-size:12.5px;">Aucun élève pour le moment.</p>';
+    return;
+  }
+  list.innerHTML = ACCOMMODATIONS.map(a => `
+    <div class="accom-item">
+      <span>${a.student_name_display}</span>
+      <button data-remove-accom="${a.id}">retirer</button>
+    </div>
+  `).join('');
+  list.querySelectorAll('[data-remove-accom]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if(!confirm('Retirer cet élève de la liste des accompagnements ?')) return;
+      await supa.from('accommodations').delete().eq('id', btn.dataset.removeAccom);
+      loadAccommodations();
+    });
+  });
+}
+
+document.getElementById('accom-toggle').addEventListener('click', () => {
+  document.getElementById('accom-body').classList.toggle('hidden');
+});
+
+document.getElementById('accom-add-btn').addEventListener('click', async () => {
+  const input = document.getElementById('accom-new-name');
+  const raw = input.value.trim();
+  if(!raw || !raw.includes(' ')){
+    alert('Entre le prénom et le nom (ex : Arthur Vallet).');
+    return;
+  }
+  const { error } = await supa.from('accommodations').insert({
+    student_name_normalized: normalizeAccomName(raw),
+    student_name_display: raw,
+    no_spelling_penalty: true
+  });
+  if(error){ alert("Erreur : cet élève est peut-être déjà dans la liste."); return; }
+  input.value = '';
+  loadAccommodations();
+});
+
+loadAccommodations();
 
 document.getElementById('reset-results-btn').addEventListener('click', async () => {
   const step1 = confirm("Supprimer TOUTES les tentatives enregistrées, dans toutes les classes et tous les quiz ? Cette action est irréversible (utile en début d'année scolaire).");
