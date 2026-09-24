@@ -589,6 +589,13 @@ async function loadResults(){
     return;
   }
 
+  // Tri alphabétique par prénom (premier mot du nom saisi)
+  attempts.sort((a, b) => {
+    const firstA = (a.student_name_raw || '').trim().split(' ')[0] || '';
+    const firstB = (b.student_name_raw || '').trim().split(' ')[0] || '';
+    return firstA.localeCompare(firstB, 'fr', { sensitivity: 'base' });
+  });
+
   const classById = Object.fromEntries(CLASSES.map(c => [c.id, c.name]));
   const quizById = Object.fromEntries(QUIZZES.map(q => [q.id, q.title]));
   currentAttempts = attempts;

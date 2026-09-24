@@ -432,6 +432,7 @@
   </div>
 
   <div id="quiz-area"></div>
+  <button id="btn-back" style="display:none; margin:4px 0 18px; background:none; border:1px solid var(--line); color:var(--ink-soft); border-radius:6px; padding:9px 16px; font-size:13.5px; cursor:pointer;">◀ Précédent</button>
 
   <div id="writing">
     <div class="writing-head">
@@ -469,6 +470,7 @@
 // ============ CONFIG — mêmes valeurs que admin.html / eleve.html ============
 const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+const GRADE_ENDPOINT = SUPABASE_URL + "/functions/v1/grade-advanced";
 // Classes pour lesquelles la note n'est PAS affichée à l'élève à la fin (en attente de validation manuelle) :
 const PENDING_VALIDATION_CLASSES = ["312b1566-e893-4cf1-8765-a6668b60347f"]; // 2nde TNE
 // ==============================================================================
@@ -492,20 +494,26 @@ if(!studentName || !classId || !quizId){
 }
 
 async function submitScore(score, total, answersDetail, writingText, writingCorrection){
-  try{
-    await supa.from('attempts').insert({
-      quiz_id: quizId,
-      class_id: classId,
-      student_name_raw: studentName,
-      student_name_normalized: normalizeName(studentName),
-      score: score,
-      total: total,
-      cancelled: false,
-      answers_detail: answersDetail || null,
-      writing_text: writingText || null,
-      writing_correction: writingCorrection || null
-    });
-  } catch(e){ /* silencieux : la note reste affichée à l'élève même si l'envoi échoue */ }
+  let saveOk = false;
+  for(let tryN = 0; tryN < 2 && !saveOk; tryN++){
+    try{
+      const { error } = await supa.from('attempts').insert({
+        quiz_id: quizId,
+        class_id: classId,
+        student_name_raw: studentName,
+        student_name_normalized: normalizeName(studentName),
+        score: score,
+        total: total,
+        cancelled: false,
+        answers_detail: answersDetail || null,
+        writing_text: writingText || null,
+        writing_correction: writingCorrection || null
+      });
+      if(!error) saveOk = true;
+    } catch(e){}
+    if(!saveOk && tryN === 0) await new Promise(r => setTimeout(r, 1200));
+  }
+  return saveOk;
 }
 
 // ============ EMPÊCHE LA MISE EN VEILLE DE L'ÉCRAN PENDANT LE QUIZ ============
@@ -535,7 +543,7 @@ document.addEventListener('visibilitychange', () => {
   } else if(awayTimer){
     const awaySeconds = (Date.now() - awayTimer) / 1000;
     awayTimer = null;
-    if(awaySeconds > 8){
+    if(awaySeconds > 5){
       cheatTriggered = true;
       cancelAttempt();
     } else {
@@ -671,7 +679,8 @@ function recordAnswer(qi, givenText, correctText, isCorrect){
 }
 
 function handleTranslateAnswer(qi){
-  if(answered[qi] !== undefined) return;
+  const wasAnswered = answered[qi] !== undefined;
+  if(wasAnswered && score > 0 && answered[qi]) score--; // annule l'ancien point si la question était déjà correcte
 
   const input = document.getElementById('input'+qi);
   const q = QUESTIONS[qi];
@@ -686,14 +695,15 @@ function handleTranslateAnswer(qi){
   document.querySelector(`[data-submit="${qi}"]`).disabled = true;
   qScore.textContent = score;
 
-  setTimeout(() => goTo(qi + 1), 200);
+  if(!wasAnswered) setTimeout(() => goTo(qi + 1), 200);
 }
 
 function handleAnswer(e){
   const btn = e.currentTarget;
   const qDiv = btn.closest('.question');
   const qi = parseInt(qDiv.id.replace('q',''));
-  if(answered[qi] !== undefined) return;
+  const wasAnswered = answered[qi] !== undefined;
+  if(wasAnswered && score > 0 && answered[qi]) score--; // annule l'ancien point si la question était déjà correcte
 
   const chosen = parseInt(btn.dataset.i);
   const q = QUESTIONS[qi];
@@ -705,7 +715,7 @@ function handleAnswer(e){
   qDiv.querySelectorAll('.option').forEach(o => o.disabled = true);
   qScore.textContent = score;
 
-  setTimeout(() => goTo(qi + 1), 150);
+  if(!wasAnswered) setTimeout(() => goTo(qi + 1), 150);
 }
 
 function goTo(i){
@@ -718,7 +728,20 @@ function goTo(i){
   document.getElementById('q'+i).classList.add('active');
   current = i;
   qPos.textContent = (i+1) + ' / ' + QUESTIONS.length;
+
+  // Ré-active les champs/boutons de cette question pour permettre de modifier la réponse
+  const qDiv = document.getElementById('q'+i);
+  qDiv.querySelectorAll('.option').forEach(o => o.disabled = false);
+  const input = document.getElementById('input'+i);
+  if(input){
+    input.disabled = false;
+    const submitBtn = document.querySelector(`[data-submit="${i}"]`);
+    if(submitBtn) submitBtn.disabled = false;
+  }
+
+  document.getElementById('btn-back').style.display = i > 0 ? 'block' : 'none';
 }
+document.getElementById('btn-back').addEventListener('click', () => goTo(current - 1));
 
 function showWriting(){
   document.querySelectorAll('.question').forEach(d => d.classList.remove('active'));
@@ -726,51 +749,63 @@ function showWriting(){
   qPos.textContent = QUESTIONS.length + ' / ' + QUESTIONS.length;
 }
 
+let finalDisplayScore = null;
+let finalDisplayPending = false;
+let finalDisplaySaveFailed = false;
+
 function showResults(){
   writingEl.classList.remove('show');
   resultsEl.classList.add('show');
   const v = document.getElementById('final-verdict');
+
+  if(finalDisplaySaveFailed){
+    document.getElementById('final-score').innerHTML = (finalDisplayScore !== null ? finalDisplayScore : '–') + '<span>/20</span>';
+    v.textContent = "⚠ Ta copie n'a PAS pu être envoyée (problème de connexion). Fais une photo de cet écran et montre-la à ta prof.";
+    v.className = 'verdict-final retry';
+    return;
+  }
+  if(finalDisplayPending){
+    document.getElementById('final-score').innerHTML = finalDisplayScore + '<span>/10 (partiel)</span>';
+    v.textContent = "La correction de la rédaction n'a pas pu se faire automatiquement — ta prof la complétera.";
+    v.className = 'verdict-final ok';
+    return;
+  }
   if(PENDING_VALIDATION_CLASSES.includes(classId)){
     document.getElementById('final-score').innerHTML = '<span style="font-size:20px;">En attente de validation</span>';
     v.textContent = "Ta copie a bien été envoyée. Ta prof valide chaque copie avant d'afficher la note.";
     v.className = 'verdict-final ok';
     return;
   }
-  document.getElementById('final-score').innerHTML = score + '<span>/'+QUESTIONS.length+'</span>';
-  if(score >= 16){ v.textContent = 'Excellent brief !'; v.className = 'verdict-final great'; }
-  else if(score >= 11){ v.textContent = 'Bien, continue comme ça'; v.className = 'verdict-final ok'; }
+  document.getElementById('final-score').innerHTML = finalDisplayScore + '<span>/20</span>';
+  if(finalDisplayScore >= 16){ v.textContent = 'Excellent brief !'; v.className = 'verdict-final great'; }
+  else if(finalDisplayScore >= 11){ v.textContent = 'Bien, continue comme ça'; v.className = 'verdict-final ok'; }
   else { v.textContent = 'À retravailler'; v.className = 'verdict-final retry'; }
 }
 
 async function generateWritingCorrection(text){
-  const prompt = `Tu es un professeur de français bienveillant pour des élèves de 2nde en filière professionnelle, qui évalue une épreuve pratique sur le journalisme (obtention de la "carte de journaliste"). Un(e) élève a rédigé un article de presse complet sur le sujet suivant : « Le club théâtre du lycée organise sa première représentation publique le mois prochain, ouverte à tous les élèves et à leurs familles. »
+  const systemPrompt = `Tu es un professeur de français bienveillant pour des élèves de 2nde en filière professionnelle, qui évalue une épreuve pratique sur le journalisme (obtention de la "carte de journaliste"). L'élève a rédigé un article de presse complet sur le sujet suivant : « Le club théâtre du lycée organise sa première représentation publique le mois prochain, ouverte à tous les élèves et à leurs familles. »
 
-Article de l'élève :
-"""
-${text}
-"""
+Note l'article sur 10 points, répartis ainsi :
+- 3 pts : les 5W (Qui ? Quoi ? Où ? Quand ? Pourquoi ? clairement présents)
+- 3 pts : la structure (titre accrocheur, accroche, développement clair)
+- 2 pts : le style (phrases courtes, ton neutre et objectif, pas de répétitions inutiles)
+- 2 pts : grammaire/orthographe — distingue les fautes de frappe/orthographe isolées qui ne gênent pas la compréhension (TOLÉRÉES, 0 point perdu : accents, majuscules, inversions mineures de lettres) des erreurs de grammaire qui cassent la construction de la phrase ou en changent le sens (celles-ci coûtent des points)
+Un article vide ou hors sujet obtient 0. En cas de doute, donne le bénéfice du doute à l'élève.
 
-Évalue quatre aspects, dans cet ordre :
-1. Les 5W : l'article répond-il clairement à Qui ? Quoi ? Où ? Quand ? Pourquoi ?
-2. La structure : y a-t-il un titre accrocheur, une accroche, un développement clair ?
-3. Le style : phrases courtes, ton neutre et objectif, pas de répétitions inutiles.
-4. Grammaire, orthographe : distingue les fautes de frappe/orthographe isolées qui ne gênent pas la compréhension (à signaler sans faire beaucoup chuter la note) des erreurs de grammaire qui cassent la construction de la phrase ou en changent le sens (celles-ci doivent peser davantage sur la note globale). Les accents manquants/incorrects et les inversions mineures de lettres qui ne gênent pas la lecture sont aussi tolérés.
-
-Termine par une note globale sur 10 (cohérente avec la qualité du travail), clairement indiquée (ex. "Note : 7/10"), et une phrase d'encouragement. Réponds en français. Reste concis (200 mots maximum).`;
+Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
+{"score":0,"feedback":"Retour concis en français (150 mots max), qui commente les 4 critères et se termine par une phrase d'encouragement."}
+Le score peut être un nombre entier ou avec un seul chiffre après la virgule (ex: 7.5).`;
 
   try {
-    const response = await fetch('https://ia-proxy.clperet.workers.dev/', {
+    const res = await fetch(GRADE_ENDPOINT, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 600,
-        messages: [{role: 'user', content: prompt}]
-      })
+      body: JSON.stringify({ systemPrompt, userContent: text || '(article vide)' })
     });
-    if(!response.ok) throw new Error('network');
-    const data = await response.json();
-    return (data.content || []).map(b => b.text || '').filter(Boolean).join('\n') || null;
+    if(!res.ok) throw new Error('grade-advanced http error');
+    const data = await res.json();
+    if(data.error || typeof data.score !== 'number') throw new Error('malformed response');
+    return { score: Math.max(0, Math.min(10, data.score)), feedback: data.feedback || '' };
   } catch(err){
     return null;
   }
@@ -782,10 +817,25 @@ document.getElementById('finish-btn').addEventListener('click', async () => {
   const text = input.value.trim();
 
   btn.disabled = true;
-  btn.textContent = "Enregistrement...";
+  btn.textContent = "Correction en cours...";
 
-  const writingCorrection = text.length >= 5 ? await generateWritingCorrection(text) : null;
-  await submitScore(score, QUESTIONS.length, answersDetail, text, writingCorrection);
+  const qcmScore10 = Math.round((score / QUESTIONS.length) * 10 * 2) / 2; // QCM ramené sur 10
+  const writingResult = text.length >= 5 ? await generateWritingCorrection(text) : { score: 0, feedback: 'Rédaction vide.' };
+
+  if(writingResult){
+    finalDisplayScore = Math.round((qcmScore10 + writingResult.score) * 2) / 2;
+    finalDisplayPending = false;
+  } else {
+    finalDisplayScore = qcmScore10;
+    finalDisplayPending = true;
+  }
+
+  const writingCorrection = writingResult
+    ? `Vocabulaire/grammaire (QCM) : ${qcmScore10}/10\nRédaction : ${writingResult.score}/10\n\n${writingResult.feedback}`
+    : "Correction IA de la rédaction indisponible — à noter manuellement sur 10 et additionner au score QCM (" + qcmScore10 + "/10) pour la note finale.";
+
+  const saveOk = await submitScore(finalDisplayPending ? null : finalDisplayScore, 20, answersDetail, text, writingCorrection);
+  if(!saveOk) finalDisplaySaveFailed = true;
 
   showResults();
 });

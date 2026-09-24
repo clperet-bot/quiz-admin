@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Homecoming Mystery — Contrôle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#1A1712;
+    --ink-soft:#6B6255;
+    --paper:#F4EEDD;
+    --white:#FFFFFF;
+    --tan:#D8C9A3;
+    --tan-dark:#B79F6B;
+    --black:#161310;
+    --red:#B23A2E;
+    --yellow:#E8B923;
+    --line:#E2D8BE;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    line-height:1.5;
+  }
+  .tape{
+    height:22px;
+    background:repeating-linear-gradient(135deg, var(--yellow), var(--yellow) 22px, var(--black) 22px, var(--black) 44px);
+    display:flex; align-items:center; justify-content:center;
+  }
+  header{
+    padding:32px 20px 26px;
+    text-align:center;
+    background:var(--black);
+    color:var(--paper);
+  }
+  .badge{
+    display:inline-block;
+    background:var(--yellow);
+    color:var(--black);
+    font-family:'Special Elite',monospace;
+    font-weight:400;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    padding:5px 14px;
+    border-radius:2px;
+    margin-bottom:12px;
+  }
+  h1{
+    font-family:'Special Elite',monospace;
+    font-weight:400;
+    font-size:clamp(24px,6vw,34px);
+    margin:0;
+    letter-spacing:0.02em;
+  }
+  .subtitle{color:#C9C0AA; font-size:13px; margin-top:6px;}
+  main{max-width:640px; margin:0 auto; padding:26px 18px 100px;}
+  .scorebar{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--white); border:1px solid var(--line); border-left:5px solid var(--yellow);
+    padding:14px 18px; margin-bottom:22px; font-size:14px; border-radius:4px;
+  }
+  .section{
+    background:var(--white); border:1px solid var(--line); border-radius:6px;
+    padding:20px 20px; margin-bottom:18px;
+  }
+  .section-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;}
+  .section-title{font-family:'Special Elite',monospace; font-weight:400; font-size:16px;}
+  .section-points{font-size:12.5px; color:var(--ink-soft); font-weight:600;}
+  .section-instructions{font-size:13.5px; color:var(--ink-soft); margin:8px 0 16px;}
+  .q-row{margin-bottom:14px;}
+  .q-row label{display:block; font-size:13.5px; color:var(--ink); margin-bottom:5px;}
+  .q-row .hint{color:var(--ink-soft); font-size:12px;}
+  input[type=text]{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:5px;
+    font-family:'Inter',sans-serif; font-size:14.5px; background:var(--paper);
+  }
+  input[type=text]:focus{outline:none; border-color:var(--tan-dark);}
+  .verb-line{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14.5px; margin-bottom:12px;}
+  .verb-line .subj{flex-shrink:0;}
+  .verb-line input{flex:1; min-width:130px;}
+  .verb-hint{color:var(--ink-soft); font-style:italic;}
+  textarea{
+    width:100%; min-height:180px; padding:12px 14px; border:1px solid var(--line); border-radius:5px;
+    font-family:'Inter',sans-serif; font-size:14.5px; background:var(--paper); resize:vertical;
+  }
+  textarea:focus{outline:none; border-color:var(--tan-dark);}
+  .clue-list{background:var(--paper); border:1px dashed var(--tan-dark); border-radius:5px; padding:10px 14px; font-size:13px; color:var(--ink-soft); margin-bottom:12px;}
+  #submit-btn{
+    width:100%; margin-top:4px;
+    font-family:'Special Elite',monospace; font-weight:400; font-size:15px; letter-spacing:0.03em; text-transform:uppercase;
+    background:var(--black); color:var(--paper); border:none; padding:16px; border-radius:5px; cursor:pointer;
+  }
+  #submit-btn:hover{background:var(--red);}
+  #submit-btn:disabled{background:var(--ink-soft); cursor:wait;}
+  .cheat-banner{
+    display:none; position:sticky; top:0; z-index:999;
+    background:var(--red); color:var(--white); text-align:center; padding:10px 16px; font-size:13px; font-weight:600;
+  }
+  .cheat-banner.show{display:block;}
+  .access-gate{
+    display:none; min-height:100vh; align-items:center; justify-content:center;
+    padding:40px 20px; text-align:center; font-size:15px; color:var(--ink-soft);
+  }
+  .access-gate.show{display:flex;}
+  .cancelled-screen{
+    display:none; min-height:60vh; align-items:center; justify-content:center; padding:40px 20px; text-align:center;
+  }
+  .cancelled-screen.show{display:flex;}
+  .cancelled-screen p{font-size:16px; color:var(--red); max-width:400px;}
+  .results-screen{display:none; text-align:center; padding:20px 0;}
+  .results-screen.show{display:block;}
+  .final-score{
+    font-family:'Special Elite',monospace; font-weight:400; font-size:56px; color:var(--black); margin:10px 0 0;
+  }
+  .final-score span{font-size:24px; color:var(--ink-soft);}
+  .final-note{
+    background:var(--white); border:1px solid var(--line); border-radius:6px; padding:16px 18px; margin-top:20px;
+    font-size:14px; color:var(--ink-soft); text-align:left;
+  }
+  .pending-note{
+    background:#FBF0D2; border:1px solid var(--yellow); border-radius:6px; padding:14px 16px; margin-top:16px;
+    font-size:13.5px; text-align:left;
+  }
+  footer{text-align:center; padding:24px; color:var(--ink-soft); font-size:12px; opacity:0.7;}
+</style>
+</head>
+<body>
+
+<div id="cheat-banner" class="cheat-banner">⚠ Si tu quittes cette page, ta prof sera notifiée et cette tentative sera annulée.</div>
+
+<div id="access-gate" class="access-gate">
+  <p>Ce contrôle est évalué. Accède-y uniquement via le lien donné par ta prof (QR code de ta classe).</p>
+</div>
+
+<div id="quiz-wrapper" style="display:none;">
+
+<div class="tape"></div>
+<header>
+  <span class="badge">Contrôle · Case #LHS-2024</span>
+  <h1>Homecoming Mystery</h1>
+  <p class="subtitle" id="student-label"></p>
+</header>
+<div class="tape"></div>
+
+<main>
+
+  <div id="form-screen">
+
+  <div class="scorebar">
+    <span>Note finale sur <strong>20</strong></span>
+    <span>3 parties</span>
+  </div>
+
+  <!-- PARTIE 1 — VOCABULAIRE -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Partie 1 — Vocabulaire</div>
+      <div class="section-points">6 pts</div>
+    </div>
+    <p class="section-instructions">Traduis les mots en anglais. (1 pt par mot)</p>
+    <div class="q-row"><label>1. Un indice →</label><input type="text" id="p1-1" autocomplete="off"></div>
+    <div class="q-row"><label>2. Le/la coupable →</label><input type="text" id="p1-2" autocomplete="off"></div>
+    <div class="q-row"><label>3. Le mobile (du crime) →</label><input type="text" id="p1-3" autocomplete="off"></div>
+    <div class="q-row"><label>4. Une fausse piste →</label><input type="text" id="p1-4" autocomplete="off"></div>
+    <div class="q-row"><label>5. Un casier →</label><input type="text" id="p1-5" autocomplete="off"></div>
+    <div class="q-row"><label>6. Le début d'après-midi →</label><input type="text" id="p1-6" autocomplete="off"></div>
+  </div>
+
+  <!-- PARTIE 2A — POSSESSION 'S -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Partie 2A — La possession avec 's</div>
+      <div class="section-points">3 pts</div>
+    </div>
+    <p class="section-instructions">Traduis en anglais avec le 's. (1 pt par phrase)</p>
+    <div class="q-row"><label>1. Le casier de Jason est bleu.</label><input type="text" id="p2a-1" autocomplete="off"></div>
+    <div class="q-row"><label>2. Le vernis à ongles de Sophia est rouge. <span class="hint">(vernis à ongles = nail polish)</span></label><input type="text" id="p2a-2" autocomplete="off"></div>
+    <div class="q-row"><label>3. Le message de Sophia est anonyme. <span class="hint">(message = note)</span></label><input type="text" id="p2a-3" autocomplete="off"></div>
+  </div>
+
+  <!-- PARTIE 2B — PRÉTÉRIT -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Partie 2B — Le prétérit</div>
+      <div class="section-points">3 pts</div>
+    </div>
+    <p class="section-instructions">Complète avec le verbe au prétérit. (0,5 pt par verbe)</p>
+    <div class="verb-line"><span class="subj">1. Jason</span><input type="text" id="p2b-1" autocomplete="off"><span class="verb-hint">(disappear) on Friday.</span></div>
+    <div class="verb-line"><span class="subj">2. Sophia</span><input type="text" id="p2b-2" autocomplete="off"><span class="verb-hint">(write) a note to Jason.</span></div>
+    <div class="verb-line"><span class="subj">3. Daniel</span><input type="text" id="p2b-3" autocomplete="off"><span class="verb-hint">(be) at music rehearsal.</span></div>
+    <div class="verb-line"><span class="subj">4. Michael</span><input type="text" id="p2b-4" autocomplete="off"><span class="verb-hint">(see) someone near the lockers.</span></div>
+    <div class="verb-line"><span class="subj">5. We</span><input type="text" id="p2b-5" autocomplete="off"><span class="verb-hint">(find) a guitar pick.</span></div>
+    <div class="verb-line"><span class="subj">6. The camera</span><input type="text" id="p2b-6" autocomplete="off"><span class="verb-hint">(show) Sophia in the hallway.</span></div>
+  </div>
+
+  <!-- PARTIE 3 — PRODUCTION ÉCRITE -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Partie 3 — Production écrite</div>
+      <div class="section-points">8 pts</div>
+    </div>
+    <p class="section-instructions">Écris 6 à 8 phrases en anglais. Réponds à 3 questions : 👤 Qui est le/la coupable ? 🔍 Comment tu le sais ? (les indices) 💔 Pourquoi il/elle l'a fait ? (le mobile)</p>
+    <div class="clue-list">Indices disponibles : vernis rouge · message anonyme · caméra · emploi du temps · médiator (fausse piste)</div>
+    <textarea id="p3-text" placeholder="Write your answer here..."></textarea>
+  </div>
+
+  <button id="submit-btn">Rendre le contrôle</button>
+
+  </div>
+  <!-- fin form-screen -->
+
+  <div id="results-screen" class="results-screen">
+    <p style="font-family:'Special Elite',monospace; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft); font-size:12.5px;">Ta note</p>
+    <div class="final-score" id="final-score">–<span>/20</span></div>
+    <div id="pending-box"></div>
+    <div class="final-note">Ta note a été transmise à ta prof. Tu peux fermer cette page.</div>
+  </div>
+
+</main>
+
+<footer>Lycée Godefroy de Bouillon — Homecoming Mystery, Case #LHS-2024</footer>
+
+</div>
+<!-- fin #quiz-wrapper -->
+
+<script>
+// ============ CONFIG ============
+const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+const GRADE_ENDPOINT = SUPABASE_URL + "/functions/v1/grade-advanced";
+// Classes pour lesquelles la note n'est PAS affichée à l'élève à la fin (en attente de validation manuelle) :
+const PENDING_VALIDATION_CLASSES = ["312b1566-e893-4cf1-8765-a6668b60347f"]; // 2nde TNE
+// ==============================================================================
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const params = new URLSearchParams(location.search);
+const studentName = params.get('student');
+const classId = params.get('class_id');
+const quizId = params.get('quiz_id');
+
+function normalizeName(s){
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+}
+function normalizeAnswer(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+}
+
+const ALL_FIELD_IDS = [
+  'p1-1','p1-2','p1-3','p1-4','p1-5','p1-6',
+  'p2a-1','p2a-2','p2a-3',
+  'p2b-1','p2b-2','p2b-3','p2b-4','p2b-5','p2b-6',
+  'p3-text'
+];
+function captureRawFields(){
+  const out = {};
+  ALL_FIELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) out[id] = el.value;
+  });
+  return out;
+}
+async function tryResumePreviousAnswers(){
+  const resumeFrom = params.get('resume_from');
+  if(!resumeFrom) return;
+  try{
+    const { data } = await supa.from('attempts').select('answers_detail').eq('id', resumeFrom).maybeSingle();
+    const raw = data && data.answers_detail && data.answers_detail.raw_fields;
+    if(raw){
+      ALL_FIELD_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if(el && raw[id]) el.value = raw[id];
+      });
+      const note = document.createElement('div');
+      note.className = 'pending-note';
+      note.style.marginBottom = '16px';
+      note.textContent = "Tes réponses précédentes ont été restaurées — vérifie-les avant de continuer.";
+      document.getElementById('form-screen').prepend(note);
+    }
+  } catch(e){}
+}
+
+if(!studentName || !classId || !quizId){
+  document.getElementById('access-gate').classList.add('show');
+} else {
+  document.getElementById('quiz-wrapper').style.display = 'block';
+  document.getElementById('cheat-banner').classList.add('show');
+  document.getElementById('student-label').textContent = studentName;
+  tryResumePreviousAnswers();
+}
+
+// ============ EMPÊCHE LA MISE EN VEILLE DE L'ÉCRAN PENDANT LE QUIZ ============
+let wakeLock = null;
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e){ /* pas supporté ou refusé : tant pis, le reste du système reste fonctionnel */ }
+}
+if(studentName && classId && quizId){
+  requestWakeLock();
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible' && !wakeLock) requestWakeLock();
+  });
+}
+
+// ============ ANTI-TRICHE ============
+let cheatTriggered = false;
+let awayTimer = null;
+document.addEventListener('visibilitychange', () => {
+  if(cheatTriggered) return;
+  if(document.hidden){
+    awayTimer = Date.now();
+  } else if(awayTimer){
+    const awaySeconds = (Date.now() - awayTimer) / 1000;
+    awayTimer = null;
+    if(awaySeconds > 5){
+      cheatTriggered = true;
+      cancelAttempt();
+    } else {
+      document.getElementById('cheat-banner').textContent = "⚠ Tu es sorti(e) du quiz. Si tu recommences, cette tentative sera annulée et ta prof sera notifiée.";
+    }
+  }
+});
+
+async function cancelAttempt(){
+  const rawFields = captureRawFields();
+  const partialText = `[Tentative annulée — réponses partielles au moment de la coupure]\n\n` +
+    ALL_FIELD_IDS.map(id => `${id}: ${rawFields[id] || '(vide)'}`).join('\n');
+
+  document.getElementById('quiz-wrapper').innerHTML = `
+    <div class="cancelled-screen show">
+      <p>Tentative annulée : tu as quitté le contrôle. Ta prof a été notifiée. Reviens demain pour réessayer.</p>
+    </div>
+  `;
+  try{
+    await supa.from('attempts').insert({
+      quiz_id: quizId, class_id: classId,
+      student_name_raw: studentName, student_name_normalized: normalizeName(studentName),
+      score: null, total: null, cancelled: true,
+      writing_text: partialText || null,
+      answers_detail: { raw_fields: rawFields, released_for_retry: false }
+    });
+  } catch(e){}
+}
+
+// ============ CORRECTION PARTIE 1 & 2B (côté client) ============
+function levenshtein(a, b){
+  const m = a.length, n = b.length;
+  if(m === 0) return n;
+  if(n === 0) return m;
+  const dp = Array.from({length: m+1}, (_, i) => [i, ...Array(n).fill(0)]);
+  for(let j=0; j<=n; j++) dp[0][j] = j;
+  for(let i=1; i<=m; i++){
+    for(let j=1; j<=n; j++){
+      dp[i][j] = a[i-1] === b[j-1]
+        ? dp[i-1][j-1]
+        : 1 + Math.min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+function fuzzyTolerance(len){
+  if(len <= 4) return 1;
+  if(len <= 9) return 2;
+  return 3;
+}
+function isCloseEnough(norm, accepted){
+  if(norm === accepted || (norm.length > 2 && norm.includes(accepted))) return true;
+  const normWords = norm.split(' ');
+  const accWords = accepted.split(' ');
+  if(normWords.length === accWords.length){
+    return normWords.every((w, i) => levenshtein(w, accWords[i]) <= fuzzyTolerance(accWords[i].length));
+  }
+  return levenshtein(norm, accepted) <= fuzzyTolerance(accepted.length);
+}
+
+const PARTIE1_ANSWERS = [
+  { field:'p1-1', accepted:['a clue','clue'] },
+  { field:'p1-2', accepted:['the culprit','culprit','the guilty person'] },
+  { field:'p1-3', accepted:['the motive','motive'] },
+  { field:'p1-4', accepted:['a red herring','red herring'] },
+  { field:'p1-5', accepted:['a locker','locker'] },
+  { field:'p1-6', accepted:['early afternoon','the early afternoon','start of the afternoon'] }
+];
+const PARTIE2B_ANSWERS = [
+  { field:'p2b-1', accepted:['disappeared'] },
+  { field:'p2b-2', accepted:['wrote'] },
+  { field:'p2b-3', accepted:['was'] },
+  { field:'p2b-4', accepted:['saw'] },
+  { field:'p2b-5', accepted:['found'] },
+  { field:'p2b-6', accepted:['showed'] }
+];
+
+function gradeExactSection(list, pointsPerItem){
+  let total = 0;
+  const detail = [];
+  list.forEach(item => {
+    const raw = document.getElementById(item.field).value;
+    const norm = normalizeAnswer(raw);
+    const ok = item.accepted.some(a => isCloseEnough(norm, a));
+    total += ok ? pointsPerItem : 0;
+    detail.push({ field:item.field, answer: raw, correct: ok });
+  });
+  return { total: Math.round(total*2)/2, detail };
+}
+
+// ============ CORRECTION PARTIE 2A & 3 (par IA, via edge function sécurisée) ============
+const GRADING_SYSTEM_PROMPT = `Tu es un professeur d'anglais qui corrige un contrôle pour des élèves de 1ère (niveau A2-B1) sur une enquête policière fictive ("Homecoming Mystery"). Note deux parties, avec indulgence sur les erreurs mineures mais rigueur sur le sens. Pour chaque item, évalue systématiquement DEUX axes séparés :
+
+AXE 1 — SENS : le contenu demandé est-il correct et complet ?
+AXE 2 — FORME : distingue TROIS catégories, avec un coût de point différent pour chacune :
+- TOLÉRÉ (0 point perdu) : faute de frappe ou d'orthographe isolée qui n'empêche pas de comprendre (accent manquant, majuscule oubliée, inversion mineure de lettres, "s" de pluriel/accord manquant).
+- OMISSION MINEURE (coût faible, jamais plus de la moitié des points de l'item) : un petit mot grammatical manquant, MAIS UNIQUEMENT si son absence gêne réellement la clarté. Sinon, c'est TOLÉRÉ (0 point perdu).
+- ERREUR GRAVE (coût le plus élevé) : erreur qui casse la construction de la phrase ou change le sens.
+En cas de doute, donne le bénéfice du doute à l'élève.
+
+CONTEXTE DE L'ENQUÊTE (ne pas répéter aux élèves, juste pour ta correction) : Jason a disparu un vendredi. Le/la coupable est Sophia Williams. Indices réels : un fragment de vernis à ongles rouge à elle, une note/message anonyme qu'elle a écrit à Jason, des images de vidéosurveillance qui la montrent dans le couloir, un trou/incohérence dans son emploi du temps ce jour-là. Le médiator de guitare (guitar pick) trouvé est une FAUSSE PISTE (red herring) — appartient à quelqu'un d'innocent, ne doit PAS être compté comme une preuve valide contre Sophia. Daniel était à la répétition de musique (alibi). Michael a vu quelqu'un près des casiers.
+
+PARTIE 2A (3 phrases, "partie2a_items") — traduction en anglais avec la possession 's. Réponses attendues : 1. "Jason's locker is blue." 2. "Sophia's nail polish is red." 3. "Sophia's note is anonymous." Pour chaque phrase, score sur 1 point (paliers possibles : 1 / 0.5 / 0) :
+- 1 : sens correct (bon vocabulaire, construction 's utilisée correctement) et forme tolérée uniquement
+- 0.5 : sens correct mais 's mal utilisé ou omis, ou une erreur grave de forme
+- 0 : sens incorrect, vide, ou incompréhensible
+
+PARTIE 3 (rédaction libre, "partie3") — l'élève devait répondre en 6-8 phrases à qui/comment/pourquoi. Note sur 8 points, décomposée en 3 sous-scores que tu dois retourner séparément :
+- "qui_score" (0 à 2) : Sophia Williams est-elle clairement identifiée comme coupable ? 2 = oui clairement, 1 = mentionnée mais pas affirmée clairement comme coupable, 0 = mauvaise personne ou absent
+- "comment_score" (0 à 4) : les indices cités sont-ils corrects et pertinents (vernis rouge, message anonyme, vidéosurveillance/caméra, emploi du temps) ? Compte environ 1 point par indice correct cité (jusqu'à 4). Si l'élève cite le médiator/guitar pick comme preuve réelle contre Sophia (sans reconnaître que c'est une fausse piste), ne compte pas ce point-là et signale-le dans le commentaire.
+- "pourquoi_score" (0 à 2) : un mobile plausible et cohérent est-il donné ? 2 = oui, cohérent, 1 = présent mais vague/peu convaincant, 0 = absent ou incohérent
+Applique aussi l'AXE 2 (forme) de façon globale sur l'ensemble du texte : si le texte contient des erreurs graves de forme qui gênent la compréhension générale, réduis légèrement le total (jusqu'à -1 au total, pas plus) via un champ "forme_penalite" (0 ou -0.5 ou -1). Les fautes tolérées (accents, orthographe mineure) ne coûtent rien. Si le texte fait moins de 4 phrases, signale-le dans le commentaire mais ne pénalise que via les sous-scores eux-mêmes (contenu manquant = sous-scores plus bas), pas de pénalité de longueur séparée.
+
+Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
+{"partie2a_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie3":{"qui_score":0,"comment_score":0,"pourquoi_score":0,"forme_penalite":0,"comment":"..."},"feedback_global":"Une ou deux phrases de synthèse en français pour la prof."}
+
+Les commentaires doivent être courts (moins de 20 mots), en français, et préciser quel axe (sens ou forme) a fait perdre des points quand ce n'est pas le score maximum.`;
+
+function buildUserContent(p2a, p3text){
+  return `PARTIE 2A — Phrases de l'élève :\n${p2a.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nPARTIE 3 — Texte de l'élève :\n${p3text || '(vide)'}`;
+}
+
+async function gradeWithAI(p2a, p3text){
+  const body = { systemPrompt: GRADING_SYSTEM_PROMPT, userContent: buildUserContent(p2a, p3text) };
+  const res = await fetch(GRADE_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if(!res.ok) throw new Error('grade-advanced http error');
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  if(!Array.isArray(data.partie2a_items) || !data.partie3) throw new Error('malformed response');
+  return data;
+}
+
+// ============ SOUMISSION ============
+document.getElementById('submit-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Correction en cours...';
+
+  const grade1 = gradeExactSection(PARTIE1_ANSWERS, 1);
+  const grade2b = gradeExactSection(PARTIE2B_ANSWERS, 0.5);
+  const p2a = ['p2a-1','p2a-2','p2a-3'].map(id => document.getElementById(id).value.trim());
+  const p3text = document.getElementById('p3-text').value.trim();
+
+  let aiResult = null;
+  let aiError = null;
+  try{
+    aiResult = await gradeWithAI(p2a, p3text);
+  } catch(e){
+    aiError = String(e);
+  }
+
+  let score2a = null, score3 = null;
+  if(aiResult){
+    score2a = aiResult.partie2a_items.reduce((a,b)=>a+(Number(b.score)||0),0);
+    const p3 = aiResult.partie3;
+    score3 = Math.max(0, (Number(p3.qui_score)||0) + (Number(p3.comment_score)||0) + (Number(p3.pourquoi_score)||0) + (Number(p3.forme_penalite)||0));
+  }
+
+  const clientTotal = grade1.total + grade2b.total;
+  const aiTotal = aiResult ? (score2a + score3) : null;
+  const finalScore = aiResult ? Math.round((clientTotal + aiTotal)*2)/2 : null;
+
+  const answersDetail = {
+    partie1: grade1.detail,
+    partie2a_ai: aiResult ? aiResult.partie2a_items.map((item, i) => ({ ...item, answer: p2a[i] })) : p2a.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
+    partie2b: grade2b.detail,
+    partie3_ai: aiResult ? { ...aiResult.partie3, answer: p3text, total: score3 } : { answer: p3text, score: null, comment: 'Non corrigé (IA indisponible)' },
+    feedback_global: aiResult ? aiResult.feedback_global : null,
+    ai_error: aiError,
+    client_subtotal: clientTotal,
+    ai_subtotal: aiTotal
+  };
+
+  const writingText = buildUserContent(p2a, p3text);
+  const writingCorrection = aiResult ? aiResult.feedback_global : ("Correction IA indisponible — à vérifier manuellement pour les parties 2A et 3. " + (aiError||''));
+
+  let saveOk = false;
+  for(let tryN = 0; tryN < 2 && !saveOk; tryN++){
+    try{
+      const { error } = await supa.from('attempts').insert({
+        quiz_id: quizId, class_id: classId,
+        student_name_raw: studentName, student_name_normalized: normalizeName(studentName),
+        score: finalScore, total: 20, cancelled: false,
+        answers_detail: answersDetail,
+        writing_text: writingText,
+        writing_correction: writingCorrection
+      });
+      if(!error) saveOk = true;
+    } catch(e){}
+    if(!saveOk && tryN === 0) await new Promise(r => setTimeout(r, 1200));
+  }
+
+  document.getElementById('form-screen').style.display = 'none';
+  document.getElementById('results-screen').classList.add('show');
+
+  if(!saveOk){
+    document.getElementById('final-score').innerHTML = (finalScore !== null ? finalScore : clientTotal) + '<span>/20</span>';
+    document.getElementById('pending-box').innerHTML = "<div class=\"pending-note\" style=\"background:#FDE2E2;border-color:var(--red);\">⚠ Ta copie n'a PAS pu être envoyée à ta prof (problème de connexion). Ne ferme pas cette page : fais une photo de cet écran et montre-la à ta prof.</div>";
+  } else if(PENDING_VALIDATION_CLASSES.includes(classId)){
+    document.getElementById('final-score').innerHTML = '<span style="font-size:20px;">En attente de validation</span>';
+    document.getElementById('pending-box').innerHTML = "<div class=\"pending-note\">Ta copie a bien été envoyée. Ta prof valide chaque copie avant d'afficher la note — tu la retrouveras plus tard.</div>";
+  } else if(finalScore !== null){
+    document.getElementById('final-score').innerHTML = finalScore + '<span>/20</span>';
+  } else {
+    document.getElementById('final-score').innerHTML = clientTotal + '<span>/9 (partiel)</span>';
+    document.getElementById('pending-box').innerHTML = "<div class=\"pending-note\">⚠ La correction automatique des parties 2A et 3 n'a pas pu se faire. Ta prof va vérifier ces deux parties manuellement et complétera ta note.</div>";
+  }
+});
+</script>
+
+</body>
+</html>
