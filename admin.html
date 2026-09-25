@@ -742,10 +742,9 @@ function reportRenderItem(item){
   else if(item.score === null) mark = '⏳';
   const label = item.question || item.label || item.field || '';
   const given = item.given !== undefined ? item.given : item.answer;
-  const expected = item.correct_answer ? ` <span class="report-expected">(attendu : ${item.correct_answer})</span>` : '';
   const note = (item.comment || item.explanation) ? `<span class="report-comment">${item.comment || item.explanation}</span>` : '';
   const answerHtml = given !== undefined && given !== '' ? `<span class="report-answer">${given}</span>` : '<span class="report-expected">(vide)</span>';
-  return `<li><span class="report-mark">${mark}</span>${label ? `<strong>${label}</strong> — ` : ''}${answerHtml}${expected}${note}</li>`;
+  return `<li><span class="report-mark">${mark}</span>${label ? `<strong>${label}</strong> — ` : ''}${answerHtml}${note}</li>`;
 }
 
 function reportRenderDetail(detail){

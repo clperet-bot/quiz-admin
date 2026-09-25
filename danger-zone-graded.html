@@ -263,11 +263,14 @@ let studentHasAccommodation = false;
 async function checkAccommodation(){
   if(!studentName) return;
   try{
-    const { data } = await supa.from('accommodations')
-      .select('id')
-      .eq('student_name_normalized', normalizeName(studentName))
-      .maybeSingle();
-    studentHasAccommodation = !!data;
+    const { data } = await supa.from('accommodations').select('student_name_normalized');
+    const norm = normalizeName(studentName);
+    // Correspondance tolérante aux petites fautes de frappe/orthographe dans le nom saisi par l'élève
+    // (sinon un simple espace ou une lettre différente désactive l'accommodement sans que personne ne le voie).
+    studentHasAccommodation = (data || []).some(a => {
+      const accNorm = a.student_name_normalized || '';
+      return accNorm === norm || levenshtein(norm, accNorm) <= 2;
+    });
   } catch(e){}
 }
 
