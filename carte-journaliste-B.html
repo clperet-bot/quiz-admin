@@ -485,11 +485,41 @@ function normalizeName(s){
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
 }
 
+let studentHasAccommodation = false;
+async function checkAccommodation(){
+  if(!studentName) return;
+  try{
+    const { data } = await supa.from('accommodations')
+      .select('id')
+      .eq('student_name_normalized', normalizeName(studentName))
+      .maybeSingle();
+    studentHasAccommodation = !!data;
+  } catch(e){}
+}
+function levenshtein(a, b){
+  const m = a.length, n = b.length;
+  if(m === 0) return n;
+  if(n === 0) return m;
+  const dp = Array.from({length: m+1}, (_, i) => [i, ...Array(n).fill(0)]);
+  for(let j=0; j<=n; j++) dp[0][j] = j;
+  for(let i=1; i<=m; i++){
+    for(let j=1; j<=n; j++){
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+function matchesWithAccommodation(raw, answers){
+  const tolerance = Math.max(2, Math.ceil(raw.length / 2));
+  return answers.some(a => levenshtein(raw, a) <= tolerance);
+}
+
 if(!studentName || !classId || !quizId){
   document.getElementById('access-gate').classList.add('show');
 } else {
   document.getElementById('quiz-wrapper').style.display = 'block';
   document.getElementById('cheat-banner').classList.add('show');
+  checkAccommodation();
   runQuiz();
 }
 
@@ -685,7 +715,7 @@ function handleTranslateAnswer(qi){
   const input = document.getElementById('input'+qi);
   const q = QUESTIONS[qi];
   const raw = input.value.trim().toLowerCase().replace(/[.!?]+$/,'');
-  const correct = q.answers.includes(raw) && raw.length > 0;
+  const correct = raw.length > 0 && (q.answers.includes(raw) || (studentHasAccommodation && matchesWithAccommodation(raw, q.answers)));
 
   answered[qi] = correct;
   if(correct) score++;
@@ -785,15 +815,17 @@ function showResults(){
 async function generateWritingCorrection(text){
   const systemPrompt = `Tu es un professeur de français bienveillant pour des élèves de 2nde en filière professionnelle, qui évalue une épreuve pratique sur le journalisme (obtention de la "carte de journaliste"). L'élève a rédigé un article de presse complet sur le sujet suivant : « Le lycée va installer des bornes de recharge pour vélos et trottinettes électriques d'ici la fin du trimestre. »
 
-Note l'article sur 10 points, répartis ainsi :
+Ce sont des élèves débutants en journalisme (première épreuve du genre) : sois généreux.e sur la sophistication du style et de la structure — la présence des éléments de base suffit pour le maximum de points, inutile d'attendre un niveau professionnel. Note l'article sur 10 points, répartis ainsi :
 - 3 pts : les 5W (Qui ? Quoi ? Où ? Quand ? Pourquoi ? clairement présents)
-- 3 pts : la structure (titre accrocheur, accroche, développement clair)
-- 2 pts : le style (phrases courtes, ton neutre et objectif, pas de répétitions inutiles)
-- 2 pts : grammaire/orthographe — distingue les fautes de frappe/orthographe isolées qui ne gênent pas la compréhension (TOLÉRÉES, 0 point perdu : accents, majuscules, inversions mineures de lettres) des erreurs de grammaire qui cassent la construction de la phrase ou en changent le sens (celles-ci coûtent des points)
+- 3 pts : la structure — un titre, une accroche même simple, un développement qui reste compréhensible ; n'exige pas de titre "accrocheur" sophistiqué, un titre factuel correct suffit pour le plein
+- 2 pts : le style — phrases globalement courtes et un ton plutôt neutre suffisent ; ne pénalise pas une tournure un peu maladroite tant que l'information reste claire
+- 2 pts : grammaire/orthographe — distingue les fautes de frappe/orthographe isolées qui ne gênent pas la compréhension (TOLÉRÉES, 0 point perdu : accents, majuscules, inversions mineures de lettres) des erreurs de grammaire qui cassent la construction de la phrase ou en changent le sens (celles-ci coûtent des points). Ne pénalise une erreur que si elle gêne réellement la compréhension — sois généreux.e, en cas d'hésitation choisis toujours le palier le plus favorable à l'élève.
 Un article vide ou hors sujet obtient 0. En cas de doute, donne le bénéfice du doute à l'élève.
+${studentHasAccommodation ? `
+ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Donne-lui automatiquement les 2 points de grammaire/orthographe, quelle que soit la qualité orthographique réelle, et n'en parle pas dans le feedback. Note normalement les 3 autres critères (5W, structure, style) sur les 8 points restants ; le total reste sur 10.` : ''}
 
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
-{"score":0,"feedback":"Retour concis en français (150 mots max), qui commente les 4 critères et se termine par une phrase d'encouragement."}
+{"score":0,"feedback":"Retour concis en français (150 mots max), adressé directement à l'élève en le/la tutoyant, qui commente les 4 critères et se termine par une phrase d'encouragement."}
 Le score peut être un nombre entier ou avec un seul chiffre après la virgule (ex: 7.5).`;
 
   try {

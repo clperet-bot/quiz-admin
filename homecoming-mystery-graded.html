@@ -241,6 +241,18 @@ const PENDING_VALIDATION_CLASSES = ["312b1566-e893-4cf1-8765-a6668b60347f"]; // 
 // ==============================================================================
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+let studentHasAccommodation = false;
+async function checkAccommodation(){
+  if(!studentName) return;
+  try{
+    const { data } = await supa.from('accommodations')
+      .select('id')
+      .eq('student_name_normalized', normalizeName(studentName))
+      .maybeSingle();
+    studentHasAccommodation = !!data;
+  } catch(e){}
+}
+
 const params = new URLSearchParams(location.search);
 const studentName = params.get('student');
 const classId = params.get('class_id');
@@ -294,6 +306,7 @@ if(!studentName || !classId || !quizId){
   document.getElementById('cheat-banner').classList.add('show');
   document.getElementById('student-label').textContent = studentName;
   tryResumePreviousAnswers();
+  checkAccommodation();
 }
 
 // ============ EMPÊCHE LA MISE EN VEILLE DE L'ÉCRAN PENDANT LE QUIZ ============
@@ -369,9 +382,8 @@ function levenshtein(a, b){
   return dp[m][n];
 }
 function fuzzyTolerance(len){
-  if(len <= 4) return 1;
-  if(len <= 9) return 2;
-  return 3;
+  const base = len <= 4 ? 1 : len <= 9 ? 2 : 3;
+  return studentHasAccommodation ? base * 2 + 1 : base; // orthographe non pénalisée : tolérance largement augmentée
 }
 function isCloseEnough(norm, accepted){
   if(norm === accepted || (norm.length > 2 && norm.includes(accepted))) return true;
@@ -420,7 +432,7 @@ AXE 1 — SENS : le contenu demandé est-il correct et complet ?
 AXE 2 — FORME : distingue TROIS catégories, avec un coût de point différent pour chacune :
 - TOLÉRÉ (0 point perdu) : faute de frappe ou d'orthographe isolée qui n'empêche pas de comprendre (accent manquant, majuscule oubliée, inversion mineure de lettres, "s" de pluriel/accord manquant).
 - OMISSION MINEURE (coût faible, jamais plus de la moitié des points de l'item) : un petit mot grammatical manquant, MAIS UNIQUEMENT si son absence gêne réellement la clarté. Sinon, c'est TOLÉRÉ (0 point perdu).
-- ERREUR GRAVE (coût le plus élevé) : erreur qui casse la construction de la phrase ou change le sens.
+- ERREUR GRAVE (coût le plus élevé) : erreur qui casse la construction de la phrase ou change le sens. Ne classe une erreur comme "grave" que si elle gêne réellement la compréhension — une formulation maladroite mais compréhensible reste TOLÉRÉE. Sois généreux.e : en cas d'hésitation entre deux paliers, choisis toujours le plus favorable à l'élève.
 En cas de doute, donne le bénéfice du doute à l'élève.
 
 CONTEXTE DE L'ENQUÊTE (ne pas répéter aux élèves, juste pour ta correction) : Jason a disparu un vendredi. Le/la coupable est Sophia Williams. Indices réels : un fragment de vernis à ongles rouge à elle, une note/message anonyme qu'elle a écrit à Jason, des images de vidéosurveillance qui la montrent dans le couloir, un trou/incohérence dans son emploi du temps ce jour-là. Le médiator de guitare (guitar pick) trouvé est une FAUSSE PISTE (red herring) — appartient à quelqu'un d'innocent, ne doit PAS être compté comme une preuve valide contre Sophia. Daniel était à la répétition de musique (alibi). Michael a vu quelqu'un près des casiers.
@@ -437,16 +449,21 @@ PARTIE 3 (rédaction libre, "partie3") — l'élève devait répondre en 6-8 phr
 Applique aussi l'AXE 2 (forme) de façon globale sur l'ensemble du texte : si le texte contient des erreurs graves de forme qui gênent la compréhension générale, réduis légèrement le total (jusqu'à -1 au total, pas plus) via un champ "forme_penalite" (0 ou -0.5 ou -1). Les fautes tolérées (accents, orthographe mineure) ne coûtent rien. Si le texte fait moins de 4 phrases, signale-le dans le commentaire mais ne pénalise que via les sous-scores eux-mêmes (contenu manquant = sous-scores plus bas), pas de pénalité de longueur séparée.
 
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
-{"partie2a_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie3":{"qui_score":0,"comment_score":0,"pourquoi_score":0,"forme_penalite":0,"comment":"..."},"feedback_global":"Une ou deux phrases de synthèse en français pour la prof."}
+{"partie2a_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie3":{"qui_score":0,"comment_score":0,"pourquoi_score":0,"forme_penalite":0,"comment":"..."},"feedback_global":"Une ou deux phrases en français, adressées directement à l'élève en le/la tutoyant, qui résument ce qui est réussi et ce qu'il faut retenir."}
 
-Les commentaires doivent être courts (moins de 20 mots), en français, et préciser quel axe (sens ou forme) a fait perdre des points quand ce n'est pas le score maximum.`;
+Les commentaires doivent être courts (moins de 20 mots), en français, adressés directement à l'élève en le/la tutoyant, et préciser quel axe (sens ou forme) a fait perdre des points quand ce n'est pas le score maximum.`;
+
+const ACCOMMODATION_CLAUSE = `
+
+ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Pour cette copie, IGNORE TOTALEMENT l'AXE 2 (forme/orthographe/grammaire) et le champ "forme_penalite" (laisse-le à 0), quelle que soit la gravité des fautes. Note UNIQUEMENT sur le sens/le contenu : si le sens est compréhensible et correct, donne le score maximum de l'item, même si la phrase est très mal orthographiée ou mal construite. N'évoque jamais l'orthographe/la grammaire comme motif de perte de points.`;
 
 function buildUserContent(p2a, p3text){
   return `PARTIE 2A — Phrases de l'élève :\n${p2a.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nPARTIE 3 — Texte de l'élève :\n${p3text || '(vide)'}`;
 }
 
 async function gradeWithAI(p2a, p3text){
-  const body = { systemPrompt: GRADING_SYSTEM_PROMPT, userContent: buildUserContent(p2a, p3text) };
+  const systemPrompt = GRADING_SYSTEM_PROMPT + (studentHasAccommodation ? ACCOMMODATION_CLAUSE : '');
+  const body = { systemPrompt, userContent: buildUserContent(p2a, p3text) };
   const res = await fetch(GRADE_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -464,6 +481,8 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   btn.textContent = 'Correction en cours...';
+
+  await checkAccommodation();
 
   const grade1 = gradeExactSection(PARTIE1_ANSWERS, 1);
   const grade2b = gradeExactSection(PARTIE2B_ANSWERS, 0.5);

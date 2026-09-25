@@ -259,6 +259,18 @@ const PENDING_VALIDATION_CLASSES = ["312b1566-e893-4cf1-8765-a6668b60347f"]; // 
 // ==============================================================================
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+let studentHasAccommodation = false;
+async function checkAccommodation(){
+  if(!studentName) return;
+  try{
+    const { data } = await supa.from('accommodations')
+      .select('id')
+      .eq('student_name_normalized', normalizeName(studentName))
+      .maybeSingle();
+    studentHasAccommodation = !!data;
+  } catch(e){}
+}
+
 const params = new URLSearchParams(location.search);
 const studentName = params.get('student');
 const classId = params.get('class_id');
@@ -312,6 +324,7 @@ if(!studentName || !classId || !quizId){
   document.getElementById('cheat-banner').classList.add('show');
   document.getElementById('student-label').textContent = studentName;
   tryResumePreviousAnswers();
+  checkAccommodation();
 }
 
 // ============ EMPÊCHE LA MISE EN VEILLE DE L'ÉCRAN PENDANT LE QUIZ ============
@@ -409,9 +422,8 @@ function levenshtein(a, b){
   return dp[m][n];
 }
 function fuzzyTolerance(len){
-  if(len <= 4) return 1;
-  if(len <= 9) return 2;
-  return 3;
+  const base = len <= 4 ? 1 : len <= 9 ? 2 : 3;
+  return studentHasAccommodation ? base * 2 + 1 : base; // orthographe non pénalisée : tolérance largement augmentée
 }
 function isCloseEnough(norm, accepted){
   if(norm === accepted || (norm.length > 2 && norm.includes(accepted))) return true;
@@ -449,7 +461,7 @@ AXE 1 — SENS : le danger décrit est-il correctement identifié et plausible (
 AXE 2 — FORME : distingue TROIS catégories, avec un coût de point différent pour chacune :
 - TOLÉRÉ (0 point perdu) : faute de frappe ou d'orthographe isolée qui n'empêche pas de comprendre la phrase (ex : "pannel" pour "panel", majuscule oubliée en début de phrase, "s" d'accord oublié, "s" de pluriel manquant comme "cable" pour "cables", accent manquant ou incorrect, inversion mineure de lettres qui ne gêne pas la lecture comme "cabel" pour "cable").
 - OMISSION MINEURE (0,5 point perdu maximum, jamais plus) : un petit mot grammatical manquant (typiquement un article "the"/"a") MAIS UNIQUEMENT si son absence gêne réellement la clarté ou la compréhension de la phrase. Si la phrase reste parfaitement claire sans lui (cas le plus fréquent pour un article manquant), ne pénalise PAS du tout — traite-le comme TOLÉRÉ (0 point perdu).
-- ERREUR GRAVE (1 point perdu) : erreur de grammaire qui casse la construction de la phrase, la rend confuse, ou change le sens (ex : mauvaise conjugaison comme "didn't wearings", verbe manquant, ordre des mots incorrect qui déforme le sens).
+- ERREUR GRAVE (1 point perdu) : erreur de grammaire qui rend la phrase difficile à comprendre ou change clairement le sens voulu (ex : mauvaise conjugaison comme "didn't wearings", verbe manquant, ordre des mots incorrect qui déforme le sens). Ne classe une erreur comme "grave" que si elle gêne réellement la compréhension — une formulation maladroite mais compréhensible reste TOLÉRÉE. Sois généreux.e : en cas d'hésitation entre deux paliers, choisis toujours le plus favorable à l'élève.
 Si plusieurs petites omissions mineures se cumulent dans une même phrase, elles restent plafonnées à -0,5 au total (jamais additionnées à plus d'un point).
 
 SECTION 1 (4 phrases, "section1_items") — l'élève devait écrire une phrase par danger visible sur la photo (ex attendu : "I can see cables on the floor."). Pour chaque phrase, note de base 2 si le sens est correct (AXE 1), puis retire selon l'AXE 2 :
@@ -472,9 +484,9 @@ Pour chaque ligne, tu reçois : l'EPI concerné, la réponse de l'élève, et si
 - Si "déjà validé" est false, juge toi-même : score 1 si le lien logique EPI↔danger est cohérent et plausible (formulation (a) ou (b)), score 0 sinon (réponse vide, incohérente, ou EPI/danger sans rapport).
 
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme (section1_items : scores 0, 1, 1.5 ou 2 uniquement ; section2_items et section4_items : scores 0 ou 1 uniquement) :
-{"section1_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section2_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section4_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"feedback_global":"Une ou deux phrases de synthèse en français pour la prof."}
+{"section1_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section2_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section4_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"feedback_global":"Une ou deux phrases en français, adressées directement à l'élève en le/la tutoyant, qui résument ce qui est réussi et ce qu'il faut retenir."}
 
-Les commentaires doivent être courts (moins de 15 mots), en français, et préciser quel axe (sens ou forme) a fait perdre des points quand ce n'est pas le score maximum.`;
+Les commentaires doivent être courts (moins de 15 mots), en français, adressés directement à l'élève en le/la tutoyant (ex : "Bien vu !", "Attention, l'orthographe n'a pas compté ici"), et préciser quel axe (sens ou forme) a fait perdre des points quand ce n'est pas le score maximum.`;
 
 function getFreeTextAnswers(){
   const s1 = [1,2,3,4].map(n => document.getElementById('s1-'+n).value.trim());
@@ -496,8 +508,13 @@ function buildUserContent(s1, s4, section2Detail){
   return `SECTION 1 — Phrases de l'élève :\n${s1.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nSECTION 2 — Correspondances EPI/danger :\n${buildSection2Block(section2Detail)}\n\nSECTION 4 — Phrases de l'élève :\n${s4.map((t,i)=>`${i+1}. ${t}`).join('\n')}`;
 }
 
+const ACCOMMODATION_CLAUSE = `
+
+ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Pour cette copie, IGNORE TOTALEMENT l'AXE 2 (forme/orthographe/grammaire), quelle que soit la gravité des fautes — ne fais JAMAIS perdre de point pour la forme, même une erreur normalement "grave". Note UNIQUEMENT sur l'AXE 1 (le sens) : si le sens est compréhensible et correct, donne le score maximum de l'item, même si la phrase est très mal orthographiée ou mal construite. Adapte tes commentaires en conséquence (ne mentionne jamais l'orthographe/la grammaire comme motif de perte de points).`;
+
 async function gradeWithAI(s1, s4, section2Detail){
-  const body = { systemPrompt: GRADING_SYSTEM_PROMPT, userContent: buildUserContent(s1, s4, section2Detail) };
+  const systemPrompt = GRADING_SYSTEM_PROMPT + (studentHasAccommodation ? ACCOMMODATION_CLAUSE : '');
+  const body = { systemPrompt, userContent: buildUserContent(s1, s4, section2Detail) };
   const res = await fetch(GRADE_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -515,6 +532,8 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   btn.textContent = 'Correction en cours...';
+
+  await checkAccommodation(); // sécurité si la vérification initiale n'avait pas fini
 
   const grade2 = gradeExactSection(SECTION2_ANSWERS, 1);
   const grade3 = gradeExactSection(SECTION3_ANSWERS, 0.5);

@@ -188,7 +188,7 @@
   .pr-mark.ok{color:#2E8B47;}
   .pr-mark.no{color:#C0392B;}
   .pr-answer{font-weight:500; color:#181614;}
-  .pr-comment{display:block; margin-top:2px; color:#6b5f99; font-style:italic; font-size:11.5px;}
+  .pr-comment{display:block; margin-top:2px; color:#C2185B; font-style:italic; font-size:11.5px;}
   .pr-text-block{font-size:12.5px; line-height:1.6; white-space:pre-wrap; background:#FAF8F3; border:1px solid #eee; border-radius:5px; padding:10px 12px;}
   .pr-footer{margin-top:20px; text-align:center; font-size:10px; color:#999;}
   .loading-note{font-size:13px; color:var(--ink-soft); padding:20px;}
@@ -835,26 +835,47 @@ function prRenderItem(item){
   else if(item.correct !== undefined) markHtml = item.correct ? '<span class="pr-mark ok">✓</span>' : '<span class="pr-mark no">✕</span>';
   else if(item.score !== undefined && item.score !== null) markHtml = `<span class="pr-mark">${item.score} pt</span>`;
   else if(item.score === null) markHtml = '<span class="pr-mark">⏳</span>';
-  const label = item.question || item.field || '';
+  const label = item.question || ''; // jamais l'id technique du champ dans la version imprimée
   const given = item.given !== undefined ? item.given : item.answer;
   const expected = item.correct_answer ? ` <span style="color:#999;">(attendu : ${item.correct_answer})</span>` : '';
-  const note = (item.comment || item.explanation) ? `<span class="pr-comment">${item.comment || item.explanation}</span>` : '';
+  const rawComment = item.comment || item.explanation || item.feedback;
+  const note = rawComment ? `<span class="pr-comment">${prCleanComment(rawComment)}</span>` : '';
   const answerHtml = given !== undefined && given !== '' ? `<span class="pr-answer">${given}</span>` : '<span style="color:#999;">(vide)</span>';
   return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}${expected}</span></div>${note}</div>`;
 }
+
+function prLabelForKey(k){
+  const labels = {
+    section1_ai:'Partie 1', section2:'Partie 2', section3:'Partie 3', section4_ai:'Partie 4',
+    partie1_ai:'Partie 1', partie2_ai:'Partie 2', partie3:'Partie 3', partie4_ai:'Partie 4', partie5:'Partie 5',
+    partie1_items:'Partie 1', partie2_items:'Partie 2', partie2a_items:'Partie 2A', partie4_items:'Partie 4',
+    feedback_global:'Ton bilan', article:'Ton article'
+  };
+  return labels[k] || k;
+}
+// Nettoie les commentaires des mentions internes (correction manuelle, IA indisponible...) —
+// l'élève n'a pas besoin de savoir comment sa copie a été corrigée.
+function prCleanComment(text){
+  if(!text) return text;
+  return text
+    .replace(/^Corrigé manuellement\s*:?\s*/i, '')
+    .replace(/^Non corrigé \(IA indisponible\)\.?\s*/i, '')
+    .trim();
+}
+const PR_HIDDEN_KEYS = ['client_subtotal','ai_subtotal','ai_error','raw_fields','released_for_retry'];
 
 function prRenderDetail(detail){
   if(!detail) return '';
   if(Array.isArray(detail)){
     return `<div class="pr-section"><div class="pr-section-title">Réponses</div>${detail.map(prRenderItem).join('')}</div>`;
   }
-  const entries = Object.entries(detail).filter(([k,v]) => k !== 'released_for_retry' && v !== null && v !== undefined && v !== '');
+  const entries = Object.entries(detail).filter(([k,v]) => !PR_HIDDEN_KEYS.includes(k) && v !== null && v !== undefined && v !== '');
   const ordered = [
     ...REPORT_KEY_ORDER.map(k => entries.find(([key]) => key === k)).filter(Boolean),
     ...entries.filter(([key]) => !REPORT_KEY_ORDER.includes(key))
   ];
   return ordered.map(([key, val]) => {
-    const title = reportLabelForKey(key);
+    const title = prLabelForKey(key);
     if(Array.isArray(val)){
       return `<div class="pr-section"><div class="pr-section-title">${title}</div>${val.map(prRenderItem).join('')}</div>`;
     }
@@ -875,10 +896,10 @@ function buildPrintReport(a, detail){
   const isItemizedFreeText = detail && (detail.section1_ai || detail.section4_ai);
   const hasFeedbackInDetail = detail && detail.feedback_global;
   if(a.writing_text && !isItemizedFreeText){
-    body += `<div class="pr-section"><div class="pr-section-title">Réponse rédigée</div><div class="pr-text-block">${a.writing_text}</div></div>`;
+    body += `<div class="pr-section"><div class="pr-section-title">Ta copie</div><div class="pr-text-block">${a.writing_text}</div></div>`;
   }
   if(a.writing_correction && !hasFeedbackInDetail){
-    body += `<div class="pr-section"><div class="pr-section-title">Correction / retour</div><div class="pr-text-block">${a.writing_correction}</div></div>`;
+    body += `<div class="pr-section"><div class="pr-section-title">Ton bilan</div><div class="pr-text-block" style="color:#C2185B;">${prCleanComment(a.writing_correction)}</div></div>`;
   }
   if(!body){
     body = '<p style="color:#999; font-size:13px;">Aucun détail enregistré pour cette tentative.</p>';
