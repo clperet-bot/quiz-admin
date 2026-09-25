@@ -173,12 +173,13 @@
   @media print{
     body > *:not(#print-report-root){display:none !important;}
     #print-report-root{display:block !important;}
+    #print-report-root, #print-report-root *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
     @page{margin:14mm 16mm;}
   }
-  .pr-header{background:#4B2E83; color:#fff; padding:14px 18px; border-radius:6px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;}
+  .pr-header{background:#4B2E83; color:#fff; padding:14px 18px; border-radius:6px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
   .pr-header-name{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:19px;}
   .pr-header-meta{font-size:11.5px; opacity:0.85; margin-top:3px;}
-  .pr-score{background:rgba(255,255,255,0.22); font-weight:700; font-size:15px; padding:6px 14px; border-radius:20px;}
+  .pr-score{background:rgba(255,255,255,0.22); font-weight:700; font-size:15px; padding:6px 14px; border-radius:20px; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
   .pr-section{margin-bottom:16px; page-break-inside:avoid;}
   .pr-section-title{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:13px; color:#4B2E83; text-transform:uppercase; letter-spacing:0.04em; border-bottom:2px solid #E3DAF5; padding-bottom:4px; margin-bottom:8px;}
   .pr-item{padding:8px 0; border-bottom:1px solid #eee; font-size:12.5px; line-height:1.5;}
