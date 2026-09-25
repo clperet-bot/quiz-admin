@@ -740,7 +740,7 @@ function reportRenderItem(item){
   else if(item.correct !== undefined) mark = item.correct ? '✅' : '❌';
   else if(item.score !== undefined && item.score !== null) mark = `${item.score} pt`;
   else if(item.score === null) mark = '⏳';
-  const label = item.question || item.field || '';
+  const label = item.question || item.label || item.field || '';
   const given = item.given !== undefined ? item.given : item.answer;
   const expected = item.correct_answer ? ` <span class="report-expected">(attendu : ${item.correct_answer})</span>` : '';
   const note = (item.comment || item.explanation) ? `<span class="report-comment">${item.comment || item.explanation}</span>` : '';
@@ -850,13 +850,12 @@ function prRenderItem(item){
   else if(item.correct !== undefined) markHtml = item.correct ? '<span class="pr-mark ok">✓</span>' : '<span class="pr-mark no">✕</span>';
   else if(item.score !== undefined && item.score !== null) markHtml = `<span class="pr-mark">${item.score} pt</span>`;
   else if(item.score === null) markHtml = '<span class="pr-mark">⏳</span>';
-  const label = item.question || ''; // jamais l'id technique du champ dans la version imprimée
+  const label = item.question || item.label || ''; // jamais l'id technique du champ dans la version imprimée
   const given = item.given !== undefined ? item.given : item.answer;
-  const expected = item.correct_answer ? ` <span style="color:#999;">(attendu : ${item.correct_answer})</span>` : '';
   const rawComment = item.comment || item.explanation || item.feedback;
   const note = rawComment ? `<span class="pr-comment">${prCleanComment(rawComment)}</span>` : '';
   const answerHtml = given !== undefined && given !== '' ? `<span class="pr-answer">${given}</span>` : '<span style="color:#999;">(vide)</span>';
-  return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}${expected}</span></div>${note}</div>`;
+  return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}</span></div>${note}</div>`;
 }
 
 function prLabelForKey(k){

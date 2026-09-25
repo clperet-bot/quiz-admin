@@ -396,14 +396,14 @@ const SECTION2_ANSWERS = [
   { field:'s2-4', label:'Helmet', accepted:['ladder','ladders'] }
 ];
 const SECTION3_ANSWERS = [
-  { field:'s3-1', accepted:['ladder','ladders'] },
-  { field:'s3-2', accepted:['helmet','hard hat'] },
-  { field:'s3-3', accepted:['gloves','glove'] },
-  { field:'s3-4', accepted:['wet floor','wet ground'] },
-  { field:'s3-5', accepted:['electrical panel','electric panel','electrical board'] },
-  { field:'s3-6', accepted:['goggles','protective glasses','safety glasses'] },
-  { field:'s3-7', accepted:['safety boots','safety shoes','security boots'] },
-  { field:'s3-8', accepted:['cable','cables','wire','wires'] }
+  { field:'s3-1', label:'échelle', accepted:['ladder','ladders'] },
+  { field:'s3-2', label:'casque', accepted:['helmet','hard hat'] },
+  { field:'s3-3', label:'gants', accepted:['gloves','glove'] },
+  { field:'s3-4', label:'sol mouillé', accepted:['wet floor','wet ground'] },
+  { field:'s3-5', label:'panneau électrique', accepted:['electrical panel','electric panel','electrical board'] },
+  { field:'s3-6', label:'lunettes de protection', accepted:['goggles','protective glasses','safety glasses'] },
+  { field:'s3-7', label:'chaussures de sécurité', accepted:['safety boots','safety shoes','security boots'] },
+  { field:'s3-8', label:'câble', accepted:['cable','cables','wire','wires'] }
 ];
 
 function levenshtein(a, b){
@@ -451,6 +451,8 @@ function gradeExactSection(list, pointsPerItem){
 
 // ============ CORRECTION SECTIONS 1 & 4 (par IA, via edge function sécurisée) ============
 const GRADING_SYSTEM_PROMPT = `Tu es un professeur d'anglais qui corrige un contrôle de vocabulaire pour des élèves de seconde (niveau A2-B1) sur le thème de la sécurité en atelier ("Danger Zone"). Note deux parties de rédaction courte en anglais, avec indulgence sur les erreurs mineures de grammaire mais rigueur sur le sens (le danger doit être correctement identifié et nommé).
+
+RÈGLE ABSOLUE DE TON, à respecter dans TOUS les textes que tu écris (feedback_global ET chaque "comment") : tu t'adresses TOUJOURS directement et uniquement à l'élève en le/la tutoyant ("tu as...", "tu dois...", "pense à..."). N'utilise JAMAIS le prénom ou le nom de l'élève, JAMAIS la troisième personne ("l'élève a...", "il/elle doit..."), et JAMAIS le vouvoiement. Cette règle prime sur toute autre considération de style.
 
 CONTEXTE — la photo montrée aux élèves montre un atelier avec ces dangers visibles : un sol mouillé (panneau "CAUTION WET FLOOR"), des câbles/fils électriques au sol, deux échelles appuyées contre le mur, un tableau électrique ouvert en haut à gauche, des étincelles provenant d'une meuleuse utilisée par un ouvrier, une paire de gants posée/abandonnée au sol près du panneau de sol mouillé, aucun des deux ouvriers ne porte de casque. Cette liste n'est PAS exhaustive : accepte comme correcte toute autre observation raisonnable et plausible sur les dangers d'un atelier (par ex. objets au sol qui peuvent faire trébucher, absence de protection portée, désordre autour d'un poste de travail), même si elle n'est pas listée ci-dessus — ne pénalise jamais un élève simplement parce que son observation n'apparaît pas dans cette liste.
 
@@ -563,10 +565,10 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   const finalScore = aiResult ? Math.round((clientTotal + aiTotal)*2)/2 : null;
 
   const answersDetail = {
-    section1_ai: aiResult ? aiResult.section1_items.map((item, i) => ({ ...item, answer: s1[i] })) : s1.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
+    section1_ai: aiResult ? aiResult.section1_items.map((item, i) => ({ ...item, question: `Phrase ${i+1} — I can see [hazard] on/in the [place].`, answer: s1[i] })) : s1.map((a, i) => ({ question: `Phrase ${i+1} — I can see [hazard] on/in the [place].`, answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
     section2: aiResult ? aiResult.section2_items.map((item, i) => ({ score: item.score, comment: item.comment, field: grade2.detail[i].field, label: grade2.detail[i].label, answer: grade2.detail[i].answer, correct: Number(item.score) > 0 })) : grade2.detail,
     section3: grade3.detail,
-    section4_ai: aiResult ? aiResult.section4_items.map((item, i) => ({ ...item, answer: s4[i] })) : s4.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
+    section4_ai: aiResult ? aiResult.section4_items.map((item, i) => ({ ...item, question: `Ligne ${i+1} — The [hazard] is dangerous because [reason].`, answer: s4[i] })) : s4.map((a, i) => ({ question: `Ligne ${i+1} — The [hazard] is dangerous because [reason].`, answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
     feedback_global: aiResult ? aiResult.feedback_global : null,
     ai_error: aiError,
     client_subtotal: clientTotal,
