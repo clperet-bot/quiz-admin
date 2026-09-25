@@ -87,9 +87,9 @@ async function init(){
     return;
   }
 
-  const { data: quiz } = await supa.from('quizzes').select('*').eq('class_id', cls.id).eq('active', true).maybeSingle();
+  const { data: quizzes } = await supa.from('quizzes').select('*').eq('class_id', cls.id).eq('active', true);
 
-  if(!quiz){
+  if(!quizzes || quizzes.length === 0){
     card.innerHTML = `
       <img src="icon-192.png?v=2" alt="">
       <p class="class-name">${cls.name}</p>
@@ -99,11 +99,36 @@ async function init(){
     return;
   }
 
+  if(quizzes.length === 1){
+    renderStudentForm(cls, quizzes[0]);
+    return;
+  }
+
+  // Plusieurs quiz actifs en même temps pour cette classe (ex : français + anglais) —
+  // l'élève choisit d'abord lequel il/elle vient faire.
+  card.innerHTML = `
+    <img src="icon-192.png?v=2" alt="">
+    <p class="class-name">${cls.name}</p>
+    <p class="status">Plusieurs contrôles sont disponibles. Choisis celui que tu viens faire :</p>
+    <div id="quiz-choice-list" style="display:flex; flex-direction:column; gap:10px; margin-top:14px;"></div>
+  `;
+  const list = document.getElementById('quiz-choice-list');
+  quizzes.forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-primary';
+    btn.style.textAlign = 'left';
+    btn.innerHTML = `${q.title}${q.subject ? `<span style="display:block; font-weight:400; font-size:12px; opacity:0.85;">${q.subject}</span>` : ''}`;
+    btn.addEventListener('click', () => renderStudentForm(cls, q));
+    list.appendChild(btn);
+  });
+}
+
+function renderStudentForm(cls, quiz){
   card.innerHTML = `
     <img src="icon-192.png?v=2" alt="">
     <p class="class-name">${cls.name}</p>
     <p class="quiz-name">${quiz.title}</p>
-    <p class="quiz-meta">${quiz.total_questions} questions · évalué</p>
+    <p class="quiz-meta">${quiz.total_questions} questions · évalué${quiz.subject ? ' · ' + quiz.subject : ''}</p>
     <div class="field">
       <label>Prénom</label>
       <input type="text" id="firstname" autocomplete="off">

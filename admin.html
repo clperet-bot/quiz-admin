@@ -338,6 +338,7 @@
         </div>
         <div class="filter-row">
           <select id="filter-class"><option value="">Toutes les classes</option></select>
+          <select id="filter-subject"><option value="">Toutes les matières</option></select>
           <select id="filter-quiz"><option value="">Tous les quiz</option></select>
           <button id="print-quiz-corrections-btn" class="btn-print-corrections hidden">🖨️ Imprimer les corrections</button>
           <button id="reset-results-btn" class="btn-danger-outline">Réinitialiser tous les résultats</button>
@@ -624,28 +625,44 @@ document.getElementById('qr-close-btn').addEventListener('click', () => {
 async function loadResults(){
   const filterClass = document.getElementById('filter-class').value;
   const filterQuiz = document.getElementById('filter-quiz').value;
+  const filterSubject = document.getElementById('filter-subject').value;
 
   // Le bouton d'impression groupée n'a de sens que sur un quiz précis, pas sur "Tous les quiz".
   document.getElementById('print-quiz-corrections-btn').classList.toggle('hidden', !filterQuiz);
 
+  const classByIdEarly = Object.fromEntries(CLASSES.map(c => [c.id, c.name]));
+
   if(document.getElementById('filter-class').options.length <= 1){
     document.getElementById('filter-class').innerHTML += CLASSES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    document.getElementById('filter-quiz').innerHTML += QUIZZES.map(q => `<option value="${q.id}">${q.title}</option>`).join('');
+    // Le titre seul ne suffit pas à distinguer un même quiz activé pour plusieurs classes —
+    // on ajoute la classe (et la matière si connue) entre parenthèses.
+    document.getElementById('filter-quiz').innerHTML += QUIZZES.map(q =>
+      `<option value="${q.id}">${q.title} (${classByIdEarly[q.class_id] || '?'}${q.subject ? ' · ' + q.subject : ''})</option>`
+    ).join('');
+    const subjects = [...new Set(QUIZZES.map(q => q.subject).filter(Boolean))].sort();
+    document.getElementById('filter-subject').innerHTML += subjects.map(s => `<option value="${s}">${s}</option>`).join('');
     document.getElementById('filter-class').addEventListener('change', loadResults);
     document.getElementById('filter-quiz').addEventListener('change', loadResults);
+    document.getElementById('filter-subject').addEventListener('change', loadResults);
   }
 
   let query = supa.from('attempts').select('*').order('created_at', { ascending: false }).limit(200);
   if(filterClass) query = query.eq('class_id', filterClass);
   if(filterQuiz) query = query.eq('quiz_id', filterQuiz);
 
-  const { data: attempts, error } = await query;
+  const { data: rawAttempts, error } = await query;
   const wrap = document.getElementById('results-table-wrap');
 
   if(error){
     wrap.innerHTML = '<p class="empty-note">Erreur de chargement.</p>';
     return;
   }
+
+  const quizByIdEarly = Object.fromEntries(QUIZZES.map(q => [q.id, q]));
+  const attempts = filterSubject
+    ? (rawAttempts || []).filter(a => (quizByIdEarly[a.quiz_id] || {}).subject === filterSubject)
+    : (rawAttempts || []);
+
   if(!attempts || attempts.length === 0){
     wrap.innerHTML = '<p class="empty-note">Aucune tentative enregistrée pour le moment.</p>';
     return;
