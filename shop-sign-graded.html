@@ -803,10 +803,10 @@ Note le texte sur 10 points, répartis ainsi :
 - 5 pts : grammaire, vocabulaire, orthographe — distingue les fautes de frappe/orthographe isolées qui ne gênent pas la compréhension (TOLÉRÉES, 0 point perdu) des erreurs de grammaire qui rendent la phrase confuse ou en changent le sens (celles-ci coûtent des points). Ne pénalise une erreur que si elle gêne réellement la compréhension — sois généreux.e, en cas d'hésitation choisis toujours le palier le plus favorable à l'élève.
 Un texte vide obtient 0.
 ${studentHasAccommodation ? `
-ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Donne-lui automatiquement les 5 points de grammaire/orthographe, quelle que soit la qualité orthographique réelle (sauf si le vocabulaire employé est réellement incorrect/hors-sujet), et n'évoque pas l'orthographe dans le feedback. Note normalement la longueur/organisation sur les 5 autres points ; le total reste sur 10.` : ''}
+ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Donne-lui automatiquement les 5 points de grammaire/orthographe, quelle que soit la qualité orthographique réelle (sauf si le vocabulaire employé est réellement incorrect/hors-sujet), et n'évoque pas l'orthographe dans le feedback. Note normalement la longueur/organisation sur les 5 autres points ; le total reste sur 10. Avant de juger un mot incorrect/hors-sujet, vérifie qu'il ne s'agit pas simplement d'une déformation orthographique d'un mot anglais attendu.` : ''}
 
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
-{"score":0,"feedback":"Retour concis en français (150 mots max, corrige les erreurs en citant les mots anglais concernés), termine par une phrase d'encouragement."}
+{"score":0,"feedback":"Retour concis en français (150 mots max, adressé directement à l'élève en le/la tutoyant, corrige les erreurs en citant les mots anglais concernés), termine par une phrase d'encouragement."}
 Le score peut être un nombre entier ou avec un seul chiffre après la virgule (ex: 7.5).`;
 
   try {

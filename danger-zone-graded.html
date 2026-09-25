@@ -263,14 +263,11 @@ let studentHasAccommodation = false;
 async function checkAccommodation(){
   if(!studentName) return;
   try{
-    const { data } = await supa.from('accommodations').select('student_name_normalized');
-    const norm = normalizeName(studentName);
-    // Correspondance tolérante aux petites fautes de frappe/orthographe dans le nom saisi par l'élève
-    // (sinon un simple espace ou une lettre différente désactive l'accommodement sans que personne ne le voie).
-    studentHasAccommodation = (data || []).some(a => {
-      const accNorm = a.student_name_normalized || '';
-      return accNorm === norm || levenshtein(norm, accNorm) <= 2;
-    });
+    const { data } = await supa.from('accommodations')
+      .select('id')
+      .eq('student_name_normalized', normalizeName(studentName))
+      .maybeSingle();
+    studentHasAccommodation = !!data;
   } catch(e){}
 }
 
@@ -455,8 +452,6 @@ function gradeExactSection(list, pointsPerItem){
 // ============ CORRECTION SECTIONS 1 & 4 (par IA, via edge function sécurisée) ============
 const GRADING_SYSTEM_PROMPT = `Tu es un professeur d'anglais qui corrige un contrôle de vocabulaire pour des élèves de seconde (niveau A2-B1) sur le thème de la sécurité en atelier ("Danger Zone"). Note deux parties de rédaction courte en anglais, avec indulgence sur les erreurs mineures de grammaire mais rigueur sur le sens (le danger doit être correctement identifié et nommé).
 
-RÈGLE ABSOLUE DE TON, à respecter dans TOUS les textes que tu écris (feedback_global ET chaque "comment") : tu t'adresses TOUJOURS directement et uniquement à l'élève en le/la tutoyant ("tu as...", "tu dois...", "pense à..."). N'utilise JAMAIS le prénom ou le nom de l'élève, JAMAIS la troisième personne ("l'élève a...", "il/elle doit..."), et JAMAIS le vouvoiement. Cette règle prime sur toute autre considération de style.
-
 CONTEXTE — la photo montrée aux élèves montre un atelier avec ces dangers visibles : un sol mouillé (panneau "CAUTION WET FLOOR"), des câbles/fils électriques au sol, deux échelles appuyées contre le mur, un tableau électrique ouvert en haut à gauche, des étincelles provenant d'une meuleuse utilisée par un ouvrier, une paire de gants posée/abandonnée au sol près du panneau de sol mouillé, aucun des deux ouvriers ne porte de casque. Cette liste n'est PAS exhaustive : accepte comme correcte toute autre observation raisonnable et plausible sur les dangers d'un atelier (par ex. objets au sol qui peuvent faire trébucher, absence de protection portée, désordre autour d'un poste de travail), même si elle n'est pas listée ci-dessus — ne pénalise jamais un élève simplement parce que son observation n'apparaît pas dans cette liste.
 
 Pour CHAQUE phrase, évalue systématiquement DEUX axes séparés puis combine-les selon le barème de la section :
@@ -515,7 +510,8 @@ function buildUserContent(s1, s4, section2Detail){
 
 const ACCOMMODATION_CLAUSE = `
 
-ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Pour cette copie, IGNORE TOTALEMENT l'AXE 2 (forme/orthographe/grammaire), quelle que soit la gravité des fautes — ne fais JAMAIS perdre de point pour la forme, même une erreur normalement "grave". Note UNIQUEMENT sur l'AXE 1 (le sens) : si le sens est compréhensible et correct, donne le score maximum de l'item, même si la phrase est très mal orthographiée ou mal construite. Adapte tes commentaires en conséquence (ne mentionne jamais l'orthographe/la grammaire comme motif de perte de points).`;
+ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Pour cette copie, IGNORE TOTALEMENT l'AXE 2 (forme/orthographe/grammaire), quelle que soit la gravité des fautes — ne fais JAMAIS perdre de point pour la forme, même une erreur normalement "grave". Note UNIQUEMENT sur l'AXE 1 (le sens) : si le sens est compréhensible et correct, donne le score maximum de l'item, même si la phrase est très mal orthographiée ou mal construite.
+ATTENTION, piège fréquent à éviter : avant de conclure qu'un élément grammatical est absent (verbe, mot-clé, etc.), vérifie TOUJOURS si ce qui est écrit n'est pas simplement une déformation orthographique/phonétique d'un mot attendu — par exemple "dont ave" pour "doesn't have", "ave"/"av" pour "have", "leader" pour "ladder", une lettre manquante, inversée ou remplacée par une autre qui se prononce pareil. Si c'est le cas, considère cet élément comme PRÉSENT et correct, ne le compte JAMAIS comme une erreur de sens ou une absence de verbe/structure. Ne déclare "pas de verbe" ou "structure incomplète" que si aucune déformation plausible d'un mot attendu n'explique ce qui est écrit. Adapte tes commentaires en conséquence (ne mentionne jamais l'orthographe/la grammaire comme motif de perte de points).`;
 
 async function gradeWithAI(s1, s4, section2Detail){
   const systemPrompt = GRADING_SYSTEM_PROMPT + (studentHasAccommodation ? ACCOMMODATION_CLAUSE : '');
@@ -567,11 +563,14 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   const aiTotal = aiResult ? (score1 + score4) : null;
   const finalScore = aiResult ? Math.round((clientTotal + aiTotal)*2)/2 : null;
 
+  const SECTION1_QUESTION = 'Écris une phrase sur un danger visible sur la photo.';
+  const SECTION4_QUESTION = 'Complète : The ___ is dangerous because ___';
+
   const answersDetail = {
-    section1_ai: aiResult ? aiResult.section1_items.map((item, i) => ({ ...item, question: `Phrase ${i+1} — I can see [hazard] on/in the [place].`, answer: s1[i] })) : s1.map((a, i) => ({ question: `Phrase ${i+1} — I can see [hazard] on/in the [place].`, answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
+    section1_ai: aiResult ? aiResult.section1_items.map((item, i) => ({ ...item, answer: s1[i], question: SECTION1_QUESTION })) : s1.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)', question: SECTION1_QUESTION })),
     section2: aiResult ? aiResult.section2_items.map((item, i) => ({ score: item.score, comment: item.comment, field: grade2.detail[i].field, label: grade2.detail[i].label, answer: grade2.detail[i].answer, correct: Number(item.score) > 0 })) : grade2.detail,
     section3: grade3.detail,
-    section4_ai: aiResult ? aiResult.section4_items.map((item, i) => ({ ...item, question: `Ligne ${i+1} — The [hazard] is dangerous because [reason].`, answer: s4[i] })) : s4.map((a, i) => ({ question: `Ligne ${i+1} — The [hazard] is dangerous because [reason].`, answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
+    section4_ai: aiResult ? aiResult.section4_items.map((item, i) => ({ ...item, answer: s4[i], question: SECTION4_QUESTION })) : s4.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)', question: SECTION4_QUESTION })),
     feedback_global: aiResult ? aiResult.feedback_global : null,
     ai_error: aiError,
     client_subtotal: clientTotal,

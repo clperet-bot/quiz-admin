@@ -396,20 +396,20 @@ function isCloseEnough(norm, accepted){
 }
 
 const PARTIE1_ANSWERS = [
-  { field:'p1-1', accepted:['a clue','clue'] },
-  { field:'p1-2', accepted:['the culprit','culprit','the guilty person'] },
-  { field:'p1-3', accepted:['the motive','motive'] },
-  { field:'p1-4', accepted:['a red herring','red herring'] },
-  { field:'p1-5', accepted:['a locker','locker'] },
-  { field:'p1-6', accepted:['early afternoon','the early afternoon','start of the afternoon'] }
+  { field:'p1-1', label:'Un indice', accepted:['a clue','clue'] },
+  { field:'p1-2', label:'Le/la coupable', accepted:['the culprit','culprit','the guilty person'] },
+  { field:'p1-3', label:'Le mobile (du crime)', accepted:['the motive','motive'] },
+  { field:'p1-4', label:'Une fausse piste', accepted:['a red herring','red herring'] },
+  { field:'p1-5', label:'Un casier', accepted:['a locker','locker'] },
+  { field:'p1-6', label:"Le début d'après-midi", accepted:['early afternoon','the early afternoon','start of the afternoon'] }
 ];
 const PARTIE2B_ANSWERS = [
-  { field:'p2b-1', accepted:['disappeared'] },
-  { field:'p2b-2', accepted:['wrote'] },
-  { field:'p2b-3', accepted:['was'] },
-  { field:'p2b-4', accepted:['saw'] },
-  { field:'p2b-5', accepted:['found'] },
-  { field:'p2b-6', accepted:['showed'] }
+  { field:'p2b-1', label:'Jason ___ (disappear) on Friday.', accepted:['disappeared'] },
+  { field:'p2b-2', label:'Sophia ___ (write) a note to Jason.', accepted:['wrote'] },
+  { field:'p2b-3', label:'Daniel ___ (be) at music rehearsal.', accepted:['was'] },
+  { field:'p2b-4', label:'Michael ___ (see) someone near the lockers.', accepted:['saw'] },
+  { field:'p2b-5', label:'We ___ (find) a guitar pick.', accepted:['found'] },
+  { field:'p2b-6', label:'The camera ___ (show) Sophia in the hallway.', accepted:['showed'] }
 ];
 
 function gradeExactSection(list, pointsPerItem){
@@ -420,7 +420,7 @@ function gradeExactSection(list, pointsPerItem){
     const norm = normalizeAnswer(raw);
     const ok = item.accepted.some(a => isCloseEnough(norm, a));
     total += ok ? pointsPerItem : 0;
-    detail.push({ field:item.field, answer: raw, correct: ok });
+    detail.push({ field:item.field, label:item.label, answer: raw, correct: ok });
   });
   return { total: Math.round(total*2)/2, detail };
 }
@@ -455,7 +455,8 @@ Les commentaires doivent être courts (moins de 20 mots), en français, adressé
 
 const ACCOMMODATION_CLAUSE = `
 
-ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Pour cette copie, IGNORE TOTALEMENT l'AXE 2 (forme/orthographe/grammaire) et le champ "forme_penalite" (laisse-le à 0), quelle que soit la gravité des fautes. Note UNIQUEMENT sur le sens/le contenu : si le sens est compréhensible et correct, donne le score maximum de l'item, même si la phrase est très mal orthographiée ou mal construite. N'évoque jamais l'orthographe/la grammaire comme motif de perte de points.`;
+ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Pour cette copie, IGNORE TOTALEMENT l'AXE 2 (forme/orthographe/grammaire) et le champ "forme_penalite" (laisse-le à 0), quelle que soit la gravité des fautes. Note UNIQUEMENT sur le sens/le contenu : si le sens est compréhensible et correct, donne le score maximum de l'item, même si la phrase est très mal orthographiée ou mal construite.
+ATTENTION, piège fréquent à éviter : avant de conclure qu'un élément est absent ou incohérent (verbe, mot-clé, etc.), vérifie TOUJOURS si ce qui est écrit n'est pas simplement une déformation orthographique/phonétique d'un mot attendu (lettre manquante, inversée ou remplacée par une autre qui se prononce pareil). Si c'est le cas, considère cet élément comme PRÉSENT et correct. N'évoque jamais l'orthographe/la grammaire comme motif de perte de points.`;
 
 function buildUserContent(p2a, p3text){
   return `PARTIE 2A — Phrases de l'élève :\n${p2a.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nPARTIE 3 — Texte de l'élève :\n${p3text || '(vide)'}`;
@@ -508,11 +509,18 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   const aiTotal = aiResult ? (score2a + score3) : null;
   const finalScore = aiResult ? Math.round((clientTotal + aiTotal)*2)/2 : null;
 
+  const PARTIE2A_QUESTIONS = [
+    "Le casier de Jason est bleu. (traduire avec 's)",
+    "Le vernis à ongles de Sophia est rouge. (traduire avec 's)",
+    "Le message de Sophia est anonyme. (traduire avec 's)"
+  ];
+  const PARTIE3_QUESTION = 'Qui est le/la coupable ? Comment le sais-tu (indices) ? Pourquoi (mobile) ?';
+
   const answersDetail = {
     partie1: grade1.detail,
-    partie2a_ai: aiResult ? aiResult.partie2a_items.map((item, i) => ({ ...item, answer: p2a[i] })) : p2a.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
+    partie2a_ai: aiResult ? aiResult.partie2a_items.map((item, i) => ({ ...item, answer: p2a[i], question: PARTIE2A_QUESTIONS[i] })) : p2a.map((a, i) => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)', question: PARTIE2A_QUESTIONS[i] })),
     partie2b: grade2b.detail,
-    partie3_ai: aiResult ? { ...aiResult.partie3, answer: p3text, total: score3 } : { answer: p3text, score: null, comment: 'Non corrigé (IA indisponible)' },
+    partie3_ai: aiResult ? { ...aiResult.partie3, answer: p3text, total: score3, question: PARTIE3_QUESTION } : { answer: p3text, score: null, comment: 'Non corrigé (IA indisponible)', question: PARTIE3_QUESTION },
     feedback_global: aiResult ? aiResult.feedback_global : null,
     ai_error: aiError,
     client_subtotal: clientTotal,

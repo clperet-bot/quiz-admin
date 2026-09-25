@@ -313,10 +313,10 @@ function isCloseEnough(norm, accepted){
   return levenshtein(norm, accepted) <= fuzzyTolerance(accepted.length);
 }
 const PARTIE3_ANSWERS = [
-  { field:'p3-1', accepted:['interview'] },
-  { field:'p3-2', accepted:['article d information','article d info','information'] },
-  { field:'p3-3', accepted:['breve','annonce'] },
-  { field:'p3-4', accepted:['editorial','tribune'] }
+  { field:'p3-1', label:'Texte A', accepted:['interview'] },
+  { field:'p3-2', label:'Texte B', accepted:['article d information','article d info','information'] },
+  { field:'p3-3', label:'Texte C', accepted:['breve','annonce'] },
+  { field:'p3-4', label:'Texte D', accepted:['editorial','tribune'] }
 ];
 function gradeExactSection(list, pointsPerItem){
   let total = 0;
@@ -326,7 +326,7 @@ function gradeExactSection(list, pointsPerItem){
     const norm = normalizeAnswer(raw);
     const ok = item.accepted.some(a => isCloseEnough(norm, a));
     total += ok ? pointsPerItem : 0;
-    detail.push({ field:item.field, answer: raw, correct: ok });
+    detail.push({ field:item.field, label:item.label, answer: raw, correct: ok });
   });
   return { total: Math.round(total*2)/2, detail };
 }
@@ -367,7 +367,8 @@ Ce sont des élèves débutants en journalisme : sois généreux.e sur la sophis
 Note sur 5 points : 2 pts si les 5W sont présents et correctement repris ; 1,5 pt pour la structure (un titre, une accroche même simple, un développement compréhensible, une conclusion — n'exige pas de sophistication) ; 1,5 pt pour le style et la forme (AXE 2 ci-dessus). Un article vide ou hors sujet obtient 0.
 ${studentHasAccommodation ? `
 
-ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Pour TOUTES les parties ci-dessus, ignore totalement l'AXE 2 (forme/orthographe/grammaire), quelle que soit la gravité des fautes — ne fais jamais perdre de point pour la forme, y compris le 1,5 pt de forme en partie 5 (donne-le automatiquement). Note uniquement sur le sens/le contenu.` : ''}
+ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Pour TOUTES les parties ci-dessus, ignore totalement l'AXE 2 (forme/orthographe/grammaire), quelle que soit la gravité des fautes — ne fais jamais perdre de point pour la forme, y compris le 1,5 pt de forme en partie 5 (donne-le automatiquement). Note uniquement sur le sens/le contenu.
+ATTENTION, piège fréquent à éviter : avant de conclure qu'un élément est absent ou incohérent (verbe, mot-clé, etc.), vérifie TOUJOURS si ce qui est écrit n'est pas simplement une déformation orthographique/phonétique d'un mot attendu (lettre manquante, inversée ou remplacée par une autre qui se prononce pareil). Si c'est le cas, considère cet élément comme PRÉSENT et correct.` : ''}
 
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
 {"partie1_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie2_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie4_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie5":{"score":0,"feedback":"Retour concis en français (150 mots max), adressé directement à l'élève en le/la tutoyant, termine par un encouragement."},"feedback_global":"Une ou deux phrases en français, adressées directement à l'élève en le/la tutoyant, qui résument ce qui est réussi et ce qu'il faut retenir."}
@@ -416,12 +417,17 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   const aiTotal = aiResult ? (p1Total + p2Total + p4Total + p5Score) : null;
   const finalScore = aiResult ? Math.round((clientTotal + aiTotal) * 2) / 2 : null;
 
+  const PARTIE1_QUESTIONS = ["Un exemple d'information", 'Un exemple de rumeur', "Un exemple d'opinion", "Un exemple d'anecdote"];
+  const PARTIE2_QUESTIONS = ['Who ?', 'What ?', 'Where ?', 'When ?', 'Why ?'];
+  const PARTIE4_QUESTION = 'Corrige une des 2 erreurs de rédaction de l\'article.';
+  const PARTIE5_QUESTION = 'Rédige un article de presse complet à partir des informations données.';
+
   const answersDetail = {
-    partie1_ai: aiResult ? aiResult.partie1_items.map((item, i) => ({ ...item, answer: p1[i] })) : p1.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
-    partie2_ai: aiResult ? aiResult.partie2_items.map((item, i) => ({ ...item, answer: p2[i] })) : p2.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
+    partie1_ai: aiResult ? aiResult.partie1_items.map((item, i) => ({ ...item, answer: p1[i], question: PARTIE1_QUESTIONS[i] })) : p1.map((a, i) => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)', question: PARTIE1_QUESTIONS[i] })),
+    partie2_ai: aiResult ? aiResult.partie2_items.map((item, i) => ({ ...item, answer: p2[i], question: PARTIE2_QUESTIONS[i] })) : p2.map((a, i) => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)', question: PARTIE2_QUESTIONS[i] })),
     partie3: grade3.detail,
-    partie4_ai: aiResult ? aiResult.partie4_items.map((item, i) => ({ ...item, answer: p4[i] })) : p4.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)' })),
-    partie5: aiResult ? { score: p5Score, feedback: aiResult.partie5.feedback, answer: p5text } : { answer: p5text, score: null, comment: 'Non corrigé (IA indisponible)' },
+    partie4_ai: aiResult ? aiResult.partie4_items.map((item, i) => ({ ...item, answer: p4[i], question: PARTIE4_QUESTION })) : p4.map(a => ({ answer: a, score: null, comment: 'Non corrigé (IA indisponible)', question: PARTIE4_QUESTION })),
+    partie5: aiResult ? { score: p5Score, feedback: aiResult.partie5.feedback, answer: p5text, question: PARTIE5_QUESTION } : { answer: p5text, score: null, comment: 'Non corrigé (IA indisponible)', question: PARTIE5_QUESTION },
     feedback_global: aiResult ? aiResult.feedback_global : null,
     ai_error: aiError,
     client_subtotal: clientTotal,
