@@ -169,14 +169,28 @@
   .accom-add-row input{flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:13.5px;}
   .accom-add-row button{background:var(--purple); color:#fff; border:none; border-radius:6px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer;}
 
+  #print-report-root{display:none;}
   @media print{
-    body *{visibility:hidden;}
-    #report-modal, #report-modal *{visibility:visible;}
-    #report-modal{position:absolute; inset:0; background:#fff; padding:0;}
-    .report-panel{max-width:100%; max-height:none; border-radius:0; box-shadow:none;}
-    .report-body{overflow:visible;}
-    #report-print-btn, #report-close-btn{display:none;}
+    body > *:not(#print-report-root){display:none !important;}
+    #print-report-root{display:block !important;}
+    @page{margin:14mm 16mm;}
   }
+  .pr-header{background:#4B2E83; color:#fff; padding:14px 18px; border-radius:6px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;}
+  .pr-header-name{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:19px;}
+  .pr-header-meta{font-size:11.5px; opacity:0.85; margin-top:3px;}
+  .pr-score{background:rgba(255,255,255,0.22); font-weight:700; font-size:15px; padding:6px 14px; border-radius:20px;}
+  .pr-section{margin-bottom:16px; page-break-inside:avoid;}
+  .pr-section-title{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:13px; color:#4B2E83; text-transform:uppercase; letter-spacing:0.04em; border-bottom:2px solid #E3DAF5; padding-bottom:4px; margin-bottom:8px;}
+  .pr-item{padding:8px 0; border-bottom:1px solid #eee; font-size:12.5px; line-height:1.5;}
+  .pr-item:last-child{border-bottom:none;}
+  .pr-item-top{display:flex; align-items:baseline; gap:8px;}
+  .pr-mark{font-weight:700; flex-shrink:0; margin-right:8px;}
+  .pr-mark.ok{color:#2E8B47;}
+  .pr-mark.no{color:#C0392B;}
+  .pr-answer{font-weight:500; color:#181614;}
+  .pr-comment{display:block; margin-top:2px; color:#6b5f99; font-style:italic; font-size:11.5px;}
+  .pr-text-block{font-size:12.5px; line-height:1.6; white-space:pre-wrap; background:#FAF8F3; border:1px solid #eee; border-radius:5px; padding:10px 12px;}
+  .pr-footer{margin-top:20px; text-align:center; font-size:10px; color:#999;}
   .loading-note{font-size:13px; color:var(--ink-soft); padding:20px;}
 
   /* ---- Mobile ---- */
@@ -351,6 +365,8 @@
     </div>
   </div>
 </div>
+
+<div id="print-report-root"></div>
 
 <script>
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -758,6 +774,9 @@ function parseFreeTextFallback(writingText){
   };
 }
 
+let currentReportAttempt = null;
+let currentReportDetail = null;
+
 function openReport(a){
   if(!a) return;
   document.getElementById('report-student').textContent = a.student_name_raw;
@@ -778,6 +797,9 @@ function openReport(a){
       if(Array.isArray(detail.section4_ai)) detail.section4_ai.forEach((it, i) => { if(it && !it.answer) it.answer = s4[i] || ''; });
     }
   }
+
+  currentReportAttempt = a;
+  currentReportDetail = detail;
 
   let html = '';
   html += reportRenderDetail(detail);
@@ -802,7 +824,82 @@ function openReport(a){
 document.getElementById('report-close-btn').addEventListener('click', () => {
   document.getElementById('report-modal').classList.add('hidden');
 });
+
+function prRenderItem(item){
+  if(item === null || item === undefined) return '';
+  if(typeof item !== 'object'){
+    return `<div class="pr-item">${item}</div>`;
+  }
+  let markHtml = '';
+  if(item.is_correct !== undefined) markHtml = item.is_correct ? '<span class="pr-mark ok">✓</span>' : '<span class="pr-mark no">✕</span>';
+  else if(item.correct !== undefined) markHtml = item.correct ? '<span class="pr-mark ok">✓</span>' : '<span class="pr-mark no">✕</span>';
+  else if(item.score !== undefined && item.score !== null) markHtml = `<span class="pr-mark">${item.score} pt</span>`;
+  else if(item.score === null) markHtml = '<span class="pr-mark">⏳</span>';
+  const label = item.question || item.field || '';
+  const given = item.given !== undefined ? item.given : item.answer;
+  const expected = item.correct_answer ? ` <span style="color:#999;">(attendu : ${item.correct_answer})</span>` : '';
+  const note = (item.comment || item.explanation) ? `<span class="pr-comment">${item.comment || item.explanation}</span>` : '';
+  const answerHtml = given !== undefined && given !== '' ? `<span class="pr-answer">${given}</span>` : '<span style="color:#999;">(vide)</span>';
+  return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}${expected}</span></div>${note}</div>`;
+}
+
+function prRenderDetail(detail){
+  if(!detail) return '';
+  if(Array.isArray(detail)){
+    return `<div class="pr-section"><div class="pr-section-title">Réponses</div>${detail.map(prRenderItem).join('')}</div>`;
+  }
+  const entries = Object.entries(detail).filter(([k,v]) => k !== 'released_for_retry' && v !== null && v !== undefined && v !== '');
+  const ordered = [
+    ...REPORT_KEY_ORDER.map(k => entries.find(([key]) => key === k)).filter(Boolean),
+    ...entries.filter(([key]) => !REPORT_KEY_ORDER.includes(key))
+  ];
+  return ordered.map(([key, val]) => {
+    const title = reportLabelForKey(key);
+    if(Array.isArray(val)){
+      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${val.map(prRenderItem).join('')}</div>`;
+    }
+    if(typeof val === 'object'){
+      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${prRenderItem(val)}</div>`;
+    }
+    return `<div class="pr-section"><div class="pr-section-title">${title}</div><div class="pr-text-block">${val}</div></div>`;
+  }).join('');
+}
+
+function buildPrintReport(a, detail){
+  const classe = CLASSES.find(c => c.id === a.class_id);
+  const quiz = QUIZZES.find(q => q.id === a.quiz_id);
+  const scoreLabel = a.cancelled ? 'Annulée' : `${a.score} / ${a.total}`;
+
+  let body = prRenderDetail(detail);
+
+  const isItemizedFreeText = detail && (detail.section1_ai || detail.section4_ai);
+  const hasFeedbackInDetail = detail && detail.feedback_global;
+  if(a.writing_text && !isItemizedFreeText){
+    body += `<div class="pr-section"><div class="pr-section-title">Réponse rédigée</div><div class="pr-text-block">${a.writing_text}</div></div>`;
+  }
+  if(a.writing_correction && !hasFeedbackInDetail){
+    body += `<div class="pr-section"><div class="pr-section-title">Correction / retour</div><div class="pr-text-block">${a.writing_correction}</div></div>`;
+  }
+  if(!body){
+    body = '<p style="color:#999; font-size:13px;">Aucun détail enregistré pour cette tentative.</p>';
+  }
+
+  return `
+    <div class="pr-header">
+      <div>
+        <div class="pr-header-name">${a.student_name_raw}</div>
+        <div class="pr-header-meta">${quiz ? quiz.title : ''} · ${classe ? classe.name : ''} · ${fmtDate(a.created_at)}</div>
+      </div>
+      <div class="pr-score">${scoreLabel}</div>
+    </div>
+    ${body}
+    <div class="pr-footer">Lycée Godefroy de Bouillon</div>
+  `;
+}
+
 document.getElementById('report-print-btn').addEventListener('click', () => {
+  if(!currentReportAttempt) return;
+  document.getElementById('print-report-root').innerHTML = buildPrintReport(currentReportAttempt, currentReportDetail);
   window.print();
 });
 document.getElementById('report-modal').addEventListener('click', (e) => {
