@@ -86,6 +86,9 @@
   .class-name{font-size:14.5px; font-weight:700; color:var(--purple-deep);}
   .badge-live{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; background:var(--green-light); color:var(--green); padding:3px 9px; border-radius:20px; white-space:nowrap;}
   .badge-off{font-size:11px; font-weight:600; background:var(--paper); color:var(--ink-soft); padding:3px 9px; border-radius:20px; white-space:nowrap;}
+  .badge-matiere{font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px; white-space:nowrap; vertical-align:middle; margin-left:6px;}
+  .badge-matiere-en{background:var(--blue-light); color:var(--purple-dark);}
+  .badge-matiere-fr{background:var(--pink-light); color:#B8305A;}
   .class-meta{font-size:12.5px; color:var(--ink-soft); min-height:18px;}
   .class-qr-btn{margin-top:12px; width:100%; background:var(--purple-light); border:none; border-radius:8px; padding:9px; font-size:12.5px; font-weight:700; color:var(--purple-dark); cursor:pointer;}
   .class-qr-btn:hover{background:var(--purple); color:#fff;}
@@ -131,7 +134,7 @@
   .report-answer{color:var(--ink); font-weight:500;}
   .report-comment{display:block; margin-top:3px; color:var(--purple-dark); font-style:italic; font-size:12.5px;}
   .report-text{font-size:13.5px; line-height:1.55; background:var(--paper); border-radius:7px; padding:10px 12px; white-space:pre-wrap;}
-  .report-close{position:sticky; bottom:0; flex:1; background:var(--white); border-top:1px solid var(--line); padding:12px; font-weight:600; font-size:14px; color:var(--purple); border:none; cursor:pointer;}
+  .report-close{position:sticky; bottom:0; width:100%; background:var(--white); border-top:1px solid var(--line); padding:12px; font-weight:600; font-size:14px; color:var(--purple); border:none; cursor:pointer;}
   .result-table tr[data-report]{cursor:pointer;}
   .result-table tr[data-report]:hover{background:var(--purple-light);}
   .qr-class-name{font-family:'Baloo 2',sans-serif; font-size:clamp(24px,5vw,34px); font-weight:700; color:#fff; margin-bottom:4px;}
@@ -156,48 +159,6 @@
   .btn-release:hover{background:var(--purple-light);}
   .btn-delete-row{background:none; border:none; color:var(--ink-soft); font-size:16px; cursor:pointer; line-height:1; padding:4px 6px; border-radius:5px;}
   .btn-delete-row:hover{color:var(--red); background:#FDE2E2;}
-
-  /* ---- Accommodements ---- */
-  .accom-panel{border:1px solid var(--line); border-radius:8px; margin-bottom:16px; overflow:hidden;}
-  .accom-toggle-btn{width:100%; text-align:left; background:var(--purple-light); border:none; padding:12px 16px; font-size:13.5px; font-weight:600; color:var(--purple-deep); cursor:pointer;}
-  .accom-body{padding:14px 16px; background:var(--white);}
-  .accom-note{font-size:12.5px; color:var(--ink-soft); margin:0 0 10px;}
-  .accom-item{display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line); font-size:13.5px;}
-  .accom-item:last-child{border-bottom:none;}
-  .accom-item button{background:none; border:none; color:var(--red); cursor:pointer; font-size:12px;}
-  .accom-add-row{display:flex; gap:8px; margin-top:10px;}
-  .accom-add-row input{flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:13.5px;}
-  .accom-add-row button{background:var(--purple); color:#fff; border:none; border-radius:6px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer;}
-
-  #print-report-root{display:none;}
-  @media print{
-    body > *:not(#print-report-root){display:none !important;}
-    #print-report-root{display:block !important;}
-    #print-report-root, #print-report-root *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
-    @page{margin:0;}
-  }
-  .btn-print-corrections{background:var(--purple); color:#fff; border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer;}
-  .btn-print-corrections.hidden{display:none;}
-  /* Un compte rendu = une "page" imprimée ; celle du prénom suivant commence toujours sur une feuille neuve,
-     même si le compte rendu précédent a débordé sur plusieurs pages. */
-  .pr-page + .pr-page{break-before:page; page-break-before:always;}
-  .pr-header{background:linear-gradient(135deg,#4B2E83,#6B4FA8); color:#fff; padding:16px 20px 14px; margin:0; break-after:avoid-page; page-break-after:avoid;}
-  .pr-header-inner{display:flex; justify-content:space-between; align-items:flex-start;}
-  .pr-header-name{font-family:Georgia,'Baloo 2',sans-serif; font-weight:700; font-size:20px;}
-  .pr-header-meta{font-size:11px; opacity:0.85; margin-top:4px;}
-  .pr-score{background:#fff; color:#4B2E83; font-weight:700; font-size:16px; width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.1; flex-shrink:0;}
-  .pr-score .pr-of{font-size:8px; display:block; font-weight:400;}
-  .pr-body-pad{padding:16px 20px 6px;}
-  .pr-section{margin-bottom:14px; page-break-inside:avoid;}
-  .pr-section-title{font-weight:700; font-size:10.5px; color:#4B2E83; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;}
-  .pr-item{background:#F7F5FB; border-radius:6px; padding:9px 12px; margin-bottom:6px; font-size:12.5px; line-height:1.5;}
-  .pr-item-top{display:flex; align-items:center;}
-  .pr-mark{background:#4B2E83; color:#fff; font-size:10px; font-weight:700; padding:2px 9px; border-radius:10px; margin-right:10px; flex-shrink:0; display:inline-block;}
-  .pr-mark.no{background:#C0392B;}
-  .pr-answer{font-weight:600; color:#181614;}
-  .pr-comment{display:block; margin-top:3px; color:#C2185B; font-style:italic; font-size:11px;}
-  .pr-text-block{font-size:12.5px; line-height:1.6; white-space:pre-wrap; background:#F7F5FB; border-radius:6px; padding:10px 12px;}
-  .pr-footer{margin-top:20px; text-align:center; font-size:9.5px; color:#aaa; padding-bottom:16px;}
   .loading-note{font-size:13px; color:var(--ink-soft); padding:20px;}
 
   /* ---- Mobile ---- */
@@ -278,6 +239,10 @@
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-4"/></svg>
       Résultats
     </div>
+    <div class="nav-item" data-view="practice">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      Entraînement
+    </div>
     <div class="sidebar-footer">
       <div class="sidebar-user">
         <div class="sidebar-avatar" id="user-avatar">--</div>
@@ -297,6 +262,13 @@
       </div>
       <div class="body-pad">
         <div class="stat-row" id="stat-row"></div>
+        <div class="filter-row">
+          <select id="filter-dashboard-matiere">
+            <option value="">Toutes les matières</option>
+            <option value="Anglais">Anglais</option>
+            <option value="Français">Français</option>
+          </select>
+        </div>
         <p class="section-label">Classes</p>
         <div class="class-grid" id="class-grid">
           <p class="loading-note">Chargement...</p>
@@ -325,25 +297,48 @@
         <p class="bubble-sub">Historique complet des tentatives, toutes classes confondues.</p>
       </div>
       <div class="body-pad">
-        <div class="accom-panel">
-          <button id="accom-toggle" class="accom-toggle-btn">📝 Élèves avec accompagnement orthographe (dyslexie/dysorthographie...) <span id="accom-count"></span> ▾</button>
-          <div id="accom-body" class="accom-body hidden">
-            <p class="accom-note">Les élèves listés ici ne sont jamais pénalisés pour l'orthographe/la grammaire dans les corrections IA ou automatiques, sur tous les contrôles notés.</p>
-            <div id="accom-list"></div>
-            <div class="accom-add-row">
-              <input type="text" id="accom-new-name" placeholder="Prénom Nom">
-              <button id="accom-add-btn">Ajouter</button>
-            </div>
-          </div>
-        </div>
         <div class="filter-row">
+          <select id="filter-results-matiere">
+            <option value="">Toutes les matières</option>
+            <option value="Anglais">Anglais</option>
+            <option value="Français">Français</option>
+          </select>
           <select id="filter-class"><option value="">Toutes les classes</option></select>
-          <select id="filter-subject"><option value="">Toutes les matières</option></select>
           <select id="filter-quiz"><option value="">Tous les quiz</option></select>
-          <button id="print-quiz-corrections-btn" class="btn-print-corrections hidden">🖨️ Imprimer les corrections</button>
           <button id="reset-results-btn" class="btn-danger-outline">Réinitialiser tous les résultats</button>
         </div>
         <div id="results-table-wrap"><p class="loading-note">Chargement...</p></div>
+      </div>
+    </div>
+
+    <!-- PRACTICE VIEW -->
+    <div id="view-practice" class="hidden">
+      <div class="header-block">
+        <div class="bubble-title">Entraînement</div>
+        <p class="bubble-sub">Suivi des quiz d'entraînement (non notés) — qui s'entraîne, combien de fois, avec quels résultats.</p>
+      </div>
+      <div class="body-pad">
+        <div class="filter-row">
+          <select id="filter-practice-matiere">
+            <option value="">Toutes les matières</option>
+            <option value="Anglais">Anglais</option>
+            <option value="Français">Français</option>
+          </select>
+          <select id="filter-practice-class">
+            <option value="">Toutes les classes</option>
+            <option value="2nde MES">2nde MES</option>
+            <option value="2nde TNE">2nde TNE</option>
+            <option value="2nde BMA">2nde BMA</option>
+            <option value="1ère MES">1ère MES</option>
+            <option value="1ère MELEC">1ère MELEC</option>
+          </select>
+          <select id="filter-practice-quiz"><option value="">Tous les quiz</option></select>
+          <button id="reset-practice-btn" class="btn-danger-outline">Réinitialiser les résultats d'entraînement</button>
+        </div>
+        <p class="section-label">Vue d'ensemble par élève</p>
+        <div id="practice-summary-wrap"><p class="loading-note">Chargement...</p></div>
+        <p class="section-label" style="margin-top:24px;">Historique détaillé</p>
+        <div id="practice-table-wrap"><p class="loading-note">Chargement...</p></div>
       </div>
     </div>
 
@@ -368,14 +363,9 @@
       <div class="report-meta" id="report-meta"></div>
     </div>
     <div class="report-body" id="report-body"></div>
-    <div style="display:flex;">
-      <button class="report-close" id="report-print-btn" style="border-right:1px solid var(--line);">🖨️ Imprimer</button>
-      <button class="report-close" id="report-close-btn">Fermer</button>
-    </div>
+    <button class="report-close" id="report-close-btn">Fermer</button>
   </div>
 </div>
-
-<div id="print-report-root"></div>
 
 <script>
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -465,11 +455,12 @@ document.getElementById('back-to-dashboard').addEventListener('click', () => {
 });
 
 function showView(view){
-  ['dashboard','class','results'].forEach(v => {
+  ['dashboard','class','results','practice'].forEach(v => {
     document.getElementById('view-'+v).classList.toggle('hidden', v !== view);
   });
   if(view === 'dashboard') loadDashboard();
   if(view === 'results') loadResults();
+  if(view === 'practice') loadPractice();
 }
 
 // -------- dashboard --------
@@ -501,13 +492,21 @@ async function loadDashboard(){
     grid.innerHTML = '<p class="empty-note">Aucune classe. Ajoute-en dans Supabase (table classes).</p>';
     return;
   }
-  grid.innerHTML = CLASSES.map(c => {
+  const filterMatiere = document.getElementById('filter-dashboard-matiere').value;
+  const visibleClasses = filterMatiere ? CLASSES.filter(c => (c.matiere || 'Anglais') === filterMatiere) : CLASSES;
+  if(visibleClasses.length === 0){
+    grid.innerHTML = '<p class="empty-note">Aucune classe pour cette matière.</p>';
+    return;
+  }
+  grid.innerHTML = visibleClasses.map(c => {
     const classQuizzes = QUIZZES.filter(q => q.class_id === c.id);
     const activeQuiz = classQuizzes.find(q => q.active);
+    const matiere = c.matiere || 'Anglais';
+    const matiereBadgeClass = matiere === 'Français' ? 'badge-matiere-fr' : 'badge-matiere-en';
     return `
       <div class="class-card" data-class-id="${c.id}">
         <div class="class-card-top">
-          <span class="class-name">${c.name}</span>
+          <span class="class-name">${c.name}<span class="badge-matiere ${matiereBadgeClass}">${matiere}</span></span>
           ${activeQuiz ? '<span class="badge-live">● En ligne</span>' : '<span class="badge-off">Aucun quiz actif</span>'}
         </div>
         <p class="class-meta">${activeQuiz ? activeQuiz.title : classQuizzes.length + ' quiz disponible' + (classQuizzes.length > 1 ? 's' : '')}</p>
@@ -623,46 +622,33 @@ document.getElementById('qr-close-btn').addEventListener('click', () => {
 
 // -------- results --------
 async function loadResults(){
+  const filterMatiere = document.getElementById('filter-results-matiere').value;
   const filterClass = document.getElementById('filter-class').value;
   const filterQuiz = document.getElementById('filter-quiz').value;
-  const filterSubject = document.getElementById('filter-subject').value;
-
-  // Le bouton d'impression groupée n'a de sens que sur un quiz précis, pas sur "Tous les quiz".
-  document.getElementById('print-quiz-corrections-btn').classList.toggle('hidden', !filterQuiz);
-
-  const classByIdEarly = Object.fromEntries(CLASSES.map(c => [c.id, c.name]));
 
   if(document.getElementById('filter-class').options.length <= 1){
     document.getElementById('filter-class').innerHTML += CLASSES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    // Le titre seul ne suffit pas à distinguer un même quiz activé pour plusieurs classes —
-    // on ajoute la classe (et la matière si connue) entre parenthèses.
-    document.getElementById('filter-quiz').innerHTML += QUIZZES.map(q =>
-      `<option value="${q.id}">${q.title} (${classByIdEarly[q.class_id] || '?'}${q.subject ? ' · ' + q.subject : ''})</option>`
-    ).join('');
-    const subjects = [...new Set(QUIZZES.map(q => q.subject).filter(Boolean))].sort();
-    document.getElementById('filter-subject').innerHTML += subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+    document.getElementById('filter-quiz').innerHTML += QUIZZES.map(q => `<option value="${q.id}">${q.title}</option>`).join('');
     document.getElementById('filter-class').addEventListener('change', loadResults);
     document.getElementById('filter-quiz').addEventListener('change', loadResults);
-    document.getElementById('filter-subject').addEventListener('change', loadResults);
   }
 
   let query = supa.from('attempts').select('*').order('created_at', { ascending: false }).limit(200);
-  if(filterClass) query = query.eq('class_id', filterClass);
+  if(filterClass){
+    query = query.eq('class_id', filterClass);
+  } else if(filterMatiere){
+    const idsForMatiere = CLASSES.filter(c => (c.matiere || 'Anglais') === filterMatiere).map(c => c.id);
+    query = query.in('class_id', idsForMatiere.length ? idsForMatiere : [-1]);
+  }
   if(filterQuiz) query = query.eq('quiz_id', filterQuiz);
 
-  const { data: rawAttempts, error } = await query;
+  const { data: attempts, error } = await query;
   const wrap = document.getElementById('results-table-wrap');
 
   if(error){
     wrap.innerHTML = '<p class="empty-note">Erreur de chargement.</p>';
     return;
   }
-
-  const quizByIdEarly = Object.fromEntries(QUIZZES.map(q => [q.id, q]));
-  const attempts = filterSubject
-    ? (rawAttempts || []).filter(a => (quizByIdEarly[a.quiz_id] || {}).subject === filterSubject)
-    : (rawAttempts || []);
-
   if(!attempts || attempts.length === 0){
     wrap.innerHTML = '<p class="empty-note">Aucune tentative enregistrée pour le moment.</p>';
     return;
@@ -746,8 +732,6 @@ function reportLabelForKey(k){
   };
   return labels[k] || k;
 }
-// Ordre d'affichage forcé (partie 1 → 2 → 3 → 4), quel que soit l'ordre d'enregistrement en base.
-// Toute clé non listée ici est affichée après, dans son ordre d'origine.
 const REPORT_KEY_ORDER = ['section1_ai', 'section2', 'section3', 'section4_ai'];
 
 function reportRenderItem(item){
@@ -758,11 +742,12 @@ function reportRenderItem(item){
   else if(item.correct !== undefined) mark = item.correct ? '✅' : '❌';
   else if(item.score !== undefined && item.score !== null) mark = `${item.score} pt`;
   else if(item.score === null) mark = '⏳';
-  const label = item.question || item.label || item.field || '';
+  const label = item.question || item.field || '';
   const given = item.given !== undefined ? item.given : item.answer;
+  const expected = item.correct_answer ? ` <span class="report-expected">(attendu : ${item.correct_answer})</span>` : '';
   const note = (item.comment || item.explanation) ? `<span class="report-comment">${item.comment || item.explanation}</span>` : '';
   const answerHtml = given !== undefined && given !== '' ? `<span class="report-answer">${given}</span>` : '<span class="report-expected">(vide)</span>';
-  return `<li><span class="report-mark">${mark}</span>${label ? `<strong>${label}</strong> — ` : ''}${answerHtml}${note}</li>`;
+  return `<li><span class="report-mark">${mark}</span>${label ? `<strong>${label}</strong> — ` : ''}${answerHtml}${expected}${note}</li>`;
 }
 
 function reportRenderDetail(detail){
@@ -786,9 +771,6 @@ function reportRenderDetail(detail){
   }).join('');
 }
 
-// Reconstruit les réponses ligne par ligne à partir du texte brut enregistré
-// (utile pour les anciennes tentatives où la réponse n'était pas encore rattachée à chaque item).
-// Format attendu : "SECTION 1 — ...:\n1. xxx\n2. xxx\n3. xxx\n4. xxx\n\nSECTION 4 — ...:\n1. xxx\n..."
 function parseFreeTextFallback(writingText){
   if(!writingText) return { s1: [], s4: [] };
   const parts = writingText.split(/SECTION 4/);
@@ -801,12 +783,14 @@ function parseFreeTextFallback(writingText){
   };
 }
 
-let currentReportAttempt = null;
-let currentReportDetail = null;
+function openReport(a){
+  if(!a) return;
+  document.getElementById('report-student').textContent = a.student_name_raw;
+  document.getElementById('report-score-pill').textContent = a.cancelled ? 'Annulée' : `${a.score}/${a.total}`;
+  const classe = CLASSES.find(c => c.id === a.class_id);
+  const quiz = QUIZZES.find(q => q.id === a.quiz_id);
+  document.getElementById('report-meta').textContent = `${quiz ? quiz.title : ''} · ${classe ? classe.name : ''} · ${fmtDate(a.created_at)}`;
 
-// Copie le detail pour ne pas modifier l'objet original, et complète les réponses manquantes
-// à partir du texte brut si besoin. Partagé entre la fiche individuelle et l'impression groupée.
-function getReportDetail(a){
   const detail = a.answers_detail ? JSON.parse(JSON.stringify(a.answers_detail)) : null;
   if(detail && (detail.section1_ai || detail.section4_ai)){
     const needsFallback = ['section1_ai','section4_ai'].some(k =>
@@ -818,26 +802,10 @@ function getReportDetail(a){
       if(Array.isArray(detail.section4_ai)) detail.section4_ai.forEach((it, i) => { if(it && !it.answer) it.answer = s4[i] || ''; });
     }
   }
-  return detail;
-}
-
-function openReport(a){
-  if(!a) return;
-  document.getElementById('report-student').textContent = a.student_name_raw;
-  document.getElementById('report-score-pill').textContent = a.cancelled ? 'Annulée' : `${a.score}/${a.total}`;
-  const classe = CLASSES.find(c => c.id === a.class_id);
-  const quiz = QUIZZES.find(q => q.id === a.quiz_id);
-  document.getElementById('report-meta').textContent = `${quiz ? quiz.title : ''} · ${classe ? classe.name : ''} · ${fmtDate(a.created_at)}`;
-
-  const detail = getReportDetail(a);
-  currentReportAttempt = a;
-  currentReportDetail = detail;
 
   let html = '';
   html += reportRenderDetail(detail);
 
-  // Le bloc "Réponse rédigée" séparé ne sert que pour les quiz à rédaction unique
-  // (Frankenstein, Carte de journaliste...) qui n'ont pas de section1_ai/section4_ai.
   const isItemizedFreeText = detail && (detail.section1_ai || detail.section4_ai);
   const hasFeedbackInDetail = detail && detail.feedback_global;
 
@@ -856,174 +824,9 @@ function openReport(a){
 document.getElementById('report-close-btn').addEventListener('click', () => {
   document.getElementById('report-modal').classList.add('hidden');
 });
-
-function prRenderItem(item){
-  if(item === null || item === undefined) return '';
-  if(typeof item !== 'object'){
-    return `<div class="pr-item">${item}</div>`;
-  }
-  let markHtml = '';
-  if(item.is_correct !== undefined) markHtml = item.is_correct ? '<span class="pr-mark ok">✓</span>' : '<span class="pr-mark no">✕</span>';
-  else if(item.correct !== undefined) markHtml = item.correct ? '<span class="pr-mark ok">✓</span>' : '<span class="pr-mark no">✕</span>';
-  else if(item.score !== undefined && item.score !== null) markHtml = `<span class="pr-mark">${item.score} pt</span>`;
-  else if(item.score === null) markHtml = '<span class="pr-mark">⏳</span>';
-  const label = item.question || item.label || ''; // jamais l'id technique du champ dans la version imprimée
-  const given = item.given !== undefined ? item.given : item.answer;
-  const rawComment = item.comment || item.explanation || item.feedback;
-  const note = rawComment ? `<span class="pr-comment">${prCleanComment(rawComment)}</span>` : '';
-  const answerHtml = given !== undefined && given !== '' ? `<span class="pr-answer">${given}</span>` : '<span style="color:#999;">(vide)</span>';
-  return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}</span></div>${note}</div>`;
-}
-
-function prLabelForKey(k){
-  const labels = {
-    section1_ai:'Partie 1', section2:'Partie 2', section3:'Partie 3', section4_ai:'Partie 4',
-    partie1_ai:'Partie 1', partie2_ai:'Partie 2', partie3:'Partie 3', partie4_ai:'Partie 4', partie5:'Partie 5',
-    partie1_items:'Partie 1', partie2_items:'Partie 2', partie2a_items:'Partie 2A', partie4_items:'Partie 4',
-    feedback_global:'Ton bilan', article:'Ton article'
-  };
-  return labels[k] || k;
-}
-// Nettoie les commentaires des mentions internes (correction manuelle, IA indisponible...) —
-// l'élève n'a pas besoin de savoir comment sa copie a été corrigée.
-function prCleanComment(text){
-  if(!text) return text;
-  return text
-    .replace(/^Corrigé manuellement\s*:?\s*/i, '')
-    .replace(/^Non corrigé \(IA indisponible\)\.?\s*/i, '')
-    .trim();
-}
-const PR_HIDDEN_KEYS = ['client_subtotal','ai_subtotal','ai_error','raw_fields','released_for_retry'];
-
-function prRenderDetail(detail){
-  if(!detail) return '';
-  if(Array.isArray(detail)){
-    return `<div class="pr-section"><div class="pr-section-title">Réponses</div>${detail.map(prRenderItem).join('')}</div>`;
-  }
-  const entries = Object.entries(detail).filter(([k,v]) => !PR_HIDDEN_KEYS.includes(k) && v !== null && v !== undefined && v !== '');
-  const ordered = [
-    ...REPORT_KEY_ORDER.map(k => entries.find(([key]) => key === k)).filter(Boolean),
-    ...entries.filter(([key]) => !REPORT_KEY_ORDER.includes(key))
-  ];
-  return ordered.map(([key, val]) => {
-    const title = prLabelForKey(key);
-    if(Array.isArray(val)){
-      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${val.map(prRenderItem).join('')}</div>`;
-    }
-    if(typeof val === 'object'){
-      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${prRenderItem(val)}</div>`;
-    }
-    return `<div class="pr-section"><div class="pr-section-title">${title}</div><div class="pr-text-block">${val}</div></div>`;
-  }).join('');
-}
-
-function buildPrintReport(a, detail){
-  const classe = CLASSES.find(c => c.id === a.class_id);
-  const quiz = QUIZZES.find(q => q.id === a.quiz_id);
-  const scoreHtml = a.cancelled ? 'Annulée' : `${a.score}<span class="pr-of">/${a.total}</span>`;
-
-  let body = prRenderDetail(detail);
-
-  const isItemizedFreeText = detail && (detail.section1_ai || detail.section4_ai);
-  const hasFeedbackInDetail = detail && detail.feedback_global;
-  if(a.writing_text && !isItemizedFreeText){
-    body += `<div class="pr-section"><div class="pr-section-title">Ta copie</div><div class="pr-text-block">${a.writing_text}</div></div>`;
-  }
-  if(a.writing_correction && !hasFeedbackInDetail){
-    body += `<div class="pr-section"><div class="pr-section-title">Ton bilan</div><div class="pr-text-block" style="color:#C2185B;">${prCleanComment(a.writing_correction)}</div></div>`;
-  }
-  if(!body){
-    body = '<p style="color:#999; font-size:13px;">Aucun détail enregistré pour cette tentative.</p>';
-  }
-
-  return `
-    <div class="pr-header">
-      <div class="pr-header-inner">
-        <div>
-          <div class="pr-header-name">${a.student_name_raw}</div>
-          <div class="pr-header-meta">${quiz ? quiz.title : ''} · ${classe ? classe.name : ''} · ${fmtDate(a.created_at)}</div>
-        </div>
-        <div class="pr-score">${scoreHtml}</div>
-      </div>
-    </div>
-    <div class="pr-body-pad">
-      ${body}
-      <div class="pr-footer">Lycée Godefroy de Bouillon</div>
-    </div>
-  `;
-}
-
-document.getElementById('report-print-btn').addEventListener('click', () => {
-  if(!currentReportAttempt) return;
-  document.getElementById('print-report-root').innerHTML = buildPrintReport(currentReportAttempt, currentReportDetail);
-  window.print();
-});
-
-// Impression groupée : une correction par élève, chacune démarrant sur une nouvelle page
-// (y compris quand la correction précédente déborde sur plusieurs pages).
-document.getElementById('print-quiz-corrections-btn').addEventListener('click', () => {
-  const attempts = (currentAttempts || []).filter(a => !a.cancelled);
-  if(attempts.length === 0){ alert("Aucune correction à imprimer pour cette sélection."); return; }
-  const html = attempts.map(a => `<div class="pr-page">${buildPrintReport(a, getReportDetail(a))}</div>`).join('');
-  document.getElementById('print-report-root').innerHTML = html;
-  window.print();
-});
 document.getElementById('report-modal').addEventListener('click', (e) => {
   if(e.target.id === 'report-modal') document.getElementById('report-modal').classList.add('hidden');
 });
-
-// -------- accommodements (dyslexie/dysorthographie...) --------
-function normalizeAccomName(s){
-  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
-}
-let ACCOMMODATIONS = [];
-
-async function loadAccommodations(){
-  const { data } = await supa.from('accommodations').select('*').order('student_name_display');
-  ACCOMMODATIONS = data || [];
-  document.getElementById('accom-count').textContent = `(${ACCOMMODATIONS.length})`;
-  const list = document.getElementById('accom-list');
-  if(ACCOMMODATIONS.length === 0){
-    list.innerHTML = '<p class="empty-note" style="font-size:12.5px;">Aucun élève pour le moment.</p>';
-    return;
-  }
-  list.innerHTML = ACCOMMODATIONS.map(a => `
-    <div class="accom-item">
-      <span>${a.student_name_display}</span>
-      <button data-remove-accom="${a.id}">retirer</button>
-    </div>
-  `).join('');
-  list.querySelectorAll('[data-remove-accom]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if(!confirm('Retirer cet élève de la liste des accompagnements ?')) return;
-      await supa.from('accommodations').delete().eq('id', btn.dataset.removeAccom);
-      loadAccommodations();
-    });
-  });
-}
-
-document.getElementById('accom-toggle').addEventListener('click', () => {
-  document.getElementById('accom-body').classList.toggle('hidden');
-});
-
-document.getElementById('accom-add-btn').addEventListener('click', async () => {
-  const input = document.getElementById('accom-new-name');
-  const raw = input.value.trim();
-  if(!raw || !raw.includes(' ')){
-    alert('Entre le prénom et le nom (ex : Arthur Vallet).');
-    return;
-  }
-  const { error } = await supa.from('accommodations').insert({
-    student_name_normalized: normalizeAccomName(raw),
-    student_name_display: raw,
-    no_spelling_penalty: true
-  });
-  if(error){ alert("Erreur : cet élève est peut-être déjà dans la liste."); return; }
-  input.value = '';
-  loadAccommodations();
-});
-
-loadAccommodations();
 
 document.getElementById('reset-results-btn').addEventListener('click', async () => {
   const step1 = confirm("Supprimer TOUTES les tentatives enregistrées, dans toutes les classes et tous les quiz ? Cette action est irréversible (utile en début d'année scolaire).");
@@ -1034,6 +837,124 @@ document.getElementById('reset-results-btn').addEventListener('click', async () 
   if(error){ alert('Erreur pendant la suppression : ' + error.message); return; }
   alert('Toutes les tentatives ont été supprimées.');
   loadResults();
+});
+
+// -------- practice (quiz d'entraînement non notés) --------
+let currentPracticeAttempts = [];
+
+async function loadPractice(){
+  const filterMatiere = document.getElementById('filter-practice-matiere').value;
+  const filterClass = document.getElementById('filter-practice-class').value;
+  const filterQuiz = document.getElementById('filter-practice-quiz').value;
+
+  let query = supa.from('practice_attempts').select('*').order('completed_at', { ascending: false });
+  if(filterMatiere) query = query.eq('matiere', filterMatiere);
+  if(filterClass) query = query.eq('classe', filterClass);
+  if(filterQuiz) query = query.eq('quiz_name', filterQuiz);
+
+  const { data: attempts, error } = await query;
+  const summaryWrap = document.getElementById('practice-summary-wrap');
+  const tableWrap = document.getElementById('practice-table-wrap');
+
+  if(error){
+    summaryWrap.innerHTML = '<p class="empty-note">Erreur de chargement.</p>';
+    tableWrap.innerHTML = '';
+    return;
+  }
+
+  // Remplit le filtre "quiz" dynamiquement une seule fois, à partir de toutes les tentatives existantes
+  const quizSelect = document.getElementById('filter-practice-quiz');
+  if(quizSelect.options.length <= 1){
+    const { data: allForList } = await supa.from('practice_attempts').select('quiz_name');
+    const uniqueQuizzes = [...new Set((allForList || []).map(a => a.quiz_name))].sort((a,b) => a.localeCompare(b,'fr'));
+    quizSelect.innerHTML += uniqueQuizzes.map(q => `<option value="${q}">${q}</option>`).join('');
+  }
+
+  if(!attempts || attempts.length === 0){
+    summaryWrap.innerHTML = '<p class="empty-note">Aucune tentative d\'entraînement enregistrée pour le moment.</p>';
+    tableWrap.innerHTML = '';
+    return;
+  }
+
+  // -------- Vue d'ensemble par élève --------
+  const byStudent = {};
+  attempts.forEach(a => {
+    const key = normalizeName(a.student_name) + '|' + a.classe;
+    if(!byStudent[key]){
+      byStudent[key] = { name: a.student_name, classe: a.classe, count: 0, lastQuiz: '', lastDate: null, lastScore: null, lastMax: null };
+    }
+    byStudent[key].count++;
+    if(!byStudent[key].lastDate || new Date(a.completed_at) > new Date(byStudent[key].lastDate)){
+      byStudent[key].lastQuiz = a.quiz_name;
+      byStudent[key].lastDate = a.completed_at;
+      byStudent[key].lastScore = a.score;
+      byStudent[key].lastMax = a.max_score;
+    }
+  });
+  const summaryRows = Object.values(byStudent).sort((a,b) => a.name.localeCompare(b.name, 'fr', {sensitivity:'base'}));
+
+  summaryWrap.innerHTML = `
+    <table class="result-table">
+      <tr><th>Élève</th><th>Classe</th><th>Tentatives</th><th>Dernier quiz</th><th>Dernier score</th><th>Dernière tentative</th></tr>
+      ${summaryRows.map(s => `
+        <tr>
+          <td>${s.name}</td>
+          <td>${s.classe}</td>
+          <td>${s.count}</td>
+          <td>${s.lastQuiz}</td>
+          <td>${s.lastScore !== null && s.lastScore !== undefined ? `<span class="score-pill ${scoreClass(s.lastScore, s.lastMax)}">${s.lastScore}/${s.lastMax}</span>` : '—'}</td>
+          <td>${fmtDate(s.lastDate)}</td>
+        </tr>
+      `).join('')}
+    </table>
+  `;
+
+  // -------- Historique détaillé --------
+  const sortedAttempts = [...attempts].sort((a,b) => a.student_name.localeCompare(b.student_name, 'fr', {sensitivity:'base'}));
+  currentPracticeAttempts = sortedAttempts;
+
+  tableWrap.innerHTML = `
+    <table class="result-table">
+      <tr><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th></tr>
+      ${sortedAttempts.map((a, i) => `
+        <tr>
+          <td>${a.student_name}</td>
+          <td>${a.classe}</td>
+          <td>${a.quiz_name}</td>
+          <td>${a.score !== null && a.score !== undefined ? `<span class="score-pill ${scoreClass(a.score, a.max_score)}">${a.score}/${a.max_score}</span>` : '—'}</td>
+          <td>${fmtDate(a.completed_at)}</td>
+          <td><button class="btn-delete-row" data-delete-practice="${i}" title="Supprimer cette tentative">✕</button></td>
+        </tr>
+      `).join('')}
+    </table>
+  `;
+
+  tableWrap.querySelectorAll('[data-delete-practice]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const a = currentPracticeAttempts[parseInt(btn.dataset.deletePractice)];
+      if(!confirm(`Supprimer la tentative de ${a.student_name} (${a.quiz_name}) ?`)) return;
+      const { error } = await supa.from('practice_attempts').delete().eq('id', a.id);
+      if(error){ alert('Erreur : ' + error.message); return; }
+      loadPractice();
+    });
+  });
+}
+
+document.getElementById('filter-practice-matiere').addEventListener('change', loadPractice);
+document.getElementById('filter-practice-class').addEventListener('change', loadPractice);
+document.getElementById('filter-practice-quiz').addEventListener('change', loadPractice);
+document.getElementById('filter-results-matiere').addEventListener('change', loadResults);
+document.getElementById('filter-dashboard-matiere').addEventListener('change', loadDashboard);
+
+document.getElementById('reset-practice-btn').addEventListener('click', async () => {
+  const step1 = confirm("Supprimer TOUTES les tentatives d'entraînement enregistrées, dans toutes les classes et tous les quiz ? Cette action est irréversible.");
+  if(!step1) return;
+  const typed = prompt('Pour confirmer, tape SUPPRIMER en majuscules :');
+  if(typed !== 'SUPPRIMER'){ alert('Annulé — texte incorrect, rien n\'a été supprimé.'); return; }
+  const { error } = await supa.from('practice_attempts').delete().not('id', 'is', null);
+  if(error){ alert('Erreur pendant la suppression : ' + error.message); return; }
+  alert('Toutes les tentatives d\'entraînement ont été supprimées.');
+  loadPractice();
 });
 
 // Service worker — nécessaire pour que le navigateur propose l'installation
