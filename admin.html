@@ -311,6 +311,10 @@
         <p class="bubble-sub">Suivi des quiz d'entraînement (non notés) — qui s'entraîne, combien de fois, avec quels résultats.</p>
       </div>
       <div class="body-pad">
+        <p class="section-label">Annuaire des quiz (QR / lien à partager)</p>
+        <div id="practice-directory-wrap"></div>
+
+        <p class="section-label" style="margin-top:28px;">Filtrer les résultats</p>
         <div class="filter-row">
           <select id="filter-practice-matiere">
             <option value="">Toutes les matières</option>
@@ -568,10 +572,15 @@ async function openClass(classId){
 async function toggleQuiz(quizId, classId){
   const target = QUIZZES.find(q => q.id === quizId);
   const turningOn = !target.active;
+  const matiere = target.matiere || 'Anglais';
 
   if(turningOn){
-    // désactive tous les autres quiz de la classe, active celui-ci
-    await supa.from('quizzes').update({ active: false }).eq('class_id', classId);
+    // désactive les autres quiz de la MÊME matière pour cette classe (un seul actif par matière),
+    // mais laisse actif un éventuel quiz d'une autre matière (ex : anglais + français en même temps)
+    const sameMatiereIds = QUIZZES.filter(q => q.class_id === classId && (q.matiere || 'Anglais') === matiere).map(q => q.id);
+    if(sameMatiereIds.length){
+      await supa.from('quizzes').update({ active: false }).in('id', sameMatiereIds);
+    }
     await supa.from('quizzes').update({ active: true }).eq('id', quizId);
   } else {
     await supa.from('quizzes').update({ active: false }).eq('id', quizId);
@@ -588,11 +597,17 @@ async function toggleCorrections(quizId, classId){
 // -------- QR modal --------
 function openQr(classId){
   const cls = CLASSES.find(c => c.id === classId);
-  const activeQuiz = QUIZZES.find(q => q.class_id === classId && q.active);
+  const activeQuizzes = QUIZZES.filter(q => q.class_id === classId && q.active);
   const url = `${location.origin}${location.pathname.replace('admin.html','')}eleve.html?classe=${cls.slug}`;
 
   document.getElementById('qr-class-name').textContent = cls.name;
-  document.getElementById('qr-quiz-name').textContent = activeQuiz ? activeQuiz.title : 'Aucun quiz actif pour le moment';
+  let quizLabel = 'Aucun quiz actif pour le moment';
+  if(activeQuizzes.length === 1){
+    quizLabel = activeQuizzes[0].title;
+  } else if(activeQuizzes.length > 1){
+    quizLabel = activeQuizzes.map(q => `${q.title} (${q.matiere || 'Anglais'})`).join(' + ') + ' — l\'élève choisit en scannant';
+  }
+  document.getElementById('qr-quiz-name').textContent = quizLabel;
   document.getElementById('qr-url').textContent = url;
 
   const box = document.getElementById('qr-box');
@@ -827,7 +842,69 @@ document.getElementById('reset-results-btn').addEventListener('click', async () 
 // -------- practice (quiz d'entraînement non notés) --------
 let currentPracticeAttempts = [];
 
+// Annuaire statique des quiz d'entraînement — pas dans Supabase, ce sont de simples pages toujours ouvertes.
+// La "classe" est juste une étiquette pour t'y retrouver, pas une restriction : n'importe quel élève peut ouvrir le lien.
+// Corrige librement titre/matière/classe ci-dessous si besoin.
+const PRACTICE_QUIZ_DIRECTORY = [
+  { title: 'From Art to Ad',            url: 'art-to-ad-quiz.html',            matiere: 'Anglais',  classe: '2nde MES' },
+  { title: 'Create Your Startup',       url: 'create-startup-quiz.html',       matiere: 'Anglais',  classe: 'À préciser' },
+  { title: 'Danger Zone',               url: 'danger-zone-quiz.html',          matiere: 'Anglais',  classe: '2nde MES / TNE / BMA' },
+  { title: 'Rédiger un article',        url: 'ecrire-article-quiz.html',       matiere: 'Français', classe: '2nde MES' },
+  { title: "At Work — Electrician's Check", url: 'electrician-quiz.html',      matiere: 'Anglais',  classe: '2nde TNE' },
+  { title: 'Frankenstein',              url: 'frankenstein-quiz.html',         matiere: 'Français', classe: '1ère' },
+  { title: "Informer, s'informer",      url: 'informer-quiz.html',             matiere: 'Français', classe: '2nde MES' },
+  { title: 'The Landlady',              url: 'landlady-quiz.html',             matiere: 'Anglais',  classe: 'À préciser' },
+  { title: 'Me in Ten Years — BMA',     url: 'me-in-ten-years-bma.html',       matiere: 'Anglais',  classe: '2nde BMA' },
+  { title: 'Me in Ten Years — CVPM',    url: 'me-in-ten-years-cvpm.html',      matiere: 'Anglais',  classe: '2nde MES' },
+  { title: 'Me in Ten Years — MELEC',   url: 'me-in-ten-years-melec.html',     matiere: 'Anglais',  classe: '1ère MELEC' },
+  { title: 'Me in Ten Years — MES',     url: 'me-in-ten-years-mes.html',       matiere: 'Anglais',  classe: '1ère MES' },
+  { title: 'Fascination et rejet du monstrueux', url: 'quiz-revision-transfert.html', matiere: 'Français', classe: '1ère' },
+  { title: 'Client Brief to Shop Sign', url: 'shop-sign-quiz.html',            matiere: 'Anglais',  classe: '1ère MES' },
+  { title: 'Solve the Mystery',         url: 'solve-the-mystery-quiz.html',    matiere: 'Anglais',  classe: '1ère MELEC / MES' },
+  { title: 'Spider-Man — Before You Watch', url: 'spiderman-before-you-watch.html', matiere: 'Anglais', classe: 'À préciser' },
+  { title: 'Spider-Man — Test Prep',    url: 'spiderman-test-prep.html',       matiere: 'Anglais',  classe: 'À préciser' },
+];
+const PRACTICE_BASE_URL = 'https://clperet-bot.github.io/entrainements-cours/';
+
+function renderPracticeDirectory(){
+  const wrap = document.getElementById('practice-directory-wrap');
+  const matieres = ['Anglais', 'Français'];
+  wrap.innerHTML = matieres.map(m => {
+    const quizzes = PRACTICE_QUIZ_DIRECTORY.filter(q => q.matiere === m);
+    if(!quizzes.length) return '';
+    return `
+      <p class="section-label" style="margin-top:14px; opacity:0.75;">${m}</p>
+      <div class="class-grid">
+        ${quizzes.map((q, i) => `
+          <div class="class-card" data-dir-url="${PRACTICE_BASE_URL}${q.url}" data-dir-title="${q.title}" style="cursor:pointer;">
+            <div class="class-card-top">
+              <span class="class-name">${q.title}</span>
+            </div>
+            <p class="class-meta">${q.classe}</p>
+            <button class="class-qr-btn">Afficher le QR / lien</button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
+
+  wrap.querySelectorAll('[data-dir-url]').forEach(card => {
+    card.addEventListener('click', () => openPracticeQr(card.dataset.dirUrl, card.dataset.dirTitle));
+  });
+}
+
+function openPracticeQr(url, title){
+  document.getElementById('qr-class-name').textContent = title;
+  document.getElementById('qr-quiz-name').textContent = 'Quiz d\'entraînement — toujours accessible';
+  document.getElementById('qr-url').textContent = url;
+  const box = document.getElementById('qr-box');
+  box.innerHTML = '';
+  new QRCode(box, { text: url, width: 220, height: 220, colorDark: '#1A1D23', colorLight: '#ffffff' });
+  document.getElementById('qr-modal').classList.remove('hidden');
+}
+
 async function loadPractice(){
+  renderPracticeDirectory();
   const filterMatiere = document.getElementById('filter-practice-matiere').value;
   const filterClass = document.getElementById('filter-practice-class').value;
   const filterQuiz = document.getElementById('filter-practice-quiz').value;
