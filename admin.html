@@ -51,6 +51,8 @@
   .sidebar-brand{display:flex; align-items:center; gap:10px; padding:4px 8px 22px;}
   .sidebar-brand-icon{width:32px; height:32px; border-radius:22%; flex-shrink:0;}
   .sidebar-brand-name{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:14.5px; color:#fff;}
+  .nav-group-label{font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:rgba(255,255,255,0.55); margin:14px 0 6px; padding:0 12px;}
+  .nav-group-label:first-of-type{margin-top:2px;}
   .nav-item{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:9px; font-size:13.5px; font-weight:600; color:rgba(255,255,255,0.78); cursor:pointer; margin-bottom:4px;}
   .nav-item svg{flex-shrink:0; opacity:0.9;}
   .nav-item.active{background:rgba(255,255,255,0.18); color:#fff;}
@@ -172,6 +174,7 @@
     .sidebar-brand{padding:2px 4px; margin-right:auto;}
     .sidebar-brand-name{font-size:13px;}
     .nav-item{margin-bottom:0; padding:8px 10px; font-size:12.5px;}
+    .nav-group-label{display:none;}
     .sidebar-footer{
       margin-top:0; border-top:none; padding-top:0;
       width:auto; margin-left:auto;
@@ -231,6 +234,7 @@
       <img class="sidebar-brand-icon" src="icon-192.png?v=2" alt="">
       <span class="sidebar-brand-name">Quiz Admin</span>
     </div>
+    <p class="nav-group-label">Quiz évalué</p>
     <div class="nav-item active" data-view="dashboard">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
       Mes classes
@@ -239,6 +243,8 @@
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-4"/></svg>
       Résultats
     </div>
+
+    <p class="nav-group-label">Quiz entraînement</p>
     <div class="nav-item" data-view="practice-qr">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="21" y2="14"/><line x1="14" y1="21" x2="21" y2="21"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/></svg>
       QR quiz
