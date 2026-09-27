@@ -421,7 +421,7 @@
   <div class="kicker">Français 2nde — Formation journaliste</div>
   <h1>Carte de journaliste</h1>
   <span class="eval-badge">Quiz évalué</span>
-  <p class="subtitle">Contrôle final : info ou intox, les 5W, écrire comme un journaliste, relecture, types d'articles, rédaction.</p>
+  <p class="subtitle">Contrôle final, en vue de la rédaction de votre article pour le vrai journal du lycée : info ou intox, les 5W, écrire comme un journaliste, relecture, types d'articles, rédaction.</p>
 </header>
 
 <main>
@@ -441,7 +441,7 @@
     </div>
     <p class="writing-instructions">
       Le club théâtre du lycée organise sa première représentation publique le mois prochain, ouverte à tous les élèves et à leurs familles.
-      Rédige un article de presse complet sur ce sujet.
+      Rédige un article de presse complet sur ce sujet, comme pour le journal du lycée.
     </p>
     <textarea id="writing-input" placeholder="Rédige ton article ici..." style="min-height:200px;"></textarea>
     <button id="finish-btn">Terminer et voir ma note →</button>
@@ -615,10 +615,10 @@ async function cancelAttempt(){
 function runQuiz(){
 
 const QUESTIONS = [
-{prompt:"« Le CDI a été repeint pendant les vacances, comme confirmé par la direction. » Il s'agit...", options:["D'une opinion","D'une rumeur","D'une information","D'une anecdote"], correct:2, explanation:"Un fait confirmé par une source officielle est une information."},
-{prompt:"« On dit que deux classes vont fusionner l'an prochain, mais rien n'est confirmé. » Il s'agit...", options:["D'une information","D'une rumeur","D'une anecdote","D'une opinion"], correct:1, explanation:"Une affirmation non confirmée qui circule est une rumeur."},
-{prompt:"« Le foyer des élèves devrait être plus grand, à mon avis. » Il s'agit...", options:["D'une rumeur","D'une information","D'une opinion","D'une anecdote"], correct:2, explanation:"Un avis personnel non vérifiable est une opinion."},
-{prompt:"« Un jour, un surveillant a couru après un ballon échappé jusque dans la cour, tout le monde a ri. » Il s'agit...", options:["D'une anecdote","D'une information","D'une rumeur","D'une opinion"], correct:0, explanation:"Un petit fait vécu, raconté à titre personnel, est une anecdote."},
+{prompt:"Pour le journal du lycée, on te rapporte : « Le CDI a été repeint pendant les vacances, comme confirmé par la direction. » Pour ton article, il s'agit...", options:["D'une opinion","D'une rumeur","D'une information","D'une anecdote"], correct:2, explanation:"Un fait confirmé par une source officielle est une information."},
+{prompt:"Pour le journal du lycée, on te rapporte : « On dit que deux classes vont fusionner l'an prochain, mais rien n'est confirmé. » Pour ton article, il s'agit...", options:["D'une information","D'une rumeur","D'une anecdote","D'une opinion"], correct:1, explanation:"Une affirmation non confirmée qui circule est une rumeur."},
+{prompt:"Pour le journal du lycée, on te rapporte : « Le foyer des élèves devrait être plus grand, à mon avis. » Pour ton article, il s'agit...", options:["D'une rumeur","D'une information","D'une opinion","D'une anecdote"], correct:2, explanation:"Un avis personnel non vérifiable est une opinion."},
+{prompt:"Pour le journal du lycée, on te rapporte : « Un jour, un surveillant a couru après un ballon échappé jusque dans la cour, tout le monde a ri. » Pour ton article, il s'agit...", options:["D'une anecdote","D'une information","D'une rumeur","D'une opinion"], correct:0, explanation:"Un petit fait vécu, raconté à titre personnel, est une anecdote."},
 {prompt:"Dans la règle des 5W, quelle question permet de connaître le lieu d'un événement ?", options:["Where","Who","Why","When"], correct:0, explanation:"Where = Où : indique le lieu de l'événement."},
 {prompt:"Dans la règle des 5W, quelle question permet de connaître la date d'un événement ?", options:["When","Why","Who","What"], correct:0, explanation:"When = Quand : indique la date ou le moment de l'événement."},
 {prompt:"« La coupure d'eau a duré deux heures, provoquée par une fuite. » Cette phrase répond principalement à quelle question des 5W ?", options:["What","Why","Where","Who"], correct:1, explanation:"Why = Pourquoi : la phrase explique la cause (une fuite)."},
@@ -726,7 +726,7 @@ function handleTranslateAnswer(qi){
   document.querySelector(`[data-submit="${qi}"]`).disabled = true;
   qScore.textContent = score;
 
-  if(!wasAnswered) setTimeout(() => goTo(qi + 1), 200);
+  setTimeout(() => goTo(qi + 1), 200); // avance aussi apres une correction
 }
 
 function handleAnswer(e){
@@ -746,7 +746,7 @@ function handleAnswer(e){
   qDiv.querySelectorAll('.option').forEach(o => o.disabled = true);
   qScore.textContent = score;
 
-  if(!wasAnswered) setTimeout(() => goTo(qi + 1), 150);
+  setTimeout(() => goTo(qi + 1), 150); // avance aussi apres une correction
 }
 
 function goTo(i){
@@ -823,10 +823,10 @@ Ce sont des élèves débutants en journalisme (première épreuve du genre) : s
 - 2 pts : grammaire/orthographe — distingue les fautes de frappe/orthographe isolées qui ne gênent pas la compréhension (TOLÉRÉES, 0 point perdu : accents, majuscules, inversions mineures de lettres) des erreurs de grammaire qui cassent la construction de la phrase ou en changent le sens (celles-ci coûtent des points). Ne pénalise une erreur que si elle gêne réellement la compréhension — sois généreux.e, en cas d'hésitation choisis toujours le palier le plus favorable à l'élève.
 Un article vide ou hors sujet obtient 0. En cas de doute, donne le bénéfice du doute à l'élève.
 ${studentHasAccommodation ? `
-ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Donne-lui automatiquement les 2 points de grammaire/orthographe, quelle que soit la qualité orthographique réelle, et n'en parle pas dans le feedback. Note normalement les 3 autres critères (5W, structure, style) sur les 8 points restants ; le total reste sur 10. Avant de juger un critère de contenu (5W, structure) insuffisant, vérifie qu'un mot qui semble manquant ou incohérent n'est pas simplement mal orthographié (lettre manquante/inversée) — dans ce cas, considère-le comme présent.` : ''}
+ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Donne-lui automatiquement les 2 points de grammaire/orthographe, quelle que soit la qualité orthographique réelle, et n'en parle pas dans le feedback. Note normalement les 3 autres critères (5W, structure, style) sur les 8 points restants ; le total reste sur 10.` : ''}
 
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
-{"score":0,"feedback":"Retour concis en français (150 mots max), adressé directement à l'élève en le/la tutoyant, qui commente les 4 critères et se termine par une phrase d'encouragement."}
+{"score":0,"feedback":"Retour concis en français (150 mots max), qui commente les 4 critères et se termine par une phrase d'encouragement."}
 Le score peut être un nombre entier ou avec un seul chiffre après la virgule (ex: 7.5).`;
 
   try {
