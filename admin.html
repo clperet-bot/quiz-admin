@@ -239,9 +239,13 @@
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-4"/></svg>
       Résultats
     </div>
-    <div class="nav-item" data-view="practice">
+    <div class="nav-item" data-view="practice-qr">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="21" y2="14"/><line x1="14" y1="21" x2="21" y2="21"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/></svg>
+      QR quiz
+    </div>
+    <div class="nav-item" data-view="practice-results">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-      Entraînement
+      Suivi entraînement
     </div>
     <div class="sidebar-footer">
       <div class="sidebar-user">
@@ -304,11 +308,37 @@
       </div>
     </div>
 
-    <!-- PRACTICE VIEW -->
-    <div id="view-practice" class="hidden">
+    <!-- PRACTICE QR VIEW -->
+    <div id="view-practice-qr" class="hidden">
       <div class="header-block">
-        <div class="bubble-title">Entraînement</div>
-        <p class="bubble-sub">Suivi des quiz d'entraînement (non notés) — qui s'entraîne, combien de fois, avec quels résultats.</p>
+        <div class="bubble-title">QR quiz d'entraînement</div>
+        <p class="bubble-sub">Choisis une matière et une classe pour afficher le QR code / lien du quiz correspondant.</p>
+      </div>
+      <div class="body-pad">
+        <div class="filter-row">
+          <select id="qr-filter-matiere">
+            <option value="">Choisis une matière</option>
+            <option value="Anglais">Anglais</option>
+            <option value="Français">Français</option>
+          </select>
+          <select id="qr-filter-class">
+            <option value="">Choisis une classe</option>
+            <option value="2nde MES">2nde MES</option>
+            <option value="2nde TNE">2nde TNE</option>
+            <option value="2nde BMA">2nde BMA</option>
+            <option value="1ère MES">1ère MES</option>
+            <option value="1ère MELEC">1ère MELEC</option>
+          </select>
+        </div>
+        <div id="practice-directory-wrap"></div>
+      </div>
+    </div>
+
+    <!-- PRACTICE RESULTS VIEW -->
+    <div id="view-practice-results" class="hidden">
+      <div class="header-block">
+        <div class="bubble-title">Suivi entraînement</div>
+        <p class="bubble-sub">Qui s'entraîne, combien de fois, avec quels résultats (quiz non notés).</p>
       </div>
       <div class="body-pad">
         <p class="section-label">Filtrer les résultats</p>
@@ -329,9 +359,6 @@
           <select id="filter-practice-quiz"><option value="">Tous les quiz</option></select>
           <button id="reset-practice-btn" class="btn-danger-outline">Réinitialiser les résultats d'entraînement</button>
         </div>
-
-        <p class="section-label" style="margin-top:28px;">Annuaire des quiz (QR / lien à partager)</p>
-        <div id="practice-directory-wrap"></div>
 
         <p class="section-label" style="margin-top:28px;">Vue d'ensemble par élève</p>
         <div id="practice-summary-wrap"><p class="loading-note">Chargement...</p></div>
@@ -453,12 +480,13 @@ document.getElementById('back-to-dashboard').addEventListener('click', () => {
 });
 
 function showView(view){
-  ['dashboard','class','results','practice'].forEach(v => {
+  ['dashboard','class','results','practice-qr','practice-results'].forEach(v => {
     document.getElementById('view-'+v).classList.toggle('hidden', v !== view);
   });
   if(view === 'dashboard') loadDashboard();
   if(view === 'results') loadResults();
-  if(view === 'practice') loadPractice();
+  if(view === 'practice-qr') loadPracticeQr();
+  if(view === 'practice-results') loadPracticeResults();
 }
 
 // -------- dashboard --------
@@ -846,53 +874,66 @@ let currentPracticeAttempts = [];
 // Annuaire statique des quiz d'entraînement — pas dans Supabase, ce sont de simples pages toujours ouvertes.
 // La "classe" est juste une étiquette pour t'y retrouver, pas une restriction : n'importe quel élève peut ouvrir le lien.
 // Corrige librement titre/matière/classe ci-dessous si besoin.
+// IMPORTANT : "title" doit être EXACTEMENT identique à la chaîne passée à logPracticeAttempt()
+// dans le fichier quiz correspondant, sinon le filtre "quiz" et l'historique ne matchent plus.
 const PRACTICE_QUIZ_DIRECTORY = [
   { title: 'From Art to Ad',            url: 'art-to-ad-quiz.html',            matiere: 'Anglais',  classe: '2nde MES' },
-  { title: 'Create Your Startup',       url: 'create-startup-quiz.html',       matiere: 'Anglais',  classe: 'À préciser' },
+  { title: 'Create Your Startup (vocabulaire)', url: 'create-startup-quiz.html', matiere: 'Anglais', classe: 'À préciser' },
   { title: 'Danger Zone',               url: 'danger-zone-quiz.html',          matiere: 'Anglais',  classe: '2nde MES / TNE / BMA' },
   { title: 'Rédiger un article',        url: 'ecrire-article-quiz.html',       matiere: 'Français', classe: '2nde MES' },
-  { title: "At Work — Electrician's Check", url: 'electrician-quiz.html',      matiere: 'Anglais',  classe: '2nde TNE' },
+  { title: "At Work - Electrician's Check", url: 'electrician-quiz.html',      matiere: 'Anglais',  classe: '2nde TNE' },
   { title: 'Frankenstein',              url: 'frankenstein-quiz.html',         matiere: 'Français', classe: '1ère' },
   { title: "Informer, s'informer",      url: 'informer-quiz.html',             matiere: 'Français', classe: '2nde MES' },
   { title: 'The Landlady',              url: 'landlady-quiz.html',             matiere: 'Anglais',  classe: 'À préciser' },
-  { title: 'Me in Ten Years — BMA',     url: 'me-in-ten-years-bma.html',       matiere: 'Anglais',  classe: '2nde BMA' },
-  { title: 'Me in Ten Years — CVPM',    url: 'me-in-ten-years-cvpm.html',      matiere: 'Anglais',  classe: '2nde MES' },
-  { title: 'Me in Ten Years — MELEC',   url: 'me-in-ten-years-melec.html',     matiere: 'Anglais',  classe: '1ère MELEC' },
-  { title: 'Me in Ten Years — MES',     url: 'me-in-ten-years-mes.html',       matiere: 'Anglais',  classe: '1ère MES' },
+  { title: 'Me in Ten Years (BMA)',     url: 'me-in-ten-years-bma.html',       matiere: 'Anglais',  classe: '2nde BMA' },
+  { title: 'Me in Ten Years (CVPM)',    url: 'me-in-ten-years-cvpm.html',      matiere: 'Anglais',  classe: '2nde MES' },
+  { title: 'Me in Ten Years (MELEC)',   url: 'me-in-ten-years-melec.html',     matiere: 'Anglais',  classe: '1ère MELEC' },
+  { title: 'Me in Ten Years (MES)',     url: 'me-in-ten-years-mes.html',       matiere: 'Anglais',  classe: '1ère MES' },
   { title: 'Fascination et rejet du monstrueux', url: 'quiz-revision-transfert.html', matiere: 'Français', classe: '1ère' },
   { title: 'Client Brief to Shop Sign', url: 'shop-sign-quiz.html',            matiere: 'Anglais',  classe: '1ère MES' },
   { title: 'Solve the Mystery',         url: 'solve-the-mystery-quiz.html',    matiere: 'Anglais',  classe: '1ère MELEC / MES' },
-  { title: 'Spider-Man — Before You Watch', url: 'spiderman-before-you-watch.html', matiere: 'Anglais', classe: 'À préciser' },
-  { title: 'Spider-Man — Test Prep',    url: 'spiderman-test-prep.html',       matiere: 'Anglais',  classe: 'À préciser' },
+  { title: 'Spider-Man - Before You Watch', url: 'spiderman-before-you-watch.html', matiere: 'Anglais', classe: 'À préciser' },
+  { title: 'Spider-Man - Test Prep',    url: 'spiderman-test-prep.html',       matiere: 'Anglais',  classe: 'À préciser' },
 ];
 const PRACTICE_BASE_URL = 'https://clperet-bot.github.io/entrainements-cours/';
 
-function renderPracticeDirectory(){
+function loadPracticeQr(){
   const wrap = document.getElementById('practice-directory-wrap');
-  const matieres = ['Anglais', 'Français'];
-  wrap.innerHTML = matieres.map(m => {
-    const quizzes = PRACTICE_QUIZ_DIRECTORY.filter(q => q.matiere === m);
-    if(!quizzes.length) return '';
-    return `
-      <p class="section-label" style="margin-top:14px; opacity:0.75;">${m}</p>
-      <div class="class-grid">
-        ${quizzes.map((q, i) => `
-          <div class="class-card" data-dir-url="${PRACTICE_BASE_URL}${q.url}" data-dir-title="${q.title}" style="cursor:pointer;">
-            <div class="class-card-top">
-              <span class="class-name">${q.title}</span>
-            </div>
-            <p class="class-meta">${q.classe}</p>
-            <button class="class-qr-btn">Afficher le QR / lien</button>
+  const matiere = document.getElementById('qr-filter-matiere').value;
+  const classe = document.getElementById('qr-filter-class').value;
+
+  if(!matiere || !classe){
+    wrap.innerHTML = '<p class="empty-note">Choisis une matière et une classe ci-dessus pour afficher le(s) quiz correspondant(s).</p>';
+    return;
+  }
+
+  const quizzes = PRACTICE_QUIZ_DIRECTORY.filter(q => q.matiere === matiere && q.classe.includes(classe));
+
+  if(!quizzes.length){
+    wrap.innerHTML = '<p class="empty-note">Aucun quiz enregistré pour cette matière et cette classe. (Si le quiz existe mais que sa classe est notée "À préciser" dans le code, demande à ce que ce soit corrigé.)</p>';
+    return;
+  }
+
+  wrap.innerHTML = `
+    <div class="class-grid" style="margin-top:16px;">
+      ${quizzes.map(q => `
+        <div class="class-card" data-dir-url="${PRACTICE_BASE_URL}${q.url}" data-dir-title="${q.title}" style="cursor:pointer;">
+          <div class="class-card-top">
+            <span class="class-name">${q.title}</span>
           </div>
-        `).join('')}
-      </div>
-    `;
-  }).join('');
+          <p class="class-meta">${q.classe}</p>
+          <button class="class-qr-btn">Afficher le QR / lien</button>
+        </div>
+      `).join('')}
+    </div>
+  `;
 
   wrap.querySelectorAll('[data-dir-url]').forEach(card => {
     card.addEventListener('click', () => openPracticeQr(card.dataset.dirUrl, card.dataset.dirTitle));
   });
 }
+document.getElementById('qr-filter-matiere').addEventListener('change', loadPracticeQr);
+document.getElementById('qr-filter-class').addEventListener('change', loadPracticeQr);
 
 function openPracticeQr(url, title){
   document.getElementById('qr-class-name').textContent = title;
@@ -904,11 +945,21 @@ function openPracticeQr(url, title){
   document.getElementById('qr-modal').classList.remove('hidden');
 }
 
-async function loadPractice(){
-  renderPracticeDirectory();
+async function loadPracticeResults(){
   const filterMatiere = document.getElementById('filter-practice-matiere').value;
   const filterClass = document.getElementById('filter-practice-class').value;
   const filterQuiz = document.getElementById('filter-practice-quiz').value;
+
+  // Remplit le filtre "quiz" à partir de la liste COMPLÈTE des quiz (pas seulement ceux déjà tentés),
+  // et le refiltre selon la matière choisie pour ne proposer que des quiz pertinents.
+  const quizSelect = document.getElementById('filter-practice-quiz');
+  const previousQuizValue = quizSelect.value;
+  const quizzesForMatiere = filterMatiere
+    ? PRACTICE_QUIZ_DIRECTORY.filter(q => q.matiere === filterMatiere)
+    : PRACTICE_QUIZ_DIRECTORY;
+  quizSelect.innerHTML = '<option value="">Tous les quiz</option>' +
+    quizzesForMatiere.slice().sort((a,b) => a.title.localeCompare(b.title,'fr')).map(q => `<option value="${q.title}">${q.title}</option>`).join('');
+  if(quizzesForMatiere.some(q => q.title === previousQuizValue)) quizSelect.value = previousQuizValue;
 
   let query = supa.from('practice_attempts').select('*').order('completed_at', { ascending: false });
   if(filterMatiere) query = query.eq('matiere', filterMatiere);
@@ -923,14 +974,6 @@ async function loadPractice(){
     summaryWrap.innerHTML = '<p class="empty-note">Erreur de chargement.</p>';
     tableWrap.innerHTML = '';
     return;
-  }
-
-  // Remplit le filtre "quiz" dynamiquement une seule fois, à partir de toutes les tentatives existantes
-  const quizSelect = document.getElementById('filter-practice-quiz');
-  if(quizSelect.options.length <= 1){
-    const { data: allForList } = await supa.from('practice_attempts').select('quiz_name');
-    const uniqueQuizzes = [...new Set((allForList || []).map(a => a.quiz_name))].sort((a,b) => a.localeCompare(b,'fr'));
-    quizSelect.innerHTML += uniqueQuizzes.map(q => `<option value="${q}">${q}</option>`).join('');
   }
 
   if(!attempts || attempts.length === 0){
@@ -998,14 +1041,14 @@ async function loadPractice(){
       if(!confirm(`Supprimer la tentative de ${a.student_name} (${a.quiz_name}) ?`)) return;
       const { error } = await supa.from('practice_attempts').delete().eq('id', a.id);
       if(error){ alert('Erreur : ' + error.message); return; }
-      loadPractice();
+      loadPracticeResults();
     });
   });
 }
 
-document.getElementById('filter-practice-matiere').addEventListener('change', loadPractice);
-document.getElementById('filter-practice-class').addEventListener('change', loadPractice);
-document.getElementById('filter-practice-quiz').addEventListener('change', loadPractice);
+document.getElementById('filter-practice-matiere').addEventListener('change', loadPracticeResults);
+document.getElementById('filter-practice-class').addEventListener('change', loadPracticeResults);
+document.getElementById('filter-practice-quiz').addEventListener('change', loadPracticeResults);
 document.getElementById('filter-results-matiere').addEventListener('change', loadResults);
 
 document.getElementById('reset-practice-btn').addEventListener('click', async () => {
@@ -1016,7 +1059,7 @@ document.getElementById('reset-practice-btn').addEventListener('click', async ()
   const { error } = await supa.from('practice_attempts').delete().not('id', 'is', null);
   if(error){ alert('Erreur pendant la suppression : ' + error.message); return; }
   alert('Toutes les tentatives d\'entraînement ont été supprimées.');
-  loadPractice();
+  loadPracticeResults();
 });
 
 // Service worker — nécessaire pour que le navigateur propose l'installation
