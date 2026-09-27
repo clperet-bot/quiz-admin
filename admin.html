@@ -262,13 +262,6 @@
       </div>
       <div class="body-pad">
         <div class="stat-row" id="stat-row"></div>
-        <div class="filter-row">
-          <select id="filter-dashboard-matiere">
-            <option value="">Toutes les matières</option>
-            <option value="Anglais">Anglais</option>
-            <option value="Français">Français</option>
-          </select>
-        </div>
         <p class="section-label">Classes</p>
         <div class="class-grid" id="class-grid">
           <p class="loading-note">Chargement...</p>
@@ -492,21 +485,13 @@ async function loadDashboard(){
     grid.innerHTML = '<p class="empty-note">Aucune classe. Ajoute-en dans Supabase (table classes).</p>';
     return;
   }
-  const filterMatiere = document.getElementById('filter-dashboard-matiere').value;
-  const visibleClasses = filterMatiere ? CLASSES.filter(c => (c.matiere || 'Anglais') === filterMatiere) : CLASSES;
-  if(visibleClasses.length === 0){
-    grid.innerHTML = '<p class="empty-note">Aucune classe pour cette matière.</p>';
-    return;
-  }
-  grid.innerHTML = visibleClasses.map(c => {
+  grid.innerHTML = CLASSES.map(c => {
     const classQuizzes = QUIZZES.filter(q => q.class_id === c.id);
     const activeQuiz = classQuizzes.find(q => q.active);
-    const matiere = c.matiere || 'Anglais';
-    const matiereBadgeClass = matiere === 'Français' ? 'badge-matiere-fr' : 'badge-matiere-en';
     return `
       <div class="class-card" data-class-id="${c.id}">
         <div class="class-card-top">
-          <span class="class-name">${c.name}<span class="badge-matiere ${matiereBadgeClass}">${matiere}</span></span>
+          <span class="class-name">${c.name}</span>
           ${activeQuiz ? '<span class="badge-live">● En ligne</span>' : '<span class="badge-off">Aucun quiz actif</span>'}
         </div>
         <p class="class-meta">${activeQuiz ? activeQuiz.title : classQuizzes.length + ' quiz disponible' + (classQuizzes.length > 1 ? 's' : '')}</p>
@@ -555,7 +540,7 @@ async function openClass(classId){
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
         </div>
         <div>
-          <div class="quiz-title">${q.title}</div>
+          <div class="quiz-title">${q.title}<span class="badge-matiere ${(q.matiere || 'Anglais') === 'Français' ? 'badge-matiere-fr' : 'badge-matiere-en'}">${q.matiere || 'Anglais'}</span></div>
           <div class="quiz-sub">${q.total_questions} questions · évalué</div>
         </div>
       </div>
@@ -628,19 +613,19 @@ async function loadResults(){
 
   if(document.getElementById('filter-class').options.length <= 1){
     document.getElementById('filter-class').innerHTML += CLASSES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    document.getElementById('filter-quiz').innerHTML += QUIZZES.map(q => `<option value="${q.id}">${q.title}</option>`).join('');
+    document.getElementById('filter-quiz').innerHTML += QUIZZES.map(q => `<option value="${q.id}">${q.title}${(q.matiere || 'Anglais') === 'Français' ? ' (FR)' : ''}</option>`).join('');
     document.getElementById('filter-class').addEventListener('change', loadResults);
     document.getElementById('filter-quiz').addEventListener('change', loadResults);
   }
 
   let query = supa.from('attempts').select('*').order('created_at', { ascending: false }).limit(200);
-  if(filterClass){
-    query = query.eq('class_id', filterClass);
+  if(filterClass) query = query.eq('class_id', filterClass);
+  if(filterQuiz){
+    query = query.eq('quiz_id', filterQuiz);
   } else if(filterMatiere){
-    const idsForMatiere = CLASSES.filter(c => (c.matiere || 'Anglais') === filterMatiere).map(c => c.id);
-    query = query.in('class_id', idsForMatiere.length ? idsForMatiere : [-1]);
+    const idsForMatiere = QUIZZES.filter(q => (q.matiere || 'Anglais') === filterMatiere).map(q => q.id);
+    query = query.in('quiz_id', idsForMatiere.length ? idsForMatiere : [-1]);
   }
-  if(filterQuiz) query = query.eq('quiz_id', filterQuiz);
 
   const { data: attempts, error } = await query;
   const wrap = document.getElementById('results-table-wrap');
@@ -944,7 +929,6 @@ document.getElementById('filter-practice-matiere').addEventListener('change', lo
 document.getElementById('filter-practice-class').addEventListener('change', loadPractice);
 document.getElementById('filter-practice-quiz').addEventListener('change', loadPractice);
 document.getElementById('filter-results-matiere').addEventListener('change', loadResults);
-document.getElementById('filter-dashboard-matiere').addEventListener('change', loadDashboard);
 
 document.getElementById('reset-practice-btn').addEventListener('click', async () => {
   const step1 = confirm("Supprimer TOUTES les tentatives d'entraînement enregistrées, dans toutes les classes et tous les quiz ? Cette action est irréversible.");
