@@ -135,8 +135,41 @@
   .report-expected{color:var(--ink-soft); font-size:12.5px;}
   .report-answer{color:var(--ink); font-weight:500;}
   .report-comment{display:block; margin-top:3px; color:var(--purple-dark); font-style:italic; font-size:12.5px;}
+  .report-subscores{display:block; margin-top:5px; color:var(--ink-soft); font-size:11.5px;}
   .report-text{font-size:13.5px; line-height:1.55; background:var(--paper); border-radius:7px; padding:10px 12px; white-space:pre-wrap;}
-  .report-close{position:sticky; bottom:0; width:100%; background:var(--white); border-top:1px solid var(--line); padding:12px; font-weight:600; font-size:14px; color:var(--purple); border:none; cursor:pointer;}
+  .report-footer-row{position:sticky; bottom:0; display:flex; background:var(--white); border-top:1px solid var(--line);}
+  .report-close{flex:1; background:var(--white); padding:12px; font-weight:600; font-size:14px; color:var(--purple); border:none; cursor:pointer;}
+
+  /* ---- Impression des comptes rendus ---- */
+  #print-report-root{display:none;}
+  @media print{
+    body > *:not(#print-report-root){display:none !important;}
+    #print-report-root{display:block !important;}
+    #print-report-root, #print-report-root *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
+    @page{margin:0;}
+  }
+  .btn-print-corrections{background:var(--purple); color:#fff; border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer;}
+  .btn-print-corrections.hidden{display:none;}
+  /* Un compte rendu = une "page" imprimée ; celle du prénom suivant commence toujours sur une feuille neuve,
+     même si le compte rendu précédent a débordé sur plusieurs pages. */
+  .pr-page + .pr-page{break-before:page; page-break-before:always;}
+  .pr-header{background:linear-gradient(135deg,#4B2E83,#6B4FA8); color:#fff; padding:16px 20px 14px; margin:0; break-after:avoid-page; page-break-after:avoid;}
+  .pr-header-inner{display:flex; justify-content:space-between; align-items:flex-start;}
+  .pr-header-name{font-family:Georgia,'Baloo 2',sans-serif; font-weight:700; font-size:20px;}
+  .pr-header-meta{font-size:11px; opacity:0.85; margin-top:4px;}
+  .pr-score{background:#fff; color:#4B2E83; font-weight:700; font-size:16px; width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.1; flex-shrink:0;}
+  .pr-score .pr-of{font-size:8px; display:block; font-weight:400;}
+  .pr-body-pad{padding:16px 20px 6px;}
+  .pr-section{margin-bottom:14px; page-break-inside:avoid;}
+  .pr-section-title{font-weight:700; font-size:10.5px; color:#4B2E83; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;}
+  .pr-item{background:#F7F5FB; border-radius:6px; padding:9px 12px; margin-bottom:6px; font-size:12.5px; line-height:1.5;}
+  .pr-item-top{display:flex; align-items:center;}
+  .pr-mark{background:#4B2E83; color:#fff; font-size:10px; font-weight:700; padding:2px 9px; border-radius:10px; margin-right:10px; flex-shrink:0; display:inline-block;}
+  .pr-mark.no{background:#C0392B;}
+  .pr-answer{font-weight:600; color:#181614;}
+  .pr-comment{display:block; margin-top:3px; color:#C2185B; font-style:italic; font-size:11px;}
+  .pr-text-block{font-size:12.5px; line-height:1.6; white-space:pre-wrap; background:#F7F5FB; border-radius:6px; padding:10px 12px;}
+  .pr-footer{margin-top:20px; text-align:center; font-size:9.5px; color:#aaa; padding-bottom:16px;}
   .result-table tr[data-report]{cursor:pointer;}
   .result-table tr[data-report]:hover{background:var(--purple-light);}
   .qr-class-name{font-family:'Baloo 2',sans-serif; font-size:clamp(24px,5vw,34px); font-weight:700; color:#fff; margin-bottom:4px;}
@@ -308,6 +341,7 @@
           </select>
           <select id="filter-class"><option value="">Toutes les classes</option></select>
           <select id="filter-quiz"><option value="">Tous les quiz</option></select>
+          <button id="print-quiz-corrections-btn" class="btn-print-corrections hidden">🖨️ Imprimer les corrections</button>
           <button id="reset-results-btn" class="btn-danger-outline">Réinitialiser tous les résultats</button>
         </div>
         <div id="results-table-wrap"><p class="loading-note">Chargement...</p></div>
@@ -329,6 +363,11 @@
           </select>
           <select id="qr-filter-class">
             <option value="">Choisis une classe</option>
+            <option value="2nde MES">2nde MES</option>
+            <option value="2nde TNE">2nde TNE</option>
+            <option value="2nde BMA">2nde BMA</option>
+            <option value="1ère MES">1ère MES</option>
+            <option value="1ère MELEC">1ère MELEC</option>
           </select>
         </div>
         <div id="practice-directory-wrap"></div>
@@ -351,6 +390,11 @@
           </select>
           <select id="filter-practice-class">
             <option value="">Toutes les classes</option>
+            <option value="2nde MES">2nde MES</option>
+            <option value="2nde TNE">2nde TNE</option>
+            <option value="2nde BMA">2nde BMA</option>
+            <option value="1ère MES">1ère MES</option>
+            <option value="1ère MELEC">1ère MELEC</option>
           </select>
           <select id="filter-practice-quiz"><option value="">Tous les quiz</option></select>
           <button id="reset-practice-btn" class="btn-danger-outline">Réinitialiser les résultats d'entraînement</button>
@@ -358,6 +402,8 @@
 
         <p class="section-label" style="margin-top:28px;">Vue d'ensemble par élève</p>
         <div id="practice-summary-wrap"><p class="loading-note">Chargement...</p></div>
+        <p class="section-label" style="margin-top:24px;">Historique détaillé</p>
+        <div id="practice-table-wrap"><p class="loading-note">Chargement...</p></div>
       </div>
     </div>
 
@@ -382,9 +428,14 @@
       <div class="report-meta" id="report-meta"></div>
     </div>
     <div class="report-body" id="report-body"></div>
-    <button class="report-close" id="report-close-btn">Fermer</button>
+    <div class="report-footer-row">
+      <button class="report-close" id="report-print-btn" style="border-right:1px solid var(--line);">🖨️ Imprimer</button>
+      <button class="report-close" id="report-close-btn">Fermer</button>
+    </div>
   </div>
 </div>
+
+<div id="print-report-root"></div>
 
 <script>
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -403,12 +454,6 @@ function scoreClass(score, total){
 function fmtDate(iso){
   const d = new Date(iso);
   return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
-}
-// Reconstruit les <option> d'un select tout en gardant la valeur sélectionnée si elle est toujours valide
-function populateSelectPreserving(selectEl, optionsHtml, allLabelHtml, validValues){
-  const prev = selectEl.value;
-  selectEl.innerHTML = allLabelHtml + optionsHtml;
-  selectEl.value = validValues.includes(prev) ? prev : '';
 }
 
 // -------- auth --------
@@ -652,40 +697,25 @@ document.getElementById('qr-close-btn').addEventListener('click', () => {
 // -------- results --------
 async function loadResults(){
   const filterMatiere = document.getElementById('filter-results-matiere').value;
+  const filterClass = document.getElementById('filter-class').value;
+  const filterQuiz = document.getElementById('filter-quiz').value;
 
-  // Classe : seulement celles qui ont au moins un quiz dans la matière choisie
-  const classSelect = document.getElementById('filter-class');
-  const classesForMatiere = filterMatiere
-    ? CLASSES.filter(c => QUIZZES.some(q => q.class_id === c.id && (q.matiere || 'Anglais') === filterMatiere))
-    : CLASSES;
-  populateSelectPreserving(
-    classSelect,
-    classesForMatiere.map(c => `<option value="${c.id}">${c.name}</option>`).join(''),
-    '<option value="">Toutes les classes</option>',
-    classesForMatiere.map(c => c.id)
-  );
-  const filterClass = classSelect.value;
+  // Le bouton d'impression groupée n'a de sens que sur un quiz précis, pas sur "Tous les quiz".
+  document.getElementById('print-quiz-corrections-btn').classList.toggle('hidden', !filterQuiz);
 
-  // Quiz : seulement ceux qui correspondent à la matière ET la classe choisies
-  const quizSelect = document.getElementById('filter-quiz');
-  const quizzesForFilter = QUIZZES.filter(q =>
-    (!filterMatiere || (q.matiere || 'Anglais') === filterMatiere) &&
-    (!filterClass || q.class_id === filterClass)
-  );
-  populateSelectPreserving(
-    quizSelect,
-    quizzesForFilter.map(q => `<option value="${q.id}">${q.title}${(q.matiere || 'Anglais') === 'Français' ? ' (FR)' : ''}</option>`).join(''),
-    '<option value="">Tous les quiz</option>',
-    quizzesForFilter.map(q => q.id)
-  );
-  const filterQuiz = quizSelect.value;
+  if(document.getElementById('filter-class').options.length <= 1){
+    document.getElementById('filter-class').innerHTML += CLASSES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    document.getElementById('filter-quiz').innerHTML += QUIZZES.map(q => `<option value="${q.id}">${q.title}${(q.matiere || 'Anglais') === 'Français' ? ' (FR)' : ''}</option>`).join('');
+    document.getElementById('filter-class').addEventListener('change', loadResults);
+    document.getElementById('filter-quiz').addEventListener('change', loadResults);
+  }
 
   let query = supa.from('attempts').select('*').order('created_at', { ascending: false }).limit(200);
   if(filterClass) query = query.eq('class_id', filterClass);
   if(filterQuiz){
     query = query.eq('quiz_id', filterQuiz);
   } else if(filterMatiere){
-    const idsForMatiere = quizzesForFilter.map(q => q.id);
+    const idsForMatiere = QUIZZES.filter(q => (q.matiere || 'Anglais') === filterMatiere).map(q => q.id);
     query = query.in('quiz_id', idsForMatiere.length ? idsForMatiere : [-1]);
   }
 
@@ -769,7 +799,12 @@ async function loadResults(){
 
 // -------- report modal (compte rendu) --------
 let currentAttempts = [];
+let currentReportAttempt = null;
+let currentReportDetail = null;
 
+function humanizeKey(k){
+  return k.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+}
 function reportLabelForKey(k){
   const labels = {
     section1_ai:'Partie 1', section2:'Partie 2', section3:'Partie 3', section4_ai:'Partie 4 (corrigée par IA)',
@@ -777,9 +812,14 @@ function reportLabelForKey(k){
     ai_subtotal:'Sous-total IA', ai_error:'Erreur de correction IA',
     raw_fields:'Réponses au moment de la coupure'
   };
-  return labels[k] || k;
+  return labels[k] || humanizeKey(k);
 }
 const REPORT_KEY_ORDER = ['section1_ai', 'section2', 'section3', 'section4_ai'];
+
+// Champs "cœur" d'un item de réponse : tout le reste (souvent des sous-notes comme
+// qui_score/comment_score/pourquoi_score pour une rédaction notée sur plusieurs critères)
+// est affiché en détail plutôt que dans un JSON brut illisible.
+const REPORT_ITEM_CORE_KEYS = ['is_correct','correct','score','total','question','label','field','given','answer','correct_answer','explanation','comment'];
 
 function reportRenderItem(item){
   if(item === null || item === undefined) return '';
@@ -787,14 +827,19 @@ function reportRenderItem(item){
   let mark = '';
   if(item.is_correct !== undefined) mark = item.is_correct ? '✅' : '❌';
   else if(item.correct !== undefined) mark = item.correct ? '✅' : '❌';
+  else if(item.total !== undefined && item.total !== null) mark = `${item.total} pt`;
   else if(item.score !== undefined && item.score !== null) mark = `${item.score} pt`;
   else if(item.score === null) mark = '⏳';
-  const label = item.question || item.field || '';
+  const label = item.question || item.label || item.field || '';
   const given = item.given !== undefined ? item.given : item.answer;
   const expected = item.correct_answer ? ` <span class="report-expected">(attendu : ${item.correct_answer})</span>` : '';
   const note = (item.comment || item.explanation) ? `<span class="report-comment">${item.comment || item.explanation}</span>` : '';
   const answerHtml = given !== undefined && given !== '' ? `<span class="report-answer">${given}</span>` : '<span class="report-expected">(vide)</span>';
-  return `<li><span class="report-mark">${mark}</span>${label ? `<strong>${label}</strong> — ` : ''}${answerHtml}${expected}${note}</li>`;
+  const subScores = Object.entries(item).filter(([k,v]) => !REPORT_ITEM_CORE_KEYS.includes(k) && typeof v === 'number');
+  const subScoresHtml = subScores.length
+    ? `<span class="report-subscores">${subScores.map(([k,v]) => `${humanizeKey(k)} : ${v}`).join(' · ')}</span>`
+    : '';
+  return `<li><span class="report-mark">${mark}</span>${label ? `<strong>${label}</strong> — ` : ''}${answerHtml}${expected}${note}${subScoresHtml}</li>`;
 }
 
 function reportRenderDetail(detail){
@@ -812,7 +857,9 @@ function reportRenderDetail(detail){
       return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4><ul class="report-list">${val.map(reportRenderItem).join('')}</ul></div>`;
     }
     if(typeof val === 'object'){
-      return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4><pre class="report-text">${JSON.stringify(val, null, 1)}</pre></div>`;
+      // Une section notée par l'IA sur plusieurs critères (ex : qui/comment/pourquoi) est enregistrée
+      // comme un seul objet (pas un tableau) — on l'affiche comme un item normal, jamais en JSON brut.
+      return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4><ul class="report-list">${reportRenderItem(val)}</ul></div>`;
     }
     return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4><p class="report-text">${val}</p></div>`;
   }).join('');
@@ -830,14 +877,9 @@ function parseFreeTextFallback(writingText){
   };
 }
 
-function openReport(a){
-  if(!a) return;
-  document.getElementById('report-student').textContent = a.student_name_raw;
-  document.getElementById('report-score-pill').textContent = a.cancelled ? 'Annulée' : `${a.score}/${a.total}`;
-  const classe = CLASSES.find(c => c.id === a.class_id);
-  const quiz = QUIZZES.find(q => q.id === a.quiz_id);
-  document.getElementById('report-meta').textContent = `${quiz ? quiz.title : ''} · ${classe ? classe.name : ''} · ${fmtDate(a.created_at)}`;
-
+// Copie le detail pour ne pas modifier l'objet original, et complète les réponses manquantes
+// à partir du texte brut si besoin. Partagé entre la fiche à l'écran et l'impression.
+function getReportDetail(a){
   const detail = a.answers_detail ? JSON.parse(JSON.stringify(a.answers_detail)) : null;
   if(detail && (detail.section1_ai || detail.section4_ai)){
     const needsFallback = ['section1_ai','section4_ai'].some(k =>
@@ -849,6 +891,20 @@ function openReport(a){
       if(Array.isArray(detail.section4_ai)) detail.section4_ai.forEach((it, i) => { if(it && !it.answer) it.answer = s4[i] || ''; });
     }
   }
+  return detail;
+}
+
+function openReport(a){
+  if(!a) return;
+  document.getElementById('report-student').textContent = a.student_name_raw;
+  document.getElementById('report-score-pill').textContent = a.cancelled ? 'Annulée' : `${a.score}/${a.total}`;
+  const classe = CLASSES.find(c => c.id === a.class_id);
+  const quiz = QUIZZES.find(q => q.id === a.quiz_id);
+  document.getElementById('report-meta').textContent = `${quiz ? quiz.title : ''} · ${classe ? classe.name : ''} · ${fmtDate(a.created_at)}`;
+
+  const detail = getReportDetail(a);
+  currentReportAttempt = a;
+  currentReportDetail = detail;
 
   let html = '';
   html += reportRenderDetail(detail);
@@ -868,6 +924,112 @@ function openReport(a){
   document.getElementById('report-body').innerHTML = html;
   document.getElementById('report-modal').classList.remove('hidden');
 }
+
+// -------- impression des comptes rendus --------
+function prLabelForKey(k){
+  const labels = {
+    section1_ai:'Partie 1', section2:'Partie 2', section3:'Partie 3', section4_ai:'Partie 4',
+    feedback_global:'Ton bilan'
+  };
+  return labels[k] || humanizeKey(k);
+}
+// Nettoie les commentaires des mentions internes (correction manuelle, IA indisponible...) —
+// l'élève n'a pas besoin de savoir comment sa copie a été corrigée.
+function prCleanComment(text){
+  if(!text) return text;
+  return text
+    .replace(/^Corrigé manuellement\s*:?\s*/i, '')
+    .replace(/^Non corrigé \(IA indisponible\)\.?\s*/i, '')
+    .trim();
+}
+function prRenderItem(item){
+  if(item === null || item === undefined) return '';
+  if(typeof item !== 'object') return `<div class="pr-item">${item}</div>`;
+  let markHtml = '';
+  if(item.is_correct !== undefined) markHtml = item.is_correct ? '<span class="pr-mark">✓</span>' : '<span class="pr-mark no">✕</span>';
+  else if(item.correct !== undefined) markHtml = item.correct ? '<span class="pr-mark">✓</span>' : '<span class="pr-mark no">✕</span>';
+  else if(item.total !== undefined && item.total !== null) markHtml = `<span class="pr-mark">${item.total} pt</span>`;
+  else if(item.score !== undefined && item.score !== null) markHtml = `<span class="pr-mark">${item.score} pt</span>`;
+  else if(item.score === null) markHtml = '<span class="pr-mark">⏳</span>';
+  const label = item.question || item.label || ''; // jamais l'id technique du champ dans la version imprimée
+  const given = item.given !== undefined ? item.given : item.answer;
+  const rawComment = item.comment || item.explanation || item.feedback;
+  const note = rawComment ? `<span class="pr-comment">${prCleanComment(rawComment)}</span>` : '';
+  const answerHtml = given !== undefined && given !== '' ? `<span class="pr-answer">${given}</span>` : '<span style="color:#999;">(vide)</span>';
+  return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}</span></div>${note}</div>`;
+}
+const PR_HIDDEN_KEYS = ['client_subtotal','ai_subtotal','ai_error','raw_fields','released_for_retry'];
+function prRenderDetail(detail){
+  if(!detail) return '';
+  if(Array.isArray(detail)){
+    return `<div class="pr-section"><div class="pr-section-title">Réponses</div>${detail.map(prRenderItem).join('')}</div>`;
+  }
+  const entries = Object.entries(detail).filter(([k,v]) => !PR_HIDDEN_KEYS.includes(k) && v !== null && v !== undefined && v !== '');
+  const ordered = [
+    ...REPORT_KEY_ORDER.map(k => entries.find(([key]) => key === k)).filter(Boolean),
+    ...entries.filter(([key]) => !REPORT_KEY_ORDER.includes(key))
+  ];
+  return ordered.map(([key, val]) => {
+    const title = prLabelForKey(key);
+    if(Array.isArray(val)){
+      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${val.map(prRenderItem).join('')}</div>`;
+    }
+    if(typeof val === 'object'){
+      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${prRenderItem(val)}</div>`;
+    }
+    return `<div class="pr-section"><div class="pr-section-title">${title}</div><div class="pr-text-block">${val}</div></div>`;
+  }).join('');
+}
+function buildPrintReport(a, detail){
+  const classe = CLASSES.find(c => c.id === a.class_id);
+  const quiz = QUIZZES.find(q => q.id === a.quiz_id);
+  const scoreHtml = a.cancelled ? 'Annulée' : `${a.score}<span class="pr-of">/${a.total}</span>`;
+
+  let body = prRenderDetail(detail);
+
+  const isItemizedFreeText = detail && (detail.section1_ai || detail.section4_ai);
+  const hasFeedbackInDetail = detail && detail.feedback_global;
+  if(a.writing_text && !isItemizedFreeText){
+    body += `<div class="pr-section"><div class="pr-section-title">Ta copie</div><div class="pr-text-block">${a.writing_text}</div></div>`;
+  }
+  if(a.writing_correction && !hasFeedbackInDetail){
+    body += `<div class="pr-section"><div class="pr-section-title">Ton bilan</div><div class="pr-text-block" style="color:#C2185B;">${prCleanComment(a.writing_correction)}</div></div>`;
+  }
+  if(!body){
+    body = '<p style="color:#999; font-size:13px;">Aucun détail enregistré pour cette tentative.</p>';
+  }
+
+  return `
+    <div class="pr-header">
+      <div class="pr-header-inner">
+        <div>
+          <div class="pr-header-name">${a.student_name_raw}</div>
+          <div class="pr-header-meta">${quiz ? quiz.title : ''} · ${classe ? classe.name : ''} · ${fmtDate(a.created_at)}</div>
+        </div>
+        <div class="pr-score">${scoreHtml}</div>
+      </div>
+    </div>
+    <div class="pr-body-pad">
+      ${body}
+      <div class="pr-footer">Lycée Godefroy de Bouillon</div>
+    </div>
+  `;
+}
+document.getElementById('report-print-btn').addEventListener('click', () => {
+  if(!currentReportAttempt) return;
+  document.getElementById('print-report-root').innerHTML = buildPrintReport(currentReportAttempt, currentReportDetail);
+  window.print();
+});
+// Impression groupée : une correction par élève, chacune démarrant sur une nouvelle page
+// (y compris quand la correction précédente déborde sur plusieurs pages).
+document.getElementById('print-quiz-corrections-btn').addEventListener('click', () => {
+  const attempts = (currentAttempts || []).filter(a => !a.cancelled);
+  if(attempts.length === 0){ alert("Aucune correction à imprimer pour cette sélection."); return; }
+  const html = attempts.map(a => `<div class="pr-page">${buildPrintReport(a, getReportDetail(a))}</div>`).join('');
+  document.getElementById('print-report-root').innerHTML = html;
+  window.print();
+});
+
 document.getElementById('report-close-btn').addEventListener('click', () => {
   document.getElementById('report-modal').classList.add('hidden');
 });
@@ -887,6 +1049,7 @@ document.getElementById('reset-results-btn').addEventListener('click', async () 
 });
 
 // -------- practice (quiz d'entraînement non notés) --------
+let currentPracticeAttempts = [];
 
 // Annuaire statique des quiz d'entraînement — pas dans Supabase, ce sont de simples pages toujours ouvertes.
 // La "classe" est juste une étiquette pour t'y retrouver, pas une restriction : n'importe quel élève peut ouvrir le lien.
@@ -913,24 +1076,11 @@ const PRACTICE_QUIZ_DIRECTORY = [
   { title: 'Spider-Man - Test Prep',    url: 'spiderman-test-prep.html',       matiere: 'Anglais',  classe: 'À préciser' },
 ];
 const PRACTICE_BASE_URL = 'https://clperet-bot.github.io/entrainements-cours/';
-// Les classes possibles pour un quiz d'entraînement (mêmes valeurs que la porte d'entrée élève dans practice-logger.js)
-const PRACTICE_CLASS_OPTIONS = ['2nde MES', '2nde TNE', '2nde BMA', '1ère MES', '1ère MELEC'];
 
 function loadPracticeQr(){
   const wrap = document.getElementById('practice-directory-wrap');
   const matiere = document.getElementById('qr-filter-matiere').value;
-
-  const classeSelect = document.getElementById('qr-filter-class');
-  const classesForMatiere = matiere
-    ? PRACTICE_CLASS_OPTIONS.filter(cn => PRACTICE_QUIZ_DIRECTORY.some(q => q.matiere === matiere && q.classe.includes(cn)))
-    : PRACTICE_CLASS_OPTIONS;
-  populateSelectPreserving(
-    classeSelect,
-    classesForMatiere.map(cn => `<option value="${cn}">${cn}</option>`).join(''),
-    '<option value="">Choisis une classe</option>',
-    classesForMatiere
-  );
-  const classe = classeSelect.value;
+  const classe = document.getElementById('qr-filter-class').value;
 
   if(!matiere || !classe){
     wrap.innerHTML = '<p class="empty-note">Choisis une matière et une classe ci-dessus pour afficher le(s) quiz correspondant(s).</p>';
@@ -975,38 +1125,21 @@ function openPracticeQr(url, title){
   document.getElementById('qr-modal').classList.remove('hidden');
 }
 
-let PRACTICE_BY_STUDENT = {};
-
 async function loadPracticeResults(){
   const filterMatiere = document.getElementById('filter-practice-matiere').value;
+  const filterClass = document.getElementById('filter-practice-class').value;
+  const filterQuiz = document.getElementById('filter-practice-quiz').value;
 
-  // Classe : seulement celles qui ont au moins un quiz dans la matière choisie
-  const classSelect = document.getElementById('filter-practice-class');
-  const classesForMatiere = filterMatiere
-    ? PRACTICE_CLASS_OPTIONS.filter(cn => PRACTICE_QUIZ_DIRECTORY.some(q => q.matiere === filterMatiere && q.classe.includes(cn)))
-    : PRACTICE_CLASS_OPTIONS;
-  populateSelectPreserving(
-    classSelect,
-    classesForMatiere.map(cn => `<option value="${cn}">${cn}</option>`).join(''),
-    '<option value="">Toutes les classes</option>',
-    classesForMatiere
-  );
-  const filterClass = classSelect.value;
-
-  // Quiz : à partir de la liste COMPLÈTE des quiz (pas seulement ceux déjà tentés),
-  // filtrée par matière ET par classe pour ne proposer que des quiz pertinents.
+  // Remplit le filtre "quiz" à partir de la liste COMPLÈTE des quiz (pas seulement ceux déjà tentés),
+  // et le refiltre selon la matière choisie pour ne proposer que des quiz pertinents.
   const quizSelect = document.getElementById('filter-practice-quiz');
-  const quizzesForFilter = PRACTICE_QUIZ_DIRECTORY.filter(q =>
-    (!filterMatiere || q.matiere === filterMatiere) &&
-    (!filterClass || q.classe.includes(filterClass))
-  );
-  populateSelectPreserving(
-    quizSelect,
-    quizzesForFilter.slice().sort((a,b) => a.title.localeCompare(b.title,'fr')).map(q => `<option value="${q.title}">${q.title}</option>`).join(''),
-    '<option value="">Tous les quiz</option>',
-    quizzesForFilter.map(q => q.title)
-  );
-  const filterQuiz = quizSelect.value;
+  const previousQuizValue = quizSelect.value;
+  const quizzesForMatiere = filterMatiere
+    ? PRACTICE_QUIZ_DIRECTORY.filter(q => q.matiere === filterMatiere)
+    : PRACTICE_QUIZ_DIRECTORY;
+  quizSelect.innerHTML = '<option value="">Tous les quiz</option>' +
+    quizzesForMatiere.slice().sort((a,b) => a.title.localeCompare(b.title,'fr')).map(q => `<option value="${q.title}">${q.title}</option>`).join('');
+  if(quizzesForMatiere.some(q => q.title === previousQuizValue)) quizSelect.value = previousQuizValue;
 
   let query = supa.from('practice_attempts').select('*').order('completed_at', { ascending: false });
   if(filterMatiere) query = query.eq('matiere', filterMatiere);
@@ -1015,46 +1148,42 @@ async function loadPracticeResults(){
 
   const { data: attempts, error } = await query;
   const summaryWrap = document.getElementById('practice-summary-wrap');
+  const tableWrap = document.getElementById('practice-table-wrap');
 
   if(error){
     summaryWrap.innerHTML = '<p class="empty-note">Erreur de chargement.</p>';
+    tableWrap.innerHTML = '';
     return;
   }
 
   if(!attempts || attempts.length === 0){
     summaryWrap.innerHTML = '<p class="empty-note">Aucune tentative d\'entraînement enregistrée pour le moment.</p>';
+    tableWrap.innerHTML = '';
     return;
   }
 
   // -------- Vue d'ensemble par élève --------
-  // Regroupée par prénom normalisé (sans accents, insensible à la casse) + classe,
-  // pour qu'un même élève ne fasse qu'une seule ligne quelle que soit l'orthographe tapée.
   const byStudent = {};
   attempts.forEach(a => {
     const key = normalizeName(a.student_name) + '|' + a.classe;
     if(!byStudent[key]){
-      byStudent[key] = { name: a.student_name, classe: a.classe, count: 0, lastQuiz: '', lastDate: null, lastScore: null, lastMax: null, attempts: [] };
+      byStudent[key] = { name: a.student_name, classe: a.classe, count: 0, lastQuiz: '', lastDate: null, lastScore: null, lastMax: null };
     }
     byStudent[key].count++;
-    byStudent[key].attempts.push(a);
     if(!byStudent[key].lastDate || new Date(a.completed_at) > new Date(byStudent[key].lastDate)){
       byStudent[key].lastQuiz = a.quiz_name;
       byStudent[key].lastDate = a.completed_at;
       byStudent[key].lastScore = a.score;
       byStudent[key].lastMax = a.max_score;
-      byStudent[key].name = a.student_name; // garde l'orthographe la plus récente pour l'affichage
     }
   });
-  PRACTICE_BY_STUDENT = byStudent;
-  const summaryRows = Object.entries(byStudent)
-    .map(([key, s]) => ({ key, ...s }))
-    .sort((a,b) => a.name.localeCompare(b.name, 'fr', {sensitivity:'base'}));
+  const summaryRows = Object.values(byStudent).sort((a,b) => a.name.localeCompare(b.name, 'fr', {sensitivity:'base'}));
 
   summaryWrap.innerHTML = `
     <table class="result-table">
       <tr><th>Élève</th><th>Classe</th><th>Tentatives</th><th>Dernier quiz</th><th>Dernier score</th><th>Dernière tentative</th></tr>
       ${summaryRows.map(s => `
-        <tr data-student-key="${encodeURIComponent(s.key)}" style="cursor:pointer;">
+        <tr>
           <td>${s.name}</td>
           <td>${s.classe}</td>
           <td>${s.count}</td>
@@ -1064,48 +1193,34 @@ async function loadPracticeResults(){
         </tr>
       `).join('')}
     </table>
-    <p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">Clique sur un élève pour voir le détail (petit compte rendu) de ses tentatives.</p>
   `;
 
-  summaryWrap.querySelectorAll('[data-student-key]').forEach(row => {
-    row.addEventListener('click', () => openPracticeReport(decodeURIComponent(row.dataset.studentKey)));
-  });
-}
+  // -------- Historique détaillé --------
+  const sortedAttempts = [...attempts].sort((a,b) => a.student_name.localeCompare(b.student_name, 'fr', {sensitivity:'base'}));
+  currentPracticeAttempts = sortedAttempts;
 
-// -------- compte rendu succinct d'un élève (quiz d'entraînement) --------
-function openPracticeReport(key){
-  const s = PRACTICE_BY_STUDENT[key];
-  if(!s) return;
-  document.getElementById('report-student').textContent = s.name;
-  document.getElementById('report-score-pill').textContent = s.count + (s.count > 1 ? ' tentatives' : ' tentative');
-  document.getElementById('report-meta').textContent = s.classe;
-
-  const sortedAttempts = [...s.attempts].sort((a,b) => new Date(b.completed_at) - new Date(a.completed_at));
-  document.getElementById('report-body').innerHTML = `
-    <div class="report-block">
-      <h4>Historique</h4>
-      <ul class="report-list">
-        ${sortedAttempts.map(a => `
-          <li>
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-              <span><strong>${a.quiz_name}</strong> — ${a.score !== null && a.score !== undefined ? `<span class="score-pill ${scoreClass(a.score, a.max_score)}">${a.score}/${a.max_score}</span>` : '—'} · ${fmtDate(a.completed_at)}</span>
-              <button class="btn-delete-row" data-delete-practice-report="${a.id}" title="Supprimer cette tentative">✕</button>
-            </div>
-            ${a.feedback_summary ? `<span class="report-comment" style="display:block; margin-top:4px;">${a.feedback_summary}</span>` : ''}
-          </li>
-        `).join('')}
-      </ul>
-    </div>
+  tableWrap.innerHTML = `
+    <table class="result-table">
+      <tr><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th></tr>
+      ${sortedAttempts.map((a, i) => `
+        <tr>
+          <td>${a.student_name}</td>
+          <td>${a.classe}</td>
+          <td>${a.quiz_name}</td>
+          <td>${a.score !== null && a.score !== undefined ? `<span class="score-pill ${scoreClass(a.score, a.max_score)}">${a.score}/${a.max_score}</span>` : '—'}</td>
+          <td>${fmtDate(a.completed_at)}</td>
+          <td><button class="btn-delete-row" data-delete-practice="${i}" title="Supprimer cette tentative">✕</button></td>
+        </tr>
+      `).join('')}
+    </table>
   `;
-  document.getElementById('report-modal').classList.remove('hidden');
 
-  document.getElementById('report-body').querySelectorAll('[data-delete-practice-report]').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if(!confirm('Supprimer cette tentative ?')) return;
-      const { error } = await supa.from('practice_attempts').delete().eq('id', btn.dataset.deletePracticeReport);
+  tableWrap.querySelectorAll('[data-delete-practice]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const a = currentPracticeAttempts[parseInt(btn.dataset.deletePractice)];
+      if(!confirm(`Supprimer la tentative de ${a.student_name} (${a.quiz_name}) ?`)) return;
+      const { error } = await supa.from('practice_attempts').delete().eq('id', a.id);
       if(error){ alert('Erreur : ' + error.message); return; }
-      document.getElementById('report-modal').classList.add('hidden');
       loadPracticeResults();
     });
   });
@@ -1115,8 +1230,6 @@ document.getElementById('filter-practice-matiere').addEventListener('change', lo
 document.getElementById('filter-practice-class').addEventListener('change', loadPracticeResults);
 document.getElementById('filter-practice-quiz').addEventListener('change', loadPracticeResults);
 document.getElementById('filter-results-matiere').addEventListener('change', loadResults);
-document.getElementById('filter-class').addEventListener('change', loadResults);
-document.getElementById('filter-quiz').addEventListener('change', loadResults);
 
 document.getElementById('reset-practice-btn').addEventListener('click', async () => {
   const step1 = confirm("Supprimer TOUTES les tentatives d'entraînement enregistrées, dans toutes les classes et tous les quiz ? Cette action est irréversible.");
