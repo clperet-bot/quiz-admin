@@ -196,23 +196,49 @@
   .btn-delete-row:hover{color:var(--red); background:#FDE2E2;}
   .loading-note{font-size:13px; color:var(--ink-soft); padding:20px;}
 
+  /* ---- Regroupement des résultats par prénom (accordéon) ---- */
+  .result-group-row{cursor:pointer; background:var(--purple-light);}
+  .result-group-row:hover{background:var(--line);}
+  .result-group-row td{border-bottom:1px solid var(--line);}
+  .group-chevron{width:26px; text-align:center; color:var(--purple-dark); font-size:11px;}
+  .group-chevron .chevron{display:inline-block; transition:transform .15s;}
+  .result-group-row.open .group-chevron .chevron{transform:rotate(90deg);}
+  .group-name{color:var(--purple-deep);}
+  .group-count{font-size:11.5px; color:var(--ink-soft); font-weight:500; margin-left:6px;}
+  .result-sub-row.hidden{display:none;}
+  .result-sub-row td:nth-child(2){padding-left:26px;}
+
   /* ---- Mobile ---- */
   @media (max-width: 720px){
     .app-shell{flex-direction:column; min-height:auto;}
+    /* La sidebar devient une barre de menu fixée en bas de l'écran (comme une app mobile),
+       plutôt qu'une bande horizontale en haut peu lisible comme menu. */
     .sidebar{
-      width:100%; height:auto; position:static;
-      flex-direction:row; align-items:center; flex-wrap:wrap;
-      padding:12px 14px; gap:6px;
+      position:fixed; left:0; right:0; bottom:0; top:auto; z-index:40;
+      width:100%; height:auto; min-height:auto;
+      flex-direction:row; align-items:stretch; flex-wrap:nowrap;
+      padding:5px 4px calc(5px + env(safe-area-inset-bottom, 0px));
+      gap:2px;
+      box-shadow:0 -3px 14px rgba(61,43,102,0.28);
     }
-    .sidebar-brand{padding:2px 4px; margin-right:auto;}
-    .sidebar-brand-name{font-size:13px;}
-    .nav-item{margin-bottom:0; padding:8px 10px; font-size:12.5px;}
+    .sidebar-brand{display:none;}
     .nav-group-label{display:none;}
+    .nav-item{
+      flex:1; flex-direction:column; justify-content:center; gap:3px;
+      margin-bottom:0; padding:7px 2px; font-size:10px; text-align:center; line-height:1.15;
+    }
+    .nav-item svg{width:19px; height:19px;}
     .sidebar-footer{
       margin-top:0; border-top:none; padding-top:0;
-      width:auto; margin-left:auto;
+      flex:0 0 auto; flex-direction:column; align-items:center; justify-content:center;
+      gap:3px; width:auto;
     }
+    .sidebar-user{flex-direction:column; gap:2px;}
+    .sidebar-avatar{width:22px; height:22px; font-size:9.5px;}
     .sidebar-user-name{display:none;}
+    .logout-btn{font-size:9.5px;}
+    /* espace en bas pour que le contenu ne passe pas sous la barre fixe */
+    .main-col{padding-bottom:74px;}
     .header-block{padding:16px 16px 14px;}
     .bubble-title{font-size:16px; padding:8px 16px;}
     .body-pad{padding:16px;}
@@ -742,28 +768,67 @@ async function loadResults(){
   const quizById = Object.fromEntries(QUIZZES.map(q => [q.id, q.title]));
   currentAttempts = attempts;
 
+  // Regroupement par prénom : toutes les tentatives du même prénom (déjà triées
+  // alphabétiquement juste au-dessus, donc consécutives) sont rassemblées sous
+  // une ligne dépliable — clic sur le prénom = affiche/masque ses tentatives.
+  const groups = [];
+  let curKey = null, curGroup = null;
+  attempts.forEach((a, i) => {
+    const first = (a.student_name_raw || '').trim().split(' ')[0] || '(sans nom)';
+    const key = first.toLocaleLowerCase('fr');
+    if(key !== curKey){
+      curGroup = { name: first, idxs: [] };
+      groups.push(curGroup);
+      curKey = key;
+    }
+    curGroup.idxs.push(i);
+  });
+
+  const renderRow = (i, indent) => {
+    const a = attempts[i];
+    const released = a.answers_detail && a.answers_detail.released_for_retry === true;
+    return `
+    <tr class="${indent ? 'result-sub-row hidden' : ''}" ${indent ? `data-group="${indent}"` : ''} data-report="${i}">
+      <td></td>
+      <td>${a.student_name_raw}</td>
+      <td>${classById[a.class_id] || '—'}</td>
+      <td>${quizById[a.quiz_id] || '—'}</td>
+      <td>${a.cancelled ? '—' : `<span class="score-pill ${scoreClass(a.score, a.total)}">${a.score}/${a.total}</span>`}</td>
+      <td>${fmtDate(a.created_at)}</td>
+      <td>${a.cancelled
+        ? (released
+            ? '<span class="flag-cheat" style="color:var(--ink-soft);">⚠ annulée — reprise autorisée</span>'
+            : `<span class="flag-cheat">⚠ tentative annulée</span> <button class="btn-release" data-release="${i}">Autoriser à recommencer</button>`)
+        : ''}</td>
+      <td><button class="btn-delete-row" data-delete="${i}" title="Supprimer cette tentative">✕</button></td>
+    </tr>`;
+  };
+
   wrap.innerHTML = `
     <table class="result-table">
-      <tr><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th><th></th></tr>
-      ${attempts.map((a, i) => {
-        const released = a.answers_detail && a.answers_detail.released_for_retry === true;
-        return `
-        <tr data-report="${i}">
-          <td>${a.student_name_raw}</td>
-          <td>${classById[a.class_id] || '—'}</td>
-          <td>${quizById[a.quiz_id] || '—'}</td>
-          <td>${a.cancelled ? '—' : `<span class="score-pill ${scoreClass(a.score, a.total)}">${a.score}/${a.total}</span>`}</td>
-          <td>${fmtDate(a.created_at)}</td>
-          <td>${a.cancelled
-            ? (released
-                ? '<span class="flag-cheat" style="color:var(--ink-soft);">⚠ annulée — reprise autorisée</span>'
-                : `<span class="flag-cheat">⚠ tentative annulée</span> <button class="btn-release" data-release="${i}">Autoriser à recommencer</button>`)
-            : ''}</td>
-          <td><button class="btn-delete-row" data-delete="${i}" title="Supprimer cette tentative">✕</button></td>
+      <tr><th></th><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th><th></th></tr>
+      ${groups.map((g, gi) => {
+        if(g.idxs.length === 1) return renderRow(g.idxs[0], null);
+        const groupId = `g${gi}`;
+        const header = `
+        <tr class="result-group-row" data-group-toggle="${groupId}">
+          <td class="group-chevron"><span class="chevron">▸</span></td>
+          <td colspan="7"><span class="group-name"><strong>${g.name}</strong></span><span class="group-count">${g.idxs.length} tentatives</span></td>
         </tr>`;
+        return header + g.idxs.map(i => renderRow(i, groupId)).join('');
       }).join('')}
     </table>
   `;
+
+  wrap.querySelectorAll('[data-group-toggle]').forEach(headerRow => {
+    headerRow.addEventListener('click', () => {
+      const groupId = headerRow.dataset.groupToggle;
+      const isOpen = headerRow.classList.toggle('open');
+      wrap.querySelectorAll(`[data-group="${groupId}"]`).forEach(row => {
+        row.classList.toggle('hidden', !isOpen);
+      });
+    });
+  });
 
   wrap.querySelectorAll('[data-report]').forEach(row => {
     row.addEventListener('click', (e) => {
@@ -790,8 +855,14 @@ async function loadResults(){
       const a = currentAttempts[parseInt(btn.dataset.delete)];
       const label = a.cancelled ? 'cette tentative annulée' : `la tentative de ${a.student_name_raw} (${a.score}/${a.total})`;
       if(!confirm(`Supprimer ${label} ? Cette action est irréversible.`)) return;
-      const { error } = await supa.from('attempts').delete().eq('id', a.id);
+      // .select() est indispensable : sans lui, une suppression bloquée par les droits d'accès (RLS)
+      // ne renvoie AUCUNE erreur et semble "ne rien faire" — on vérifie donc qu'une ligne a bien été supprimée.
+      const { data: deletedRows, error } = await supa.from('attempts').delete().eq('id', a.id).select();
       if(error){ alert('Erreur : ' + error.message); return; }
+      if(!deletedRows || deletedRows.length === 0){
+        alert("La suppression n'a pas fonctionné : le serveur n'a supprimé aucune tentative (probablement un problème de droits d'accès). Essaie de te déconnecter puis de te reconnecter, puis réessaie.");
+        return;
+      }
       loadResults();
     });
   });
