@@ -329,11 +329,6 @@
           </select>
           <select id="qr-filter-class">
             <option value="">Choisis une classe</option>
-            <option value="2nde MES">2nde MES</option>
-            <option value="2nde TNE">2nde TNE</option>
-            <option value="2nde BMA">2nde BMA</option>
-            <option value="1ère MES">1ère MES</option>
-            <option value="1ère MELEC">1ère MELEC</option>
           </select>
         </div>
         <div id="practice-directory-wrap"></div>
@@ -356,11 +351,6 @@
           </select>
           <select id="filter-practice-class">
             <option value="">Toutes les classes</option>
-            <option value="2nde MES">2nde MES</option>
-            <option value="2nde TNE">2nde TNE</option>
-            <option value="2nde BMA">2nde BMA</option>
-            <option value="1ère MES">1ère MES</option>
-            <option value="1ère MELEC">1ère MELEC</option>
           </select>
           <select id="filter-practice-quiz"><option value="">Tous les quiz</option></select>
           <button id="reset-practice-btn" class="btn-danger-outline">Réinitialiser les résultats d'entraînement</button>
@@ -368,8 +358,6 @@
 
         <p class="section-label" style="margin-top:28px;">Vue d'ensemble par élève</p>
         <div id="practice-summary-wrap"><p class="loading-note">Chargement...</p></div>
-        <p class="section-label" style="margin-top:24px;">Historique détaillé</p>
-        <div id="practice-table-wrap"><p class="loading-note">Chargement...</p></div>
       </div>
     </div>
 
@@ -415,6 +403,12 @@ function scoreClass(score, total){
 function fmtDate(iso){
   const d = new Date(iso);
   return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
+}
+// Reconstruit les <option> d'un select tout en gardant la valeur sélectionnée si elle est toujours valide
+function populateSelectPreserving(selectEl, optionsHtml, allLabelHtml, validValues){
+  const prev = selectEl.value;
+  selectEl.innerHTML = allLabelHtml + optionsHtml;
+  selectEl.value = validValues.includes(prev) ? prev : '';
 }
 
 // -------- auth --------
@@ -658,22 +652,40 @@ document.getElementById('qr-close-btn').addEventListener('click', () => {
 // -------- results --------
 async function loadResults(){
   const filterMatiere = document.getElementById('filter-results-matiere').value;
-  const filterClass = document.getElementById('filter-class').value;
-  const filterQuiz = document.getElementById('filter-quiz').value;
 
-  if(document.getElementById('filter-class').options.length <= 1){
-    document.getElementById('filter-class').innerHTML += CLASSES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    document.getElementById('filter-quiz').innerHTML += QUIZZES.map(q => `<option value="${q.id}">${q.title}${(q.matiere || 'Anglais') === 'Français' ? ' (FR)' : ''}</option>`).join('');
-    document.getElementById('filter-class').addEventListener('change', loadResults);
-    document.getElementById('filter-quiz').addEventListener('change', loadResults);
-  }
+  // Classe : seulement celles qui ont au moins un quiz dans la matière choisie
+  const classSelect = document.getElementById('filter-class');
+  const classesForMatiere = filterMatiere
+    ? CLASSES.filter(c => QUIZZES.some(q => q.class_id === c.id && (q.matiere || 'Anglais') === filterMatiere))
+    : CLASSES;
+  populateSelectPreserving(
+    classSelect,
+    classesForMatiere.map(c => `<option value="${c.id}">${c.name}</option>`).join(''),
+    '<option value="">Toutes les classes</option>',
+    classesForMatiere.map(c => c.id)
+  );
+  const filterClass = classSelect.value;
+
+  // Quiz : seulement ceux qui correspondent à la matière ET la classe choisies
+  const quizSelect = document.getElementById('filter-quiz');
+  const quizzesForFilter = QUIZZES.filter(q =>
+    (!filterMatiere || (q.matiere || 'Anglais') === filterMatiere) &&
+    (!filterClass || q.class_id === filterClass)
+  );
+  populateSelectPreserving(
+    quizSelect,
+    quizzesForFilter.map(q => `<option value="${q.id}">${q.title}${(q.matiere || 'Anglais') === 'Français' ? ' (FR)' : ''}</option>`).join(''),
+    '<option value="">Tous les quiz</option>',
+    quizzesForFilter.map(q => q.id)
+  );
+  const filterQuiz = quizSelect.value;
 
   let query = supa.from('attempts').select('*').order('created_at', { ascending: false }).limit(200);
   if(filterClass) query = query.eq('class_id', filterClass);
   if(filterQuiz){
     query = query.eq('quiz_id', filterQuiz);
   } else if(filterMatiere){
-    const idsForMatiere = QUIZZES.filter(q => (q.matiere || 'Anglais') === filterMatiere).map(q => q.id);
+    const idsForMatiere = quizzesForFilter.map(q => q.id);
     query = query.in('quiz_id', idsForMatiere.length ? idsForMatiere : [-1]);
   }
 
@@ -875,7 +887,6 @@ document.getElementById('reset-results-btn').addEventListener('click', async () 
 });
 
 // -------- practice (quiz d'entraînement non notés) --------
-let currentPracticeAttempts = [];
 
 // Annuaire statique des quiz d'entraînement — pas dans Supabase, ce sont de simples pages toujours ouvertes.
 // La "classe" est juste une étiquette pour t'y retrouver, pas une restriction : n'importe quel élève peut ouvrir le lien.
@@ -902,11 +913,24 @@ const PRACTICE_QUIZ_DIRECTORY = [
   { title: 'Spider-Man - Test Prep',    url: 'spiderman-test-prep.html',       matiere: 'Anglais',  classe: 'À préciser' },
 ];
 const PRACTICE_BASE_URL = 'https://clperet-bot.github.io/entrainements-cours/';
+// Les classes possibles pour un quiz d'entraînement (mêmes valeurs que la porte d'entrée élève dans practice-logger.js)
+const PRACTICE_CLASS_OPTIONS = ['2nde MES', '2nde TNE', '2nde BMA', '1ère MES', '1ère MELEC'];
 
 function loadPracticeQr(){
   const wrap = document.getElementById('practice-directory-wrap');
   const matiere = document.getElementById('qr-filter-matiere').value;
-  const classe = document.getElementById('qr-filter-class').value;
+
+  const classeSelect = document.getElementById('qr-filter-class');
+  const classesForMatiere = matiere
+    ? PRACTICE_CLASS_OPTIONS.filter(cn => PRACTICE_QUIZ_DIRECTORY.some(q => q.matiere === matiere && q.classe.includes(cn)))
+    : PRACTICE_CLASS_OPTIONS;
+  populateSelectPreserving(
+    classeSelect,
+    classesForMatiere.map(cn => `<option value="${cn}">${cn}</option>`).join(''),
+    '<option value="">Choisis une classe</option>',
+    classesForMatiere
+  );
+  const classe = classeSelect.value;
 
   if(!matiere || !classe){
     wrap.innerHTML = '<p class="empty-note">Choisis une matière et une classe ci-dessus pour afficher le(s) quiz correspondant(s).</p>';
@@ -951,21 +975,38 @@ function openPracticeQr(url, title){
   document.getElementById('qr-modal').classList.remove('hidden');
 }
 
+let PRACTICE_BY_STUDENT = {};
+
 async function loadPracticeResults(){
   const filterMatiere = document.getElementById('filter-practice-matiere').value;
-  const filterClass = document.getElementById('filter-practice-class').value;
-  const filterQuiz = document.getElementById('filter-practice-quiz').value;
 
-  // Remplit le filtre "quiz" à partir de la liste COMPLÈTE des quiz (pas seulement ceux déjà tentés),
-  // et le refiltre selon la matière choisie pour ne proposer que des quiz pertinents.
+  // Classe : seulement celles qui ont au moins un quiz dans la matière choisie
+  const classSelect = document.getElementById('filter-practice-class');
+  const classesForMatiere = filterMatiere
+    ? PRACTICE_CLASS_OPTIONS.filter(cn => PRACTICE_QUIZ_DIRECTORY.some(q => q.matiere === filterMatiere && q.classe.includes(cn)))
+    : PRACTICE_CLASS_OPTIONS;
+  populateSelectPreserving(
+    classSelect,
+    classesForMatiere.map(cn => `<option value="${cn}">${cn}</option>`).join(''),
+    '<option value="">Toutes les classes</option>',
+    classesForMatiere
+  );
+  const filterClass = classSelect.value;
+
+  // Quiz : à partir de la liste COMPLÈTE des quiz (pas seulement ceux déjà tentés),
+  // filtrée par matière ET par classe pour ne proposer que des quiz pertinents.
   const quizSelect = document.getElementById('filter-practice-quiz');
-  const previousQuizValue = quizSelect.value;
-  const quizzesForMatiere = filterMatiere
-    ? PRACTICE_QUIZ_DIRECTORY.filter(q => q.matiere === filterMatiere)
-    : PRACTICE_QUIZ_DIRECTORY;
-  quizSelect.innerHTML = '<option value="">Tous les quiz</option>' +
-    quizzesForMatiere.slice().sort((a,b) => a.title.localeCompare(b.title,'fr')).map(q => `<option value="${q.title}">${q.title}</option>`).join('');
-  if(quizzesForMatiere.some(q => q.title === previousQuizValue)) quizSelect.value = previousQuizValue;
+  const quizzesForFilter = PRACTICE_QUIZ_DIRECTORY.filter(q =>
+    (!filterMatiere || q.matiere === filterMatiere) &&
+    (!filterClass || q.classe.includes(filterClass))
+  );
+  populateSelectPreserving(
+    quizSelect,
+    quizzesForFilter.slice().sort((a,b) => a.title.localeCompare(b.title,'fr')).map(q => `<option value="${q.title}">${q.title}</option>`).join(''),
+    '<option value="">Tous les quiz</option>',
+    quizzesForFilter.map(q => q.title)
+  );
+  const filterQuiz = quizSelect.value;
 
   let query = supa.from('practice_attempts').select('*').order('completed_at', { ascending: false });
   if(filterMatiere) query = query.eq('matiere', filterMatiere);
@@ -974,42 +1015,46 @@ async function loadPracticeResults(){
 
   const { data: attempts, error } = await query;
   const summaryWrap = document.getElementById('practice-summary-wrap');
-  const tableWrap = document.getElementById('practice-table-wrap');
 
   if(error){
     summaryWrap.innerHTML = '<p class="empty-note">Erreur de chargement.</p>';
-    tableWrap.innerHTML = '';
     return;
   }
 
   if(!attempts || attempts.length === 0){
     summaryWrap.innerHTML = '<p class="empty-note">Aucune tentative d\'entraînement enregistrée pour le moment.</p>';
-    tableWrap.innerHTML = '';
     return;
   }
 
   // -------- Vue d'ensemble par élève --------
+  // Regroupée par prénom normalisé (sans accents, insensible à la casse) + classe,
+  // pour qu'un même élève ne fasse qu'une seule ligne quelle que soit l'orthographe tapée.
   const byStudent = {};
   attempts.forEach(a => {
     const key = normalizeName(a.student_name) + '|' + a.classe;
     if(!byStudent[key]){
-      byStudent[key] = { name: a.student_name, classe: a.classe, count: 0, lastQuiz: '', lastDate: null, lastScore: null, lastMax: null };
+      byStudent[key] = { name: a.student_name, classe: a.classe, count: 0, lastQuiz: '', lastDate: null, lastScore: null, lastMax: null, attempts: [] };
     }
     byStudent[key].count++;
+    byStudent[key].attempts.push(a);
     if(!byStudent[key].lastDate || new Date(a.completed_at) > new Date(byStudent[key].lastDate)){
       byStudent[key].lastQuiz = a.quiz_name;
       byStudent[key].lastDate = a.completed_at;
       byStudent[key].lastScore = a.score;
       byStudent[key].lastMax = a.max_score;
+      byStudent[key].name = a.student_name; // garde l'orthographe la plus récente pour l'affichage
     }
   });
-  const summaryRows = Object.values(byStudent).sort((a,b) => a.name.localeCompare(b.name, 'fr', {sensitivity:'base'}));
+  PRACTICE_BY_STUDENT = byStudent;
+  const summaryRows = Object.entries(byStudent)
+    .map(([key, s]) => ({ key, ...s }))
+    .sort((a,b) => a.name.localeCompare(b.name, 'fr', {sensitivity:'base'}));
 
   summaryWrap.innerHTML = `
     <table class="result-table">
       <tr><th>Élève</th><th>Classe</th><th>Tentatives</th><th>Dernier quiz</th><th>Dernier score</th><th>Dernière tentative</th></tr>
       ${summaryRows.map(s => `
-        <tr>
+        <tr data-student-key="${encodeURIComponent(s.key)}" style="cursor:pointer;">
           <td>${s.name}</td>
           <td>${s.classe}</td>
           <td>${s.count}</td>
@@ -1019,34 +1064,48 @@ async function loadPracticeResults(){
         </tr>
       `).join('')}
     </table>
+    <p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">Clique sur un élève pour voir le détail (petit compte rendu) de ses tentatives.</p>
   `;
 
-  // -------- Historique détaillé --------
-  const sortedAttempts = [...attempts].sort((a,b) => a.student_name.localeCompare(b.student_name, 'fr', {sensitivity:'base'}));
-  currentPracticeAttempts = sortedAttempts;
+  summaryWrap.querySelectorAll('[data-student-key]').forEach(row => {
+    row.addEventListener('click', () => openPracticeReport(decodeURIComponent(row.dataset.studentKey)));
+  });
+}
 
-  tableWrap.innerHTML = `
-    <table class="result-table">
-      <tr><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th></tr>
-      ${sortedAttempts.map((a, i) => `
-        <tr>
-          <td>${a.student_name}</td>
-          <td>${a.classe}</td>
-          <td>${a.quiz_name}</td>
-          <td>${a.score !== null && a.score !== undefined ? `<span class="score-pill ${scoreClass(a.score, a.max_score)}">${a.score}/${a.max_score}</span>` : '—'}</td>
-          <td>${fmtDate(a.completed_at)}</td>
-          <td><button class="btn-delete-row" data-delete-practice="${i}" title="Supprimer cette tentative">✕</button></td>
-        </tr>
-      `).join('')}
-    </table>
+// -------- compte rendu succinct d'un élève (quiz d'entraînement) --------
+function openPracticeReport(key){
+  const s = PRACTICE_BY_STUDENT[key];
+  if(!s) return;
+  document.getElementById('report-student').textContent = s.name;
+  document.getElementById('report-score-pill').textContent = s.count + (s.count > 1 ? ' tentatives' : ' tentative');
+  document.getElementById('report-meta').textContent = s.classe;
+
+  const sortedAttempts = [...s.attempts].sort((a,b) => new Date(b.completed_at) - new Date(a.completed_at));
+  document.getElementById('report-body').innerHTML = `
+    <div class="report-block">
+      <h4>Historique</h4>
+      <ul class="report-list">
+        ${sortedAttempts.map(a => `
+          <li>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+              <span><strong>${a.quiz_name}</strong> — ${a.score !== null && a.score !== undefined ? `<span class="score-pill ${scoreClass(a.score, a.max_score)}">${a.score}/${a.max_score}</span>` : '—'} · ${fmtDate(a.completed_at)}</span>
+              <button class="btn-delete-row" data-delete-practice-report="${a.id}" title="Supprimer cette tentative">✕</button>
+            </div>
+            ${a.feedback_summary ? `<span class="report-comment" style="display:block; margin-top:4px;">${a.feedback_summary}</span>` : ''}
+          </li>
+        `).join('')}
+      </ul>
+    </div>
   `;
+  document.getElementById('report-modal').classList.remove('hidden');
 
-  tableWrap.querySelectorAll('[data-delete-practice]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const a = currentPracticeAttempts[parseInt(btn.dataset.deletePractice)];
-      if(!confirm(`Supprimer la tentative de ${a.student_name} (${a.quiz_name}) ?`)) return;
-      const { error } = await supa.from('practice_attempts').delete().eq('id', a.id);
+  document.getElementById('report-body').querySelectorAll('[data-delete-practice-report]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if(!confirm('Supprimer cette tentative ?')) return;
+      const { error } = await supa.from('practice_attempts').delete().eq('id', btn.dataset.deletePracticeReport);
       if(error){ alert('Erreur : ' + error.message); return; }
+      document.getElementById('report-modal').classList.add('hidden');
       loadPracticeResults();
     });
   });
@@ -1056,6 +1115,8 @@ document.getElementById('filter-practice-matiere').addEventListener('change', lo
 document.getElementById('filter-practice-class').addEventListener('change', loadPracticeResults);
 document.getElementById('filter-practice-quiz').addEventListener('change', loadPracticeResults);
 document.getElementById('filter-results-matiere').addEventListener('change', loadResults);
+document.getElementById('filter-class').addEventListener('change', loadResults);
+document.getElementById('filter-quiz').addEventListener('change', loadResults);
 
 document.getElementById('reset-practice-btn').addEventListener('click', async () => {
   const step1 = confirm("Supprimer TOUTES les tentatives d'entraînement enregistrées, dans toutes les classes et tous les quiz ? Cette action est irréversible.");
