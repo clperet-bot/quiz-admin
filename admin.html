@@ -136,6 +136,7 @@
   .report-answer{color:var(--ink); font-weight:500;}
   .report-comment{display:block; margin-top:3px; color:var(--purple-dark); font-style:italic; font-size:12.5px;}
   .report-subscores{display:block; margin-top:5px; color:var(--ink-soft); font-size:11.5px;}
+  .report-consigne{font-size:12px; color:var(--ink-soft); font-style:italic; margin:0 0 8px;}
   .report-text{font-size:13.5px; line-height:1.55; background:var(--paper); border-radius:7px; padding:10px 12px; white-space:pre-wrap;}
   .report-footer-row{position:sticky; bottom:0; display:flex; background:var(--white); border-top:1px solid var(--line);}
   .report-close{flex:1; background:var(--white); padding:12px; font-weight:600; font-size:14px; color:var(--purple); border:none; cursor:pointer;}
@@ -162,6 +163,7 @@
   .pr-body-pad{padding:16px 20px 6px;}
   .pr-section{margin-bottom:14px; page-break-inside:avoid;}
   .pr-section-title{font-weight:700; font-size:10.5px; color:#4B2E83; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;}
+  .pr-consigne{font-size:11px; color:#6B6B6B; font-style:italic; margin:0 0 7px;}
   .pr-item{background:#F7F5FB; border-radius:6px; padding:9px 12px; margin-bottom:6px; font-size:12.5px; line-height:1.5;}
   .pr-item-top{display:flex; align-items:center;}
   .pr-mark{background:#4B2E83; color:#fff; font-size:10px; font-weight:700; padding:2px 9px; border-radius:10px; margin-right:10px; flex-shrink:0; display:inline-block;}
@@ -894,6 +896,44 @@ function reportLabelForKey(k){
 }
 const REPORT_KEY_ORDER = ['section1_ai', 'section2', 'section3', 'section4_ai'];
 
+// Consignes (énoncés) de chaque partie, telles qu'elles apparaissent sur la page du quiz —
+// pas stockées en base (seules les réponses le sont), donc recopiées ici à la main pour
+// qu'elles s'affichent dans le compte rendu et la fiche imprimée. Indexées par nom de
+// fichier du quiz (dernier segment de son URL), puis par clé de section dans answers_detail.
+const QUIZ_SECTION_CONSIGNES = {
+  'homecoming-mystery-graded.html': {
+    partie1: "Traduis les mots en anglais. (1 pt par mot)",
+    partie2a_ai: "Traduis en anglais avec le 's. (1 pt par phrase)",
+    partie2b: "Complète avec le verbe au prétérit. (0,5 pt par verbe)",
+    partie3_ai: "Écris 6 à 8 phrases en anglais. Réponds à 3 questions : qui est le/la coupable ? Comment tu le sais (les indices) ? Pourquoi il/elle l'a fait (le mobile) ?"
+  },
+  'danger-zone-graded.html': {
+    section1_ai: "Write 4 sentences about the hazards you can see (format : I can see [hazard] on/in the [place].)",
+    section2: "Write the hazard that matches each PPE.",
+    section3: "Translate into English.",
+    section4_ai: "Name a hazard, then explain why it is dangerous."
+  },
+  'carte-journaliste-redaction.html': {
+    partie1_ai: "Rédige un exemple pour chacun. (1 pt par exemple)",
+    partie2_ai: "Lis l'article, puis réponds aux 5 questions. (1 pt par réponse)",
+    partie3: "Pour chaque texte, écris de quel type d'article il s'agit. (1 pt par texte)",
+    partie4_ai: "L'article contient 2 erreurs de rédaction : trouve-les et réécris chaque phrase corrigée.",
+    partie5: "Rédige un article de presse complet à partir des informations données (titre, accroche, développement, conclusion). Formule tout avec tes propres mots."
+  }
+};
+// Consigne de l'épreuve de rédaction libre (writing_text), pour les quiz où elle n'est pas
+// déjà répétée dans answers_detail.
+const QUIZ_WRITING_CONSIGNES = {
+  'frankenstein-graded.html': "En reprenant la méthode vue en cours, relève un mot de l'extrait appartenant au champ lexical de la fascination ou du rejet/de l'horreur, puis analyse-le en une phrase.",
+  'shop-sign-graded.html': "Imagine ton propre projet d'enseigne (n'importe quel commerce). Rédige 3 à 4 phrases en anglais pour expliquer les couleurs et matériaux que tu choisirais, et pourquoi.",
+  'carte-journaliste-A.html': "Le club théâtre du lycée organise sa première représentation publique le mois prochain, ouverte à tous les élèves et à leurs familles. Rédige un article de presse complet sur ce sujet, comme pour le journal du lycée.",
+  'carte-journaliste-B.html': "Le lycée va installer des bornes de recharge pour vélos et trottinettes électriques d'ici la fin du trimestre. Rédige un article de presse complet sur ce sujet, comme pour le journal du lycée."
+};
+function quizFileFromUrl(url){
+  if(!url) return '';
+  return url.split('/').pop().split('?')[0];
+}
+
 // Champs "cœur" d'un item de réponse : tout le reste (souvent des sous-notes comme
 // qui_score/comment_score/pourquoi_score pour une rédaction notée sur plusieurs critères)
 // est affiché en détail plutôt que dans un JSON brut illisible.
@@ -920,8 +960,9 @@ function reportRenderItem(item){
   return `<li><span class="report-mark">${mark}</span>${label ? `<strong>${label}</strong> — ` : ''}${answerHtml}${expected}${note}${subScoresHtml}</li>`;
 }
 
-function reportRenderDetail(detail){
+function reportRenderDetail(detail, quizFile){
   if(!detail) return '';
+  const consignes = QUIZ_SECTION_CONSIGNES[quizFile] || {};
   if(Array.isArray(detail)){
     return `<div class="report-block"><h4>Réponses</h4><ul class="report-list">${detail.map(reportRenderItem).join('')}</ul></div>`;
   }
@@ -931,15 +972,16 @@ function reportRenderDetail(detail){
     ...entries.filter(([key]) => !REPORT_KEY_ORDER.includes(key))
   ];
   return ordered.map(([key, val]) => {
+    const consigneHtml = consignes[key] ? `<p class="report-consigne">${consignes[key]}</p>` : '';
     if(Array.isArray(val)){
-      return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4><ul class="report-list">${val.map(reportRenderItem).join('')}</ul></div>`;
+      return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4>${consigneHtml}<ul class="report-list">${val.map(reportRenderItem).join('')}</ul></div>`;
     }
     if(typeof val === 'object'){
       // Une section notée par l'IA sur plusieurs critères (ex : qui/comment/pourquoi) est enregistrée
       // comme un seul objet (pas un tableau) — on l'affiche comme un item normal, jamais en JSON brut.
-      return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4><ul class="report-list">${reportRenderItem(val)}</ul></div>`;
+      return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4>${consigneHtml}<ul class="report-list">${reportRenderItem(val)}</ul></div>`;
     }
-    return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4><p class="report-text">${val}</p></div>`;
+    return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4>${consigneHtml}<p class="report-text">${val}</p></div>`;
   }).join('');
 }
 
@@ -978,6 +1020,7 @@ function openReport(a){
   document.getElementById('report-score-pill').textContent = a.cancelled ? 'Annulée' : `${a.score}/${a.total}`;
   const classe = CLASSES.find(c => c.id === a.class_id);
   const quiz = QUIZZES.find(q => q.id === a.quiz_id);
+  const quizFile = quizFileFromUrl(quiz && quiz.url);
   document.getElementById('report-meta').textContent = `${quiz ? quiz.title : ''} · ${classe ? classe.name : ''} · ${fmtDate(a.created_at)}`;
 
   const detail = getReportDetail(a);
@@ -985,13 +1028,14 @@ function openReport(a){
   currentReportDetail = detail;
 
   let html = '';
-  html += reportRenderDetail(detail);
+  html += reportRenderDetail(detail, quizFile);
 
   const isItemizedFreeText = detail && (detail.section1_ai || detail.section4_ai);
   const hasFeedbackInDetail = detail && detail.feedback_global;
 
   if(a.writing_text && !isItemizedFreeText){
-    html += `<div class="report-block"><h4>Réponse rédigée</h4><p class="report-text">${a.writing_text}</p></div>`;
+    const writingConsigne = QUIZ_WRITING_CONSIGNES[quizFile] ? `<p class="report-consigne">${QUIZ_WRITING_CONSIGNES[quizFile]}</p>` : '';
+    html += `<div class="report-block"><h4>Réponse rédigée</h4>${writingConsigne}<p class="report-text">${a.writing_text}</p></div>`;
   }
   if(a.writing_correction && !hasFeedbackInDetail){
     html += `<div class="report-block"><h4>Correction / retour</h4><p class="report-text">${a.writing_correction}</p></div>`;
@@ -1037,8 +1081,9 @@ function prRenderItem(item){
   return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}</span></div>${note}</div>`;
 }
 const PR_HIDDEN_KEYS = ['client_subtotal','ai_subtotal','ai_error','raw_fields','released_for_retry'];
-function prRenderDetail(detail){
+function prRenderDetail(detail, quizFile){
   if(!detail) return '';
+  const consignes = QUIZ_SECTION_CONSIGNES[quizFile] || {};
   if(Array.isArray(detail)){
     return `<div class="pr-section"><div class="pr-section-title">Réponses</div>${detail.map(prRenderItem).join('')}</div>`;
   }
@@ -1049,26 +1094,29 @@ function prRenderDetail(detail){
   ];
   return ordered.map(([key, val]) => {
     const title = prLabelForKey(key);
+    const consigneHtml = consignes[key] ? `<div class="pr-consigne">${consignes[key]}</div>` : '';
     if(Array.isArray(val)){
-      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${val.map(prRenderItem).join('')}</div>`;
+      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${consigneHtml}${val.map(prRenderItem).join('')}</div>`;
     }
     if(typeof val === 'object'){
-      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${prRenderItem(val)}</div>`;
+      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${consigneHtml}${prRenderItem(val)}</div>`;
     }
-    return `<div class="pr-section"><div class="pr-section-title">${title}</div><div class="pr-text-block">${val}</div></div>`;
+    return `<div class="pr-section"><div class="pr-section-title">${title}</div>${consigneHtml}<div class="pr-text-block">${val}</div></div>`;
   }).join('');
 }
 function buildPrintReport(a, detail){
   const classe = CLASSES.find(c => c.id === a.class_id);
   const quiz = QUIZZES.find(q => q.id === a.quiz_id);
+  const quizFile = quizFileFromUrl(quiz && quiz.url);
   const scoreHtml = a.cancelled ? 'Annulée' : `${a.score}<span class="pr-of">/${a.total}</span>`;
 
-  let body = prRenderDetail(detail);
+  let body = prRenderDetail(detail, quizFile);
 
   const isItemizedFreeText = detail && (detail.section1_ai || detail.section4_ai);
   const hasFeedbackInDetail = detail && detail.feedback_global;
   if(a.writing_text && !isItemizedFreeText){
-    body += `<div class="pr-section"><div class="pr-section-title">Ta copie</div><div class="pr-text-block">${a.writing_text}</div></div>`;
+    const writingConsigne = QUIZ_WRITING_CONSIGNES[quizFile] ? `<div class="pr-consigne">${QUIZ_WRITING_CONSIGNES[quizFile]}</div>` : '';
+    body += `<div class="pr-section"><div class="pr-section-title">Ta copie</div>${writingConsigne}<div class="pr-text-block">${a.writing_text}</div></div>`;
   }
   if(a.writing_correction && !hasFeedbackInDetail){
     body += `<div class="pr-section"><div class="pr-section-title">Ton bilan</div><div class="pr-text-block" style="color:#C2185B;">${prCleanComment(a.writing_correction)}</div></div>`;
