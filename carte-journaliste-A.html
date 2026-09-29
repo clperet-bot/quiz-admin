@@ -826,8 +826,10 @@ ${studentHasAccommodation ? `
 ACCOMMODATION IMPORTANTE : cet élève bénéficie d'un aménagement (dyslexie/dysorthographie ou trouble apparenté). Donne-lui automatiquement les 2 points de grammaire/orthographe, quelle que soit la qualité orthographique réelle, et n'en parle pas dans le feedback. Note normalement les 3 autres critères (5W, structure, style) sur les 8 points restants ; le total reste sur 10.` : ''}
 
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
-{"score":0,"feedback":"Retour concis en français (150 mots max), qui commente les 4 critères et se termine par une phrase d'encouragement."}
-Le score peut être un nombre entier ou avec un seul chiffre après la virgule (ex: 7.5).`;
+{"score":0,"feedback":"Retour concis en français (150 mots max), adressé directement à l'élève en le/la tutoyant, qui commente les 4 critères et se termine par une phrase d'encouragement."}
+Le score peut être un nombre entier ou avec un seul chiffre après la virgule (ex: 7.5).
+
+RÈGLE ABSOLUE : dans ton "feedback", adresse-toi TOUJOURS directement à l'élève avec "tu"/"tes"/"ton" (ex : "Tu identifies bien...", "Attention à ton verbe..."). N'écris JAMAIS "l'élève" à la troisième personne.`;
 
   try {
     const res = await fetch(GRADE_ENDPOINT, {
