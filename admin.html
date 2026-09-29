@@ -934,6 +934,79 @@ function quizFileFromUrl(url){
   return url.split('/').pop().split('?')[0];
 }
 
+// Barème / mots à traduire de chaque question — pas toujours stockés dans answers_detail
+// (notamment les anciennes tentatives, ou les items simplement notés "correct: true/false"
+// sans le nombre de points). Recopiés ici depuis le code du quiz pour que le compte rendu et
+// la fiche imprimée montrent toujours le mot/l'item attendu ET le barème de chaque question,
+// pas seulement une coche. Indexé par nom de fichier du quiz, puis clé de section, puis
+// position de l'item dans le tableau (même ordre que sur la page du quiz).
+const QUIZ_ITEM_SCHEMAS = {
+  'danger-zone-graded.html': {
+    section1_ai: [ {points:2}, {points:2}, {points:2}, {points:2} ],
+    section2: [
+      {label:'Gloves', points:1},
+      {label:'Safety boots', points:1},
+      {label:'Goggles', points:1},
+      {label:'Helmet', points:1}
+    ],
+    section3: [
+      {label:'échelle', points:0.5},
+      {label:'casque', points:0.5},
+      {label:'gants', points:0.5},
+      {label:'sol mouillé', points:0.5},
+      {label:'panneau électrique', points:0.5},
+      {label:'lunettes de protection', points:0.5},
+      {label:'chaussures de sécurité', points:0.5},
+      {label:'câble', points:0.5}
+    ],
+    section4_ai: [ {points:1}, {points:1}, {points:1}, {points:1} ]
+  },
+  'homecoming-mystery-graded.html': {
+    partie1: [ {points:1},{points:1},{points:1},{points:1},{points:1},{points:1} ],
+    partie2b: [ {points:0.5},{points:0.5},{points:0.5},{points:0.5},{points:0.5},{points:0.5} ]
+  },
+  'carte-journaliste-redaction.html': {
+    partie3: [
+      {correct_answer:'Interview', points:1},
+      {correct_answer:"Article d'information", points:1},
+      {correct_answer:'Brève / annonce', points:1},
+      {correct_answer:'Éditorial / tribune', points:1}
+    ]
+  }
+};
+function schemaForSection(quizFile, key){
+  return (QUIZ_ITEM_SCHEMAS[quizFile] && QUIZ_ITEM_SCHEMAS[quizFile][key]) || null;
+}
+// Complète un item avec le mot/label attendu et le barème connus quand ils manquent dans les
+// données enregistrées, sans jamais écraser ce qui est déjà là.
+function mergeItemWithSchema(item, schemaItem){
+  if(!schemaItem || item === null || typeof item !== 'object') return item;
+  const merged = Object.assign({}, item);
+  if(merged.label === undefined && schemaItem.label !== undefined) merged.label = schemaItem.label;
+  if(merged.correct_answer === undefined && schemaItem.correct_answer !== undefined) merged.correct_answer = schemaItem.correct_answer;
+  if(schemaItem.points !== undefined) merged._maxPoints = schemaItem.points;
+  return merged;
+}
+// Calcule ce qu'il faut afficher comme "note" pour un item (icône + points sur le barème),
+// à partir de ce qui est disponible : score explicite, ou simple booléen correct/is_correct
+// combiné au barème connu (_maxPoints, ajouté par mergeItemWithSchema).
+function computeMarkParts(item){
+  if(item.score === null || item.total === null) return { ok: null, label: '⏳' };
+  const max = item._maxPoints;
+  let obtained;
+  if(item.score !== undefined && item.score !== null) obtained = item.score;
+  else if(item.total !== undefined && item.total !== null) obtained = item.total;
+  let ok = null;
+  if(item.is_correct !== undefined) ok = item.is_correct;
+  else if(item.correct !== undefined) ok = item.correct;
+  if(obtained === undefined && ok !== null && max !== undefined) obtained = ok ? max : 0;
+  if(ok === null && obtained !== undefined && max !== undefined) ok = obtained >= max;
+  let ptsLabel = '';
+  if(obtained !== undefined) ptsLabel = max !== undefined ? `${obtained}/${max} pt` : `${obtained} pt`;
+  const icon = ok === true ? '✅' : ok === false ? '❌' : '';
+  return { ok, label: [icon, ptsLabel].filter(Boolean).join(' ') };
+}
+
 // Champs "cœur" d'un item de réponse : tout le reste (souvent des sous-notes comme
 // qui_score/comment_score/pourquoi_score pour une rédaction notée sur plusieurs critères)
 // est affiché en détail plutôt que dans un JSON brut illisible.
@@ -942,12 +1015,7 @@ const REPORT_ITEM_CORE_KEYS = ['is_correct','correct','score','total','question'
 function reportRenderItem(item){
   if(item === null || item === undefined) return '';
   if(typeof item !== 'object') return `<li>${item}</li>`;
-  let mark = '';
-  if(item.is_correct !== undefined) mark = item.is_correct ? '✅' : '❌';
-  else if(item.correct !== undefined) mark = item.correct ? '✅' : '❌';
-  else if(item.total !== undefined && item.total !== null) mark = `${item.total} pt`;
-  else if(item.score !== undefined && item.score !== null) mark = `${item.score} pt`;
-  else if(item.score === null) mark = '⏳';
+  const mark = computeMarkParts(item).label;
   const label = item.question || item.label || item.field || '';
   const given = item.given !== undefined ? item.given : item.answer;
   const expected = item.correct_answer ? ` <span class="report-expected">(attendu : ${item.correct_answer})</span>` : '';
@@ -974,7 +1042,9 @@ function reportRenderDetail(detail, quizFile){
   return ordered.map(([key, val]) => {
     const consigneHtml = consignes[key] ? `<p class="report-consigne">${consignes[key]}</p>` : '';
     if(Array.isArray(val)){
-      return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4>${consigneHtml}<ul class="report-list">${val.map(reportRenderItem).join('')}</ul></div>`;
+      const schema = schemaForSection(quizFile, key);
+      const items = val.map((it, i) => mergeItemWithSchema(it, schema && schema[i]));
+      return `<div class="report-block"><h4>${reportLabelForKey(key)}</h4>${consigneHtml}<ul class="report-list">${items.map(reportRenderItem).join('')}</ul></div>`;
     }
     if(typeof val === 'object'){
       // Une section notée par l'IA sur plusieurs critères (ex : qui/comment/pourquoi) est enregistrée
@@ -1067,18 +1137,15 @@ function prCleanComment(text){
 function prRenderItem(item){
   if(item === null || item === undefined) return '';
   if(typeof item !== 'object') return `<div class="pr-item">${item}</div>`;
-  let markHtml = '';
-  if(item.is_correct !== undefined) markHtml = item.is_correct ? '<span class="pr-mark">✓</span>' : '<span class="pr-mark no">✕</span>';
-  else if(item.correct !== undefined) markHtml = item.correct ? '<span class="pr-mark">✓</span>' : '<span class="pr-mark no">✕</span>';
-  else if(item.total !== undefined && item.total !== null) markHtml = `<span class="pr-mark">${item.total} pt</span>`;
-  else if(item.score !== undefined && item.score !== null) markHtml = `<span class="pr-mark">${item.score} pt</span>`;
-  else if(item.score === null) markHtml = '<span class="pr-mark">⏳</span>';
+  const markInfo = computeMarkParts(item);
+  const markHtml = markInfo.label ? `<span class="pr-mark${markInfo.ok === false ? ' no' : ''}">${markInfo.label}</span>` : '';
   const label = item.question || item.label || ''; // jamais l'id technique du champ dans la version imprimée
   const given = item.given !== undefined ? item.given : item.answer;
   const rawComment = item.comment || item.explanation || item.feedback;
   const note = rawComment ? `<span class="pr-comment">${prCleanComment(rawComment)}</span>` : '';
   const answerHtml = given !== undefined && given !== '' ? `<span class="pr-answer">${given}</span>` : '<span style="color:#999;">(vide)</span>';
-  return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}</span></div>${note}</div>`;
+  const expected = item.correct_answer ? ` <span style="color:#8A5A1E; font-weight:600;">(attendu : ${item.correct_answer})</span>` : '';
+  return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}${expected}</span></div>${note}</div>`;
 }
 const PR_HIDDEN_KEYS = ['client_subtotal','ai_subtotal','ai_error','raw_fields','released_for_retry'];
 function prRenderDetail(detail, quizFile){
@@ -1096,7 +1163,9 @@ function prRenderDetail(detail, quizFile){
     const title = prLabelForKey(key);
     const consigneHtml = consignes[key] ? `<div class="pr-consigne">${consignes[key]}</div>` : '';
     if(Array.isArray(val)){
-      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${consigneHtml}${val.map(prRenderItem).join('')}</div>`;
+      const schema = schemaForSection(quizFile, key);
+      const items = val.map((it, i) => mergeItemWithSchema(it, schema && schema[i]));
+      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${consigneHtml}${items.map(prRenderItem).join('')}</div>`;
     }
     if(typeof val === 'object'){
       return `<div class="pr-section"><div class="pr-section-title">${title}</div>${consigneHtml}${prRenderItem(val)}</div>`;
