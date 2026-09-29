@@ -244,8 +244,15 @@
     .body-pad{padding:16px;}
     .stat-row{grid-template-columns:repeat(2, 1fr);}
     .class-grid{grid-template-columns:1fr;}
-    .result-table{font-size:12px;}
-    .result-table th, .result-table td{padding:7px 6px;}
+    /* Le tableau de résultats est plus large que l'écran (score, date, boutons...) :
+       plutôt que de le laisser déborder et couper le texte, on le rend défilable
+       horizontalement à l'intérieur de son cadre. */
+    #results-table-wrap, #practice-table-wrap, #practice-summary-wrap{
+      overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;
+    }
+    .result-table{font-size:12px; min-width:600px;}
+    .result-table th, .result-table td{padding:7px 6px; white-space:nowrap;}
+    .result-table td:nth-child(2){white-space:normal;}
     .filter-row{flex-direction:column;}
     .filter-row select{width:100%;}
     .quiz-row{flex-wrap:wrap; gap:10px;}
@@ -1270,28 +1277,74 @@ async function loadPracticeResults(){
   const sortedAttempts = [...attempts].sort((a,b) => a.student_name.localeCompare(b.student_name, 'fr', {sensitivity:'base'}));
   currentPracticeAttempts = sortedAttempts;
 
+  // Même regroupement par prénom que pour les quiz évalués : les tentatives du même
+  // prénom (consécutives puisque triées ci-dessus) sont rassemblées sous une ligne dépliable.
+  const groupsP = [];
+  let curKeyP = null, curGroupP = null;
+  sortedAttempts.forEach((a, i) => {
+    const first = (a.student_name || '').trim().split(' ')[0] || '(sans nom)';
+    const key = first.toLocaleLowerCase('fr');
+    if(key !== curKeyP){
+      curGroupP = { name: first, idxs: [] };
+      groupsP.push(curGroupP);
+      curKeyP = key;
+    }
+    curGroupP.idxs.push(i);
+  });
+
+  const renderPracticeRow = (i, indent) => {
+    const a = sortedAttempts[i];
+    return `
+    <tr class="${indent ? 'result-sub-row hidden' : ''}" ${indent ? `data-group="${indent}"` : ''}>
+      <td></td>
+      <td>${a.student_name}</td>
+      <td>${a.classe}</td>
+      <td>${a.quiz_name}</td>
+      <td>${a.score !== null && a.score !== undefined ? `<span class="score-pill ${scoreClass(a.score, a.max_score)}">${a.score}/${a.max_score}</span>` : '—'}</td>
+      <td>${fmtDate(a.completed_at)}</td>
+      <td><button class="btn-delete-row" data-delete-practice="${i}" title="Supprimer cette tentative">✕</button></td>
+    </tr>`;
+  };
+
   tableWrap.innerHTML = `
     <table class="result-table">
-      <tr><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th></tr>
-      ${sortedAttempts.map((a, i) => `
-        <tr>
-          <td>${a.student_name}</td>
-          <td>${a.classe}</td>
-          <td>${a.quiz_name}</td>
-          <td>${a.score !== null && a.score !== undefined ? `<span class="score-pill ${scoreClass(a.score, a.max_score)}">${a.score}/${a.max_score}</span>` : '—'}</td>
-          <td>${fmtDate(a.completed_at)}</td>
-          <td><button class="btn-delete-row" data-delete-practice="${i}" title="Supprimer cette tentative">✕</button></td>
-        </tr>
-      `).join('')}
+      <tr><th></th><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th></tr>
+      ${groupsP.map((g, gi) => {
+        if(g.idxs.length === 1) return renderPracticeRow(g.idxs[0], null);
+        const groupId = `pg${gi}`;
+        const header = `
+        <tr class="result-group-row" data-group-toggle="${groupId}">
+          <td class="group-chevron"><span class="chevron">▸</span></td>
+          <td colspan="6"><span class="group-name"><strong>${g.name}</strong></span><span class="group-count">${g.idxs.length} tentatives</span></td>
+        </tr>`;
+        return header + g.idxs.map(i => renderPracticeRow(i, groupId)).join('');
+      }).join('')}
     </table>
   `;
 
+  tableWrap.querySelectorAll('[data-group-toggle]').forEach(headerRow => {
+    headerRow.addEventListener('click', () => {
+      const groupId = headerRow.dataset.groupToggle;
+      const isOpen = headerRow.classList.toggle('open');
+      tableWrap.querySelectorAll(`[data-group="${groupId}"]`).forEach(row => {
+        row.classList.toggle('hidden', !isOpen);
+      });
+    });
+  });
+
   tableWrap.querySelectorAll('[data-delete-practice]').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       const a = currentPracticeAttempts[parseInt(btn.dataset.deletePractice)];
       if(!confirm(`Supprimer la tentative de ${a.student_name} (${a.quiz_name}) ?`)) return;
-      const { error } = await supa.from('practice_attempts').delete().eq('id', a.id);
+      // .select() est indispensable pour détecter une suppression bloquée par les droits d'accès (RLS),
+      // qui sinon ne renvoie aucune erreur et semble "ne rien faire".
+      const { data: deletedRows, error } = await supa.from('practice_attempts').delete().eq('id', a.id).select();
       if(error){ alert('Erreur : ' + error.message); return; }
+      if(!deletedRows || deletedRows.length === 0){
+        alert("La suppression n'a pas fonctionné : le serveur n'a supprimé aucune tentative (probablement un problème de droits d'accès). Essaie de te déconnecter puis de te reconnecter, puis réessaie.");
+        return;
+      }
       loadPracticeResults();
     });
   });
