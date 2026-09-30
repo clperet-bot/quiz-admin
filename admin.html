@@ -730,6 +730,23 @@ document.getElementById('qr-close-btn').addEventListener('click', () => {
 });
 
 // -------- results --------
+// Recalcule la liste des classes proposées dans le filtre "classe" à partir de la matière
+// actuellement sélectionnée — une classe qui n'a aucun quiz dans cette matière disparaît de
+// la liste (ex : en Français, seules les classes qui ont du français apparaissent). Garde la
+// sélection en cours si elle reste valide.
+function refreshClassFilterOptions(){
+  const sel = document.getElementById('filter-class');
+  const filterMatiere = document.getElementById('filter-results-matiere').value;
+  const previousValue = sel.value;
+  const matchingClassIds = new Set(
+    QUIZZES.filter(q => !filterMatiere || (q.matiere || 'Anglais') === filterMatiere).map(q => q.class_id)
+  );
+  const filtered = CLASSES.filter(c => matchingClassIds.has(c.id));
+  sel.innerHTML = '<option value="">Toutes les classes</option>' +
+    filtered.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  if(filtered.some(c => c.id === previousValue)) sel.value = previousValue;
+}
+
 // Recalcule la liste des quiz proposés dans le filtre "quiz" à partir des filtres "matière"
 // et "classe" actuellement sélectionnés — un quiz qui n'appartient pas à la matière ou à la
 // classe choisie disparaît de la liste. Garde la sélection en cours si elle reste valide.
@@ -748,16 +765,16 @@ function refreshQuizFilterOptions(){
 }
 
 async function loadResults(){
-  const filterMatiere = document.getElementById('filter-results-matiere').value;
-  const filterClass = document.getElementById('filter-class').value;
-
-  if(document.getElementById('filter-class').options.length <= 1){
-    document.getElementById('filter-class').innerHTML += CLASSES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  if(!document.getElementById('filter-class').dataset.bound){
+    document.getElementById('filter-class').dataset.bound = '1';
     document.getElementById('filter-class').addEventListener('change', loadResults);
     document.getElementById('filter-quiz').addEventListener('change', loadResults);
   }
 
+  refreshClassFilterOptions();
   refreshQuizFilterOptions();
+  const filterMatiere = document.getElementById('filter-results-matiere').value;
+  const filterClass = document.getElementById('filter-class').value;
   const filterQuiz = document.getElementById('filter-quiz').value;
 
   // Le bouton d'impression groupée n'a de sens que sur un quiz précis, pas sur "Tous les quiz".
