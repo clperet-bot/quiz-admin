@@ -730,20 +730,38 @@ document.getElementById('qr-close-btn').addEventListener('click', () => {
 });
 
 // -------- results --------
+// Recalcule la liste des quiz proposés dans le filtre "quiz" à partir des filtres "matière"
+// et "classe" actuellement sélectionnés — un quiz qui n'appartient pas à la matière ou à la
+// classe choisie disparaît de la liste. Garde la sélection en cours si elle reste valide.
+function refreshQuizFilterOptions(){
+  const sel = document.getElementById('filter-quiz');
+  const filterMatiere = document.getElementById('filter-results-matiere').value;
+  const filterClass = document.getElementById('filter-class').value;
+  const previousValue = sel.value;
+  const filtered = QUIZZES.filter(q =>
+    (!filterMatiere || (q.matiere || 'Anglais') === filterMatiere) &&
+    (!filterClass || q.class_id === filterClass)
+  );
+  sel.innerHTML = '<option value="">Tous les quiz</option>' +
+    filtered.map(q => `<option value="${q.id}">${q.title}${(q.matiere || 'Anglais') === 'Français' ? ' (FR)' : ''}</option>`).join('');
+  if(filtered.some(q => q.id === previousValue)) sel.value = previousValue;
+}
+
 async function loadResults(){
   const filterMatiere = document.getElementById('filter-results-matiere').value;
   const filterClass = document.getElementById('filter-class').value;
+
+  if(document.getElementById('filter-class').options.length <= 1){
+    document.getElementById('filter-class').innerHTML += CLASSES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    document.getElementById('filter-class').addEventListener('change', loadResults);
+    document.getElementById('filter-quiz').addEventListener('change', loadResults);
+  }
+
+  refreshQuizFilterOptions();
   const filterQuiz = document.getElementById('filter-quiz').value;
 
   // Le bouton d'impression groupée n'a de sens que sur un quiz précis, pas sur "Tous les quiz".
   document.getElementById('print-quiz-corrections-btn').classList.toggle('hidden', !filterQuiz);
-
-  if(document.getElementById('filter-class').options.length <= 1){
-    document.getElementById('filter-class').innerHTML += CLASSES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    document.getElementById('filter-quiz').innerHTML += QUIZZES.map(q => `<option value="${q.id}">${q.title}${(q.matiere || 'Anglais') === 'Français' ? ' (FR)' : ''}</option>`).join('');
-    document.getElementById('filter-class').addEventListener('change', loadResults);
-    document.getElementById('filter-quiz').addEventListener('change', loadResults);
-  }
 
   let query = supa.from('attempts').select('*').order('created_at', { ascending: false }).limit(200);
   if(filterClass) query = query.eq('class_id', filterClass);
