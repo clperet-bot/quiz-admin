@@ -175,6 +175,7 @@
   .pr-mark.no{background:#C0392B;}
   .pr-answer{font-weight:600; color:#181614;}
   .pr-comment{display:block; margin-top:3px; color:#C2185B; font-style:italic; font-size:11px;}
+  .pr-correction{display:block; margin-top:3px; color:#2E7D32; font-style:italic; font-size:11px; font-weight:600;}
   .pr-text-block{font-size:12.5px; line-height:1.6; white-space:pre-wrap; background:#F7F5FB; border-radius:6px; padding:10px 12px;}
   .pr-footer{margin-top:20px; text-align:center; font-size:9.5px; color:#aaa; padding-bottom:16px;}
 
@@ -997,7 +998,7 @@ const QUIZ_SECTION_CONSIGNES = {
   },
   'danger-zone-graded.html': {
     section1_ai: "Write 4 sentences about the hazards you can see (format : I can see [hazard] on/in the [place].)",
-    section2: "Write the hazard that matches each PPE.",
+    section2: "Write the hazard that matches each PPE (not a translation of the PPE itself — e.g. for Gloves, write a danger like \"cuts\", not \"gants\").",
     section3: "Translate into English.",
     section4_ai: "Name a hazard, then explain why it is dangerous."
   },
@@ -1222,6 +1223,13 @@ function prCleanComment(text){
     .replace(/^Non corrigé \(IA indisponible\)\.?\s*/i, '')
     .trim();
 }
+// Sépare la "Phrase correcte / corrigée : "..."" en fin de commentaire pour l'afficher à part (en vert).
+function prSplitCorrection(text){
+  if(!text) return { note: text, correction: '' };
+  const m = text.match(/\s*(Phrase corrig[ée]e?\s*:\s*".*")\s*$/i);
+  if(!m) return { note: text, correction: '' };
+  return { note: text.slice(0, m.index).trim(), correction: m[1].trim() };
+}
 function prRenderItem(item){
   if(item === null || item === undefined) return '';
   if(typeof item !== 'object') return `<div class="pr-item">${item}</div>`;
@@ -1230,10 +1238,12 @@ function prRenderItem(item){
   const label = item.question || item.label || ''; // jamais l'id technique du champ dans la version imprimée
   const given = item.given !== undefined ? item.given : item.answer;
   const rawComment = item.comment || item.explanation || item.feedback;
-  const note = rawComment ? `<span class="pr-comment">${prCleanComment(rawComment)}</span>` : '';
+  const { note: noteText, correction } = prSplitCorrection(rawComment ? prCleanComment(rawComment) : rawComment);
+  const note = noteText ? `<span class="pr-comment">${noteText}</span>` : '';
+  const correctionHtml = correction ? `<span class="pr-correction">${correction}</span>` : '';
   const answerHtml = given !== undefined && given !== '' ? `<span class="pr-answer">${given}</span>` : '<span style="color:#999;">(vide)</span>';
   const expected = item.correct_answer ? ` <span style="color:#8A5A1E; font-weight:600;">(attendu : ${item.correct_answer})</span>` : '';
-  return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}${expected}</span></div>${note}</div>`;
+  return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}${expected}</span></div>${note}${correctionHtml}</div>`;
 }
 const PR_HIDDEN_KEYS = ['client_subtotal','ai_subtotal','ai_error','raw_fields','released_for_retry'];
 function prRenderDetail(detail, quizFile){
