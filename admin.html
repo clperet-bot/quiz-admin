@@ -1223,10 +1223,11 @@ function prCleanComment(text){
     .replace(/^Non corrigé \(IA indisponible\)\.?\s*/i, '')
     .trim();
 }
-// Sépare la "Phrase correcte / corrigée : "..."" en fin de commentaire pour l'afficher à part (en vert).
+// Sépare la "Phrase correcte / corrigée : "..."" en fin de commentaire pour l'afficher à part (en vert) —
+// sans le label ni les guillemets, juste la phrase corrigée elle-même.
 function prSplitCorrection(text){
   if(!text) return { note: text, correction: '' };
-  const m = text.match(/\s*(Phrase corrig[ée]e?\s*:\s*".*")\s*$/i);
+  const m = text.match(/\s*Phrase (?:correcte|corrig[ée]e?)\s*:\s*"(.*)"\s*$/i);
   if(!m) return { note: text, correction: '' };
   return { note: text.slice(0, m.index).trim(), correction: m[1].trim() };
 }
@@ -1237,11 +1238,12 @@ function prRenderItem(item){
   const markHtml = markInfo.label ? `<span class="pr-mark${markInfo.ok === false ? ' no' : ''}">${markInfo.label}</span>` : '';
   const label = item.question || item.label || ''; // jamais l'id technique du champ dans la version imprimée
   const given = item.given !== undefined ? item.given : item.answer;
-  // Sur une réponse déjà au maximum des points, pas besoin de justifier : juste la coche.
-  // Le commentaire + la correction ne s'affichent que si des points ont été perdus.
-  const rawComment = markInfo.ok === true ? '' : (item.comment || item.explanation || item.feedback);
+  // Le commentaire peut contenir deux choses, indépendamment du score : une explication (rose, seulement
+  // si des points ont été perdus) et une phrase corrigée (verte, dès que la phrase de l'élève méritait
+  // d'être reformulée proprement — même sur une réponse comptée bonne, ex. une faute d'orthographe tolérée).
+  const rawComment = item.comment || item.explanation || item.feedback;
   const { note: noteText, correction } = prSplitCorrection(rawComment ? prCleanComment(rawComment) : rawComment);
-  const note = noteText ? `<span class="pr-comment">${noteText}</span>` : '';
+  const note = (noteText && markInfo.ok !== true) ? `<span class="pr-comment">${noteText}</span>` : '';
   const correctionHtml = correction ? `<span class="pr-correction">${correction}</span>` : '';
   // "answer" absent (clé jamais enregistrée, souvent une ancienne correction manuelle) est différent
   // d'une réponse vraiment vide : dans ce cas on ne dit pas "(vide)" (ce serait faux et trompeur),
@@ -1256,9 +1258,11 @@ function prRenderItem(item){
   return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}${expected}</span></div>${note}${correctionHtml}</div>`;
 }
 const PR_HIDDEN_KEYS = ['client_subtotal','ai_subtotal','ai_error','raw_fields','released_for_retry'];
+// La consigne (souvent en anglais, parfois avec des précisions type "pas une traduction de...")
+// n'est volontairement PAS imprimée : les élèves ne la lisent pas et ça alourdit le document.
+// Elle reste visible sur le compte-rendu à l'écran (reportRenderDetail) pour Lilou.
 function prRenderDetail(detail, quizFile){
   if(!detail) return '';
-  const consignes = QUIZ_SECTION_CONSIGNES[quizFile] || {};
   if(Array.isArray(detail)){
     return `<div class="pr-section"><div class="pr-section-title">Réponses</div>${detail.map(prRenderItem).join('')}</div>`;
   }
@@ -1269,16 +1273,15 @@ function prRenderDetail(detail, quizFile){
   ];
   return ordered.map(([key, val]) => {
     const title = prLabelForKey(key);
-    const consigneHtml = consignes[key] ? `<div class="pr-consigne">${consignes[key]}</div>` : '';
     if(Array.isArray(val)){
       const schema = schemaForSection(quizFile, key);
       const items = val.map((it, i) => mergeItemWithSchema(it, schema && schema[i]));
-      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${consigneHtml}${items.map(prRenderItem).join('')}</div>`;
+      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${items.map(prRenderItem).join('')}</div>`;
     }
     if(typeof val === 'object'){
-      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${consigneHtml}${prRenderItem(val)}</div>`;
+      return `<div class="pr-section"><div class="pr-section-title">${title}</div>${prRenderItem(val)}</div>`;
     }
-    return `<div class="pr-section"><div class="pr-section-title">${title}</div>${consigneHtml}<div class="pr-text-block">${val}</div></div>`;
+    return `<div class="pr-section"><div class="pr-section-title">${title}</div><div class="pr-text-block">${val}</div></div>`;
   }).join('');
 }
 function buildPrintReport(a, detail){
