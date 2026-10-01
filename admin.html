@@ -1237,11 +1237,21 @@ function prRenderItem(item){
   const markHtml = markInfo.label ? `<span class="pr-mark${markInfo.ok === false ? ' no' : ''}">${markInfo.label}</span>` : '';
   const label = item.question || item.label || ''; // jamais l'id technique du champ dans la version imprimée
   const given = item.given !== undefined ? item.given : item.answer;
-  const rawComment = item.comment || item.explanation || item.feedback;
+  // Sur une réponse déjà au maximum des points, pas besoin de justifier : juste la coche.
+  // Le commentaire + la correction ne s'affichent que si des points ont été perdus.
+  const rawComment = markInfo.ok === true ? '' : (item.comment || item.explanation || item.feedback);
   const { note: noteText, correction } = prSplitCorrection(rawComment ? prCleanComment(rawComment) : rawComment);
   const note = noteText ? `<span class="pr-comment">${noteText}</span>` : '';
   const correctionHtml = correction ? `<span class="pr-correction">${correction}</span>` : '';
-  const answerHtml = given !== undefined && given !== '' ? `<span class="pr-answer">${given}</span>` : '<span style="color:#999;">(vide)</span>';
+  // "answer" absent (clé jamais enregistrée, souvent une ancienne correction manuelle) est différent
+  // d'une réponse vraiment vide : dans ce cas on ne dit pas "(vide)" (ce serait faux et trompeur),
+  // on signale juste que le texte d'origine n'a pas été conservé.
+  const answerKeyMissing = item.given === undefined && !('answer' in item);
+  const answerHtml = given !== undefined && given !== ''
+    ? `<span class="pr-answer">${given}</span>`
+    : (answerKeyMissing
+        ? '<span style="color:#999; font-style:italic;">(réponse non conservée — élève a bien répondu, score basé sur la correction d\'origine)</span>'
+        : '<span style="color:#999;">(vide)</span>');
   const expected = item.correct_answer ? ` <span style="color:#8A5A1E; font-weight:600;">(attendu : ${item.correct_answer})</span>` : '';
   return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}${expected}</span></div>${note}${correctionHtml}</div>`;
 }
@@ -1279,12 +1289,10 @@ function buildPrintReport(a, detail){
 
   let body = prRenderDetail(detail, quizFile);
 
-  const isItemizedFreeText = detail && (detail.section1_ai || detail.section4_ai);
+  // La copie rédigée (texte brut de l'élève) n'est volontairement PAS imprimée : sur une rédaction
+  // longue elle peut à elle seule ajouter 2-3 pages. Elle reste visible sur le compte-rendu à l'écran
+  // (openReport / reportRenderDetail) pour vérification, mais jamais sur la version imprimée.
   const hasFeedbackInDetail = detail && detail.feedback_global;
-  if(a.writing_text && !isItemizedFreeText){
-    const writingConsigne = QUIZ_WRITING_CONSIGNES[quizFile] ? `<div class="pr-consigne">${QUIZ_WRITING_CONSIGNES[quizFile]}</div>` : '';
-    body += `<div class="pr-section"><div class="pr-section-title">Ta copie</div>${writingConsigne}<div class="pr-text-block">${a.writing_text}</div></div>`;
-  }
   if(a.writing_correction && !hasFeedbackInDetail){
     body += `<div class="pr-section"><div class="pr-section-title">Ton bilan</div><div class="pr-text-block" style="color:#C2185B;">${prCleanComment(a.writing_correction)}</div></div>`;
   }

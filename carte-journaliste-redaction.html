@@ -392,7 +392,7 @@ ATTENTION, piège fréquent à éviter : avant de conclure qu'un élément est a
 
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
 {"partie1_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie2_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie4_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie5":{"score":0,"feedback":"Retour concis en français (150 mots max), adressé directement à l'élève en le/la tutoyant, termine par un encouragement."},"feedback_global":"Une ou deux phrases en français, adressées directement à l'élève en le/la tutoyant, qui résument ce qui est réussi et ce qu'il faut retenir."}
-Les commentaires doivent être courts (moins de 20 mots pour la partie explication), en français, adressés directement à l'élève en le/la tutoyant, et préciser CONCRÈTEMENT ce qui a fait perdre des points plutôt que d'utiliser le vocabulaire interne de ce barème. N'écris JAMAIS dans un commentaire les mots "erreur grave", "AXE 1", "AXE 2" ou "omission mineure" — ce sont des catégories internes pour toi, pas un vocabulaire à montrer à l'élève.
+Les commentaires doivent être TRÈS courts (moins de 8 mots pour la partie explication, hors phrase corrigée), en français, adressés directement à l'élève en le/la tutoyant, et préciser CONCRÈTEMENT ce qui a fait perdre des points plutôt que d'utiliser le vocabulaire interne de ce barème. N'écris JAMAIS dans un commentaire les mots "erreur grave", "AXE 1", "AXE 2" ou "omission mineure" — ce sont des catégories internes pour toi, pas un vocabulaire à montrer à l'élève. Si le score est le maximum de l'item, laisse "comment" vide ("").
 
 RÈGLE ABSOLUE (correction écrite) : pour PARTIE 4 ("partie4_items"), si le score n'est pas le maximum (1), le "comment" doit TOUJOURS se terminer par un exemple de phrase corrigée (en français), entre guillemets, introduite par "Phrase corrigée : " — une reformulation plus précise/claire de la phrase vague de l'article que l'élève devait corriger. La limite de mots ne s'applique qu'à l'explication qui précède.
 
@@ -402,21 +402,46 @@ function buildUserContent(p1, p2, p4, p5text){
   return `PARTIE 1 :\n${p1.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nPARTIE 2 :\n${p2.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nPARTIE 4 :\n${p4.map((t,i)=>`${i+1}. ${t || '(vide)'}`).join('\n')}\n\nPARTIE 5 :\n${p5text || '(vide)'}`;
 }
 
-async function gradeWithAI(p1, p2, p4, p5text){
+async function gradeWithAIOnce(p1, p2, p4, p5text){
   const body = { systemPrompt: GRADING_SYSTEM_PROMPT, userContent: buildUserContent(p1, p2, p4, p5text) };
-  const res = await fetch(GRADE_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  if(!res.ok) throw new Error('grade-advanced http error');
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 45000); // la correction IA peut prendre ~15-20s, on laisse large
+  let res;
+  try{
+    res = await fetch(GRADE_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+  if(!res.ok) throw new Error('grade-advanced http error ' + res.status);
   const data = await res.json();
   if(data.error) throw new Error(data.error);
   if(!Array.isArray(data.partie1_items) || !Array.isArray(data.partie2_items) || !Array.isArray(data.partie4_items) || !data.partie5) throw new Error('malformed response');
   return data;
 }
 
+// Le réseau du lycée (wifi mobile, filtrage établissement) coupe parfois une requête en cours.
+// On retente automatiquement avant d'abandonner, pour ne pas perdre une copie à cause d'un simple aléa réseau.
+async function gradeWithAI(p1, p2, p4, p5text){
+  const MAX_ATTEMPTS = 3;
+  let lastErr;
+  for(let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++){
+    try{
+      return await gradeWithAIOnce(p1, p2, p4, p5text);
+    } catch(e){
+      lastErr = e;
+      if(attempt < MAX_ATTEMPTS){
+        await new Promise(r => setTimeout(r, 1500 * attempt));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 // ============ SOUMISSION ============
 document.getElementById('submit-btn').addEventListener('click', async () => {
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
-  btn.textContent = 'Correction en cours...';
+  btn.textContent = 'Correction en cours... (ne fermez pas la page, cela peut prendre jusqu\'à 30 secondes)';
 
   await checkAccommodation();
 
