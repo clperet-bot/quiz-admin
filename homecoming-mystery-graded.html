@@ -440,7 +440,13 @@ function gradeExactSection(list, pointsPerItem){
     const norm = normalizeAnswer(raw);
     const ok = item.accepted.some(a => isCloseEnough(norm, a));
     total += ok ? pointsPerItem : 0;
-    detail.push({ field:item.field, label:item.label, answer: raw, correct: ok });
+    const entry = { field:item.field, label:item.label, answer: raw, correct: ok };
+    if(!ok){
+      entry.comment = (raw && raw.trim())
+        ? `Ce n'est pas la bonne réponse pour "${item.label}". Phrase correcte : "${item.accepted[0]}"`
+        : `Réponse vide. Phrase correcte : "${item.accepted[0]}"`;
+    }
+    detail.push(entry);
   });
   return { total: Math.round(total*2)/2, detail };
 }
