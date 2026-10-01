@@ -185,7 +185,7 @@
   <div class="section">
     <div class="section-points">4 points</div>
     <div class="section-title"><span class="section-num">2</span>PPE and Hazards</div>
-    <p class="section-instructions">Write the hazard that matches each PPE.</p>
+    <p class="section-instructions">Write the hazard that matches each PPE (not a translation of the PPE itself — e.g. for Gloves, write a danger like "cuts", not "gants").</p>
     <table class="match-table">
       <tr><td class="icon-cell">Gloves</td><td class="input-cell"><input type="text" id="s2-1" autocomplete="off"></td></tr>
       <tr><td class="icon-cell">Safety boots</td><td class="input-cell"><input type="text" id="s2-2" autocomplete="off"></td></tr>
@@ -508,7 +508,7 @@ Pour chaque ligne, tu reçois : l'EPI concerné, la réponse de l'élève, et si
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme (section1_items : scores 0, 1, 1.5 ou 2 uniquement ; section2_items et section4_items : scores 0 ou 1 uniquement) :
 {"section1_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section2_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"section4_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"feedback_global":"Une ou deux phrases en français, adressées directement à l'élève en le/la tutoyant, qui résument ce qui est réussi et ce qu'il faut retenir."}
 
-Les commentaires doivent être courts (moins de 15 mots pour la partie explication), en français, adressés directement à l'élève en le/la tutoyant (ex : "Bien vu !", "Attention, l'orthographe n'a pas compté ici"), et préciser quel axe (sens ou forme) a fait perdre des points quand ce n'est pas le score maximum.
+Les commentaires doivent être courts (moins de 15 mots pour la partie explication), en français, adressés directement à l'élève en le/la tutoyant (ex : "Bien vu !", "Attention, l'orthographe n'a pas compté ici"), et préciser CONCRÈTEMENT ce qui a fait perdre des points (ex : "il manque le verbe", "le sens n'est pas clair") plutôt que d'utiliser le vocabulaire interne de ce barème. N'écris JAMAIS dans un commentaire les mots "erreur grave", "AXE 1", "AXE 2" ou "omission mineure" — ce sont des catégories internes pour toi, pas un vocabulaire à montrer à l'élève.
 
 RÈGLE ABSOLUE (correction écrite) : pour SECTION 1 ("section1_items") et SECTION 4 ("section4_items") — les phrases rédigées par l'élève — si le score n'est PAS le maximum de l'item (donc < 2 en section 1, < 1 en section 4), le "comment" doit TOUJOURS se terminer par la phrase corrigée, bien formulée en anglais, introduite par "Phrase correcte : " et entre guillemets (ex : "Phrase correcte : \"The cable is dangerous because it can cause a fall.\""). Cette phrase corrigée doit reprendre le même danger que celui identifié par l'élève (ne change pas de sujet), juste reformulée correctement. La limite de 15 mots ne s'applique qu'à l'explication qui précède, pas à la phrase corrigée elle-même.
 
