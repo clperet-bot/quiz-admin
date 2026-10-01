@@ -582,6 +582,27 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+// Détection complémentaire : en écran partagé (deux fenêtres/apps côte à côte), la page du
+// quiz reste "visible" au sens de visibilitychange même quand l'élève clique dans l'autre
+// fenêtre pour taper/chercher quelque chose — seul le focus de la fenêtre change. On surveille
+// donc aussi blur/focus de la fenêtre, avec la même règle (plus de 5 secondes ailleurs = annulée).
+let windowBlurTimer = null;
+window.addEventListener('blur', () => {
+  if(cheatTriggered || document.hidden) return;
+  windowBlurTimer = Date.now();
+});
+window.addEventListener('focus', () => {
+  if(cheatTriggered || !windowBlurTimer) return;
+  const awaySeconds = (Date.now() - windowBlurTimer) / 1000;
+  windowBlurTimer = null;
+  if(awaySeconds > 5){
+    cheatTriggered = true;
+    cancelAttempt();
+  } else {
+    document.getElementById('cheat-banner').textContent = "⚠ Tu as quitté la fenêtre du quiz (écran partagé/autre appli). Si tu recommences, tes réponses seront effacées et ta prof sera notifiée.";
+  }
+});
+
 async function cancelAttempt(){
   // Récupère ce que l'élève avait déjà fait, avant de vider la page — au cas où
   // ce soit un faux positif (mise en veille, etc.) et qu'il faille vérifier après coup.

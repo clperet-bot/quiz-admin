@@ -113,6 +113,7 @@
   .toggle-corrections.on{background:var(--purple);}
   .toggle-note{display:flex; align-items:flex-start; gap:10px; font-size:12.5px; color:var(--purple-dark); background:var(--purple-light); border-radius:10px; padding:12px 14px; margin-bottom:18px;}
   .empty-note{font-size:13px; color:var(--ink-soft); padding:20px 0;}
+  .filter-hint{font-size:12px; color:var(--ink-soft); margin:-8px 0 14px;}
 
   /* ---- QR modal ---- */
   .qr-modal{position:fixed; inset:0; background:linear-gradient(180deg, var(--violet-1), var(--violet-2)); z-index:50; display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:20px;}
@@ -148,6 +149,10 @@
     #print-report-root{display:block !important;}
     #print-report-root, #print-report-root *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
     @page{margin:12mm 14mm;}
+    /* Page nommée pour le récapitulatif des notes : format paysage (plus pratique avec
+       plusieurs colonnes de contrôles), sans toucher à l'orientation des comptes rendus. */
+    @page print-recap{size:landscape; margin:10mm 12mm;}
+    .pr-page-landscape{page:print-recap;}
   }
   .btn-print-corrections{background:var(--purple); color:#fff; border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer;}
   .btn-print-corrections.hidden{display:none;}
@@ -172,6 +177,21 @@
   .pr-comment{display:block; margin-top:3px; color:#C2185B; font-style:italic; font-size:11px;}
   .pr-text-block{font-size:12.5px; line-height:1.6; white-space:pre-wrap; background:#F7F5FB; border-radius:6px; padding:10px 12px;}
   .pr-footer{margin-top:20px; text-align:center; font-size:9.5px; color:#aaa; padding-bottom:16px;}
+
+  /* ---- Récapitulatif des notes (grille élève × contrôle) ---- */
+  .pr-recap{padding:18px 22px;}
+  .pr-recap-header{display:flex; justify-content:space-between; align-items:baseline; border-bottom:2px solid #4B2E83; padding-bottom:10px; margin-bottom:14px;}
+  .pr-recap-title{font-family:Georgia,'Baloo 2',sans-serif; font-weight:700; font-size:18px; color:#4B2E83;}
+  .pr-recap-date{font-size:11px; color:#888;}
+  .pr-recap-table{width:100%; border-collapse:collapse; font-size:12px;}
+  .pr-recap-table th, .pr-recap-table td{border:1px solid #D9D3EA; padding:7px 8px; text-align:center;}
+  .pr-recap-table th{background:#F0EBFA; color:#4B2E83; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.02em;}
+  .pr-recap-name-col, .pr-recap-name{text-align:left; font-weight:600;}
+  .pr-recap-name-col{min-width:140px;}
+  .pr-recap-score{font-weight:700; color:#4B2E83;}
+  .pr-recap-score .pr-recap-of{font-weight:400; color:#888;}
+  .pr-recap-empty{color:#ccc;}
+  .pr-recap-table tr:nth-child(even) td{background:#FAFAFC;}
   .result-table tr[data-report]{cursor:pointer;}
   .result-table tr[data-report]:hover{background:var(--purple-light);}
   .qr-class-name{font-family:'Baloo 2',sans-serif; font-size:clamp(24px,5vw,34px); font-weight:700; color:#fff; margin-bottom:4px;}
@@ -246,15 +266,46 @@
     .body-pad{padding:16px;}
     .stat-row{grid-template-columns:repeat(2, 1fr);}
     .class-grid{grid-template-columns:1fr;}
-    /* Le tableau de résultats est plus large que l'écran (score, date, boutons...) :
-       plutôt que de le laisser déborder et couper le texte, on le rend défilable
-       horizontalement à l'intérieur de son cadre. */
+    /* Le tableau de résultats est plus large que l'écran (score, date, boutons...) : plutôt
+       que de le laisser déborder ou forcer un défilement horizontal peu pratique au doigt,
+       on masque les colonnes secondaires (classe, quiz, date — déjà visibles via les filtres
+       ou en ouvrant le compte rendu) pour que le reste tienne sur l'écran. overflow-x reste
+       en secours pour les cas rares (ex : ligne "tentative annulée") qui restent larges. */
     #results-table-wrap, #practice-table-wrap, #practice-summary-wrap{
       overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;
     }
-    .result-table{font-size:12px; min-width:600px;}
-    .result-table th, .result-table td{padding:7px 6px; white-space:nowrap;}
-    .result-table td:nth-child(2){white-space:normal;}
+    .result-table{font-size:12.5px; min-width:0; width:100%;}
+    .result-table th, .result-table td{padding:8px 4px; white-space:normal; word-break:break-word;}
+    /* colonnes étroites (chevron du groupe, bouton supprimer) : largeur minimale fixe pour
+       laisser le maximum de place au nom de l'élève */
+    #results-table-wrap .result-table th:first-child, #results-table-wrap .result-table td:first-child,
+    #practice-table-wrap .result-table th:first-child, #practice-table-wrap .result-table td:first-child{
+      width:16px; padding-left:2px; padding-right:0;
+    }
+    #results-table-wrap .result-table th:last-child, #results-table-wrap .result-table td:last-child,
+    #practice-table-wrap .result-table th:last-child, #practice-table-wrap .result-table td:last-child{
+      width:28px; padding-left:0;
+    }
+    /* Tableau des résultats évalués (#results-table-wrap) : empty, Élève, Classe, Quiz, Score, Date, flag, delete */
+    #results-table-wrap .result-table th:nth-child(3), #results-table-wrap .result-table td:nth-child(3),
+    #results-table-wrap .result-table th:nth-child(4), #results-table-wrap .result-table td:nth-child(4),
+    #results-table-wrap .result-table th:nth-child(6), #results-table-wrap .result-table td:nth-child(6){
+      display:none;
+    }
+    /* Tableau détaillé entraînement (#practice-table-wrap) : empty, Élève, Classe, Quiz, Score, Date, delete */
+    #practice-table-wrap .result-table th:nth-child(3), #practice-table-wrap .result-table td:nth-child(3),
+    #practice-table-wrap .result-table th:nth-child(4), #practice-table-wrap .result-table td:nth-child(4),
+    #practice-table-wrap .result-table th:nth-child(6), #practice-table-wrap .result-table td:nth-child(6){
+      display:none;
+    }
+    /* Vue d'ensemble entraînement (#practice-summary-wrap) : Élève, Classe, Tentatives, Dernier quiz, Dernier score, Dernière tentative */
+    #practice-summary-wrap .result-table th:nth-child(2), #practice-summary-wrap .result-table td:nth-child(2),
+    #practice-summary-wrap .result-table th:nth-child(4), #practice-summary-wrap .result-table td:nth-child(4),
+    #practice-summary-wrap .result-table th:nth-child(6), #practice-summary-wrap .result-table td:nth-child(6){
+      display:none;
+    }
+    .result-table .flag-cheat, .result-table .btn-release{white-space:normal;}
+    .result-table .btn-release{display:block; margin:4px 0 0;}
     .filter-row{flex-direction:column;}
     .filter-row select{width:100%;}
     .quiz-row{flex-wrap:wrap; gap:10px;}
@@ -377,8 +428,10 @@
           <select id="filter-class"><option value="">Toutes les classes</option></select>
           <select id="filter-quiz"><option value="">Tous les quiz</option></select>
           <button id="print-quiz-corrections-btn" class="btn-print-corrections hidden">🖨️ Imprimer les corrections</button>
+          <button id="print-recap-btn" class="btn-print-corrections">📋 Récapitulatif des notes (PDF)</button>
           <button id="reset-results-btn" class="btn-danger-outline">Réinitialiser tous les résultats</button>
         </div>
+        <p class="filter-hint">Pour le récapitulatif : choisis une matière et une classe ci-dessus (le quiz n'a pas besoin d'être précisé — tous les contrôles de cette matière/classe seront inclus).</p>
         <div id="results-table-wrap"><p class="loading-note">Chargement...</p></div>
       </div>
     </div>
@@ -1262,6 +1315,98 @@ document.getElementById('print-quiz-corrections-btn').addEventListener('click', 
 
 document.getElementById('report-close-btn').addEventListener('click', () => {
   document.getElementById('report-modal').classList.add('hidden');
+});
+
+// -------- Récapitulatif des notes (grille élève × contrôle, pour saisie groupée type École Directe) --------
+async function buildRecapHtml(matiere, classId){
+  const classe = CLASSES.find(c => c.id === classId);
+  const quizzesForRecap = QUIZZES.filter(q => q.class_id === classId && (q.matiere || 'Anglais') === matiere);
+  if(quizzesForRecap.length === 0) return null;
+  const quizIds = quizzesForRecap.map(q => q.id);
+
+  const { data: attempts, error } = await supa.from('attempts')
+    .select('*')
+    .in('quiz_id', quizIds)
+    .eq('cancelled', false)
+    .order('created_at', { ascending: true });
+  if(error){ alert('Erreur de chargement : ' + error.message); return null; }
+
+  // Une colonne par quiz, dans l'ordre de la première tentative passée (les quiz jamais
+  // encore tentés sont ajoutés à la fin, pour que la grille reste complète).
+  const quizOrder = [];
+  const quizFirstSeen = {};
+  (attempts || []).forEach(a => {
+    if(!(a.quiz_id in quizFirstSeen)){
+      quizFirstSeen[a.quiz_id] = true;
+      quizOrder.push(a.quiz_id);
+    }
+  });
+  quizzesForRecap.forEach(q => { if(!quizFirstSeen[q.id]) quizOrder.push(q.id); });
+  const quizTitleById = Object.fromEntries(quizzesForRecap.map(q => [q.id, q.title]));
+
+  // Regroupe par élève (nom complet normalisé, pour ne pas confondre deux élèves de même
+  // prénom). Comme les tentatives sont triées par date croissante, en cas de reprise
+  // autorisée pour un même quiz, c'est bien la plus récente qui est conservée au final.
+  const byStudent = {};
+  (attempts || []).forEach(a => {
+    const key = normalizeName(a.student_name_raw || '');
+    if(!byStudent[key]) byStudent[key] = { name: a.student_name_raw, scores: {} };
+    byStudent[key].scores[a.quiz_id] = { score: a.score, total: a.total };
+  });
+  const students = Object.values(byStudent).sort((a,b) => a.name.localeCompare(b.name, 'fr', {sensitivity:'base'}));
+
+  const header = `
+    <div class="pr-recap-header">
+      <div class="pr-recap-title">Récapitulatif des notes — ${matiere} — ${classe ? classe.name : ''}</div>
+      <div class="pr-recap-date">Généré le ${new Date().toLocaleDateString('fr-FR')}</div>
+    </div>`;
+
+  if(students.length === 0){
+    return `<div class="pr-recap">${header}<p style="font-size:13px; color:#999; margin-top:20px;">Aucune tentative enregistrée pour cette matière et cette classe.</p></div>`;
+  }
+
+  const headerCells = quizOrder.map(qid => `<th>${quizTitleById[qid] || '(quiz supprimé)'}</th>`).join('');
+  const rows = students.map(s => {
+    const cells = quizOrder.map(qid => {
+      const r = s.scores[qid];
+      if(!r || r.score === null || r.score === undefined) return '<td class="pr-recap-empty">—</td>';
+      return `<td><span class="pr-recap-score">${r.score}<span class="pr-recap-of">/${r.total}</span></span></td>`;
+    }).join('');
+    return `<tr><td class="pr-recap-name">${s.name}</td>${cells}</tr>`;
+  }).join('');
+
+  return `
+    <div class="pr-recap">
+      ${header}
+      <table class="pr-recap-table">
+        <tr><th class="pr-recap-name-col">Élève</th>${headerCells}</tr>
+        ${rows}
+      </table>
+      <div class="pr-footer">Lycée Godefroy de Bouillon</div>
+    </div>
+  `;
+}
+
+document.getElementById('print-recap-btn').addEventListener('click', async () => {
+  const matiere = document.getElementById('filter-results-matiere').value;
+  const classId = document.getElementById('filter-class').value;
+  if(!matiere || !classId){
+    alert('Choisis une matière et une classe (dans les filtres ci-dessus) avant de générer le récapitulatif.');
+    return;
+  }
+  const btn = document.getElementById('print-recap-btn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Préparation...';
+  const html = await buildRecapHtml(matiere, classId);
+  btn.disabled = false;
+  btn.textContent = originalText;
+  if(!html){
+    alert("Aucun contrôle trouvé pour cette matière et cette classe.");
+    return;
+  }
+  document.getElementById('print-report-root').innerHTML = `<div class="pr-page pr-page-landscape">${html}</div>`;
+  window.print();
 });
 document.getElementById('report-modal').addEventListener('click', (e) => {
   if(e.target.id === 'report-modal') document.getElementById('report-modal').classList.add('hidden');
