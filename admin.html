@@ -280,7 +280,6 @@
     .result-table th, .result-table td{padding:8px 4px; white-space:normal; word-break:break-word;}
     /* colonnes étroites (chevron du groupe, bouton supprimer) : largeur minimale fixe pour
        laisser le maximum de place au nom de l'élève */
-    #results-table-wrap .result-table th:first-child, #results-table-wrap .result-table td:first-child,
     #practice-table-wrap .result-table th:first-child, #practice-table-wrap .result-table td:first-child{
       width:16px; padding-left:2px; padding-right:0;
     }
@@ -288,10 +287,16 @@
     #practice-table-wrap .result-table th:last-child, #practice-table-wrap .result-table td:last-child{
       width:28px; padding-left:0;
     }
-    /* Tableau des résultats évalués (#results-table-wrap) : empty, Élève, Classe, Quiz, Score, Date, flag, delete */
-    #results-table-wrap .result-table th:nth-child(3), #results-table-wrap .result-table td:nth-child(3),
+    /* Tableau des résultats évalués (#results-table-wrap) : case à cocher, chevron, Élève, Classe, Quiz, Score, Date, flag, delete */
+    #results-table-wrap .result-table th:first-child, #results-table-wrap .result-table td:first-child{
+      width:20px; padding-left:2px; padding-right:0;
+    }
+    #results-table-wrap .result-table th:nth-child(2), #results-table-wrap .result-table td:nth-child(2){
+      width:16px; padding-left:0; padding-right:0;
+    }
     #results-table-wrap .result-table th:nth-child(4), #results-table-wrap .result-table td:nth-child(4),
-    #results-table-wrap .result-table th:nth-child(6), #results-table-wrap .result-table td:nth-child(6){
+    #results-table-wrap .result-table th:nth-child(5), #results-table-wrap .result-table td:nth-child(5),
+    #results-table-wrap .result-table th:nth-child(7), #results-table-wrap .result-table td:nth-child(7){
       display:none;
     }
     /* Tableau détaillé entraînement (#practice-table-wrap) : empty, Élève, Classe, Quiz, Score, Date, delete */
@@ -866,6 +871,8 @@ async function loadResults(){
   const classById = Object.fromEntries(CLASSES.map(c => [c.id, c.name]));
   const quizById = Object.fromEntries(QUIZZES.map(q => [q.id, q.title]));
   currentAttempts = attempts;
+  // Par défaut, toutes les tentatives non annulées sont cochées pour l'impression groupée.
+  selectedPrintIdxs = new Set(attempts.map((a, i) => i).filter(i => !attempts[i].cancelled));
 
   // Regroupement par prénom : toutes les tentatives du même prénom (déjà triées
   // alphabétiquement juste au-dessus, donc consécutives) sont rassemblées sous
@@ -888,6 +895,7 @@ async function loadResults(){
     const released = a.answers_detail && a.answers_detail.released_for_retry === true;
     return `
     <tr class="${indent ? 'result-sub-row hidden' : ''}" ${indent ? `data-group="${indent}"` : ''} data-report="${i}">
+      <td><input type="checkbox" class="print-select-cb" data-print-idx="${i}" ${selectedPrintIdxs.has(i) ? 'checked' : ''} ${a.cancelled ? 'disabled' : ''} title="Inclure dans l'impression groupée"></td>
       <td></td>
       <td>${a.student_name_raw}</td>
       <td>${classById[a.class_id] || '—'}</td>
@@ -905,12 +913,15 @@ async function loadResults(){
 
   wrap.innerHTML = `
     <table class="result-table">
-      <tr><th></th><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th><th></th></tr>
+      <tr><th><input type="checkbox" id="select-all-print" title="Tout cocher / décocher pour l'impression groupée"></th><th></th><th>Élève</th><th>Classe</th><th>Quiz</th><th>Score</th><th>Date</th><th></th><th></th></tr>
       ${groups.map((g, gi) => {
         if(g.idxs.length === 1) return renderRow(g.idxs[0], null);
         const groupId = `g${gi}`;
+        const groupIdxs = g.idxs.filter(i => !attempts[i].cancelled);
+        const groupChecked = groupIdxs.length > 0 && groupIdxs.every(i => selectedPrintIdxs.has(i));
         const header = `
         <tr class="result-group-row" data-group-toggle="${groupId}">
+          <td><input type="checkbox" class="print-select-group" data-group-select="${groupId}" ${groupChecked ? 'checked' : ''} ${groupIdxs.length === 0 ? 'disabled' : ''} title="Inclure tout le groupe dans l'impression groupée"></td>
           <td class="group-chevron"><span class="chevron">▸</span></td>
           <td colspan="7"><span class="group-name"><strong>${g.name}</strong></span><span class="group-count">${g.idxs.length} tentatives</span></td>
         </tr>`;
@@ -920,7 +931,8 @@ async function loadResults(){
   `;
 
   wrap.querySelectorAll('[data-group-toggle]').forEach(headerRow => {
-    headerRow.addEventListener('click', () => {
+    headerRow.addEventListener('click', (e) => {
+      if(e.target.closest('[data-group-select]')) return; // la case à cocher gère son propre clic
       const groupId = headerRow.dataset.groupToggle;
       const isOpen = headerRow.classList.toggle('open');
       wrap.querySelectorAll(`[data-group="${groupId}"]`).forEach(row => {
@@ -931,8 +943,58 @@ async function loadResults(){
 
   wrap.querySelectorAll('[data-report]').forEach(row => {
     row.addEventListener('click', (e) => {
-      if(e.target.closest('[data-release]') || e.target.closest('[data-delete]')) return; // ces boutons gèrent leur propre clic
+      if(e.target.closest('[data-release]') || e.target.closest('[data-delete]') || e.target.closest('[data-print-idx]')) return; // ces boutons gèrent leur propre clic
       openReport(currentAttempts[parseInt(row.dataset.report)]);
+    });
+  });
+
+  // -------- sélection des copies à inclure dans l'impression groupée --------
+  const selectAllCb = wrap.querySelector('#select-all-print');
+  const refreshSelectAllState = () => {
+    const printable = attempts.map((a, i) => i).filter(i => !attempts[i].cancelled);
+    selectAllCb.checked = printable.length > 0 && printable.every(i => selectedPrintIdxs.has(i));
+    selectAllCb.indeterminate = !selectAllCb.checked && printable.some(i => selectedPrintIdxs.has(i));
+  };
+  const refreshGroupCheckboxStates = () => {
+    wrap.querySelectorAll('[data-group-select]').forEach(cb => {
+      const groupId = cb.dataset.groupSelect;
+      const rows = wrap.querySelectorAll(`[data-group="${groupId}"][data-print-idx]`);
+      const idxs = Array.from(rows).map(r => parseInt(r.dataset.printIdx)).filter(i => !attempts[i].cancelled);
+      cb.checked = idxs.length > 0 && idxs.every(i => selectedPrintIdxs.has(i));
+    });
+  };
+  refreshSelectAllState();
+
+  selectAllCb.addEventListener('change', () => {
+    wrap.querySelectorAll('.print-select-cb:not(:disabled)').forEach(cb => {
+      const idx = parseInt(cb.dataset.printIdx);
+      cb.checked = selectAllCb.checked;
+      if(selectAllCb.checked) selectedPrintIdxs.add(idx); else selectedPrintIdxs.delete(idx);
+    });
+    refreshGroupCheckboxStates();
+  });
+
+  wrap.querySelectorAll('.print-select-cb').forEach(cb => {
+    cb.addEventListener('click', (e) => e.stopPropagation());
+    cb.addEventListener('change', () => {
+      const idx = parseInt(cb.dataset.printIdx);
+      if(cb.checked) selectedPrintIdxs.add(idx); else selectedPrintIdxs.delete(idx);
+      refreshSelectAllState();
+      refreshGroupCheckboxStates();
+    });
+  });
+
+  wrap.querySelectorAll('.print-select-group').forEach(cb => {
+    cb.addEventListener('click', (e) => e.stopPropagation());
+    cb.addEventListener('change', () => {
+      const groupId = cb.dataset.groupSelect;
+      wrap.querySelectorAll(`[data-group="${groupId}"][data-print-idx]`).forEach(rowCb => {
+        if(rowCb.disabled) return;
+        const idx = parseInt(rowCb.dataset.printIdx);
+        rowCb.checked = cb.checked;
+        if(cb.checked) selectedPrintIdxs.add(idx); else selectedPrintIdxs.delete(idx);
+      });
+      refreshSelectAllState();
     });
   });
 
@@ -969,6 +1031,8 @@ async function loadResults(){
 
 // -------- report modal (compte rendu) --------
 let currentAttempts = [];
+// Indices (dans currentAttempts) des tentatives cochées pour l'impression groupée.
+let selectedPrintIdxs = new Set();
 let currentReportAttempt = null;
 let currentReportDetail = null;
 
@@ -1360,8 +1424,8 @@ function buildEvenPagedReport(a, detail){
 // (y compris quand la correction précédente déborde sur plusieurs pages), et toujours complétée
 // à un nombre de pages pair pour ne pas décaler l'impression recto-verso.
 document.getElementById('print-quiz-corrections-btn').addEventListener('click', () => {
-  const attempts = (currentAttempts || []).filter(a => !a.cancelled);
-  if(attempts.length === 0){ alert("Aucune correction à imprimer pour cette sélection."); return; }
+  const attempts = (currentAttempts || []).filter((a, i) => !a.cancelled && selectedPrintIdxs.has(i));
+  if(attempts.length === 0){ alert("Aucune copie cochée à imprimer. Coche au moins une copie dans la liste des résultats."); return; }
   const html = attempts.map(a => buildEvenPagedReport(a, getReportDetail(a))).join('');
   document.getElementById('print-report-root').innerHTML = html;
   window.print();
