@@ -159,6 +159,7 @@
   /* Un compte rendu = une "page" imprimée ; celle du prénom suivant commence toujours sur une feuille neuve,
      même si le compte rendu précédent a débordé sur plusieurs pages. */
   .pr-page + .pr-page{break-before:page; page-break-before:always;}
+  .pr-blank-page{break-after:page; page-break-after:always;}
   .pr-header{background:linear-gradient(135deg,#4B2E83,#6B4FA8); color:#fff; padding:16px 20px 14px; margin:0; break-after:avoid-page; page-break-after:avoid;}
   .pr-header-inner{display:flex; justify-content:space-between; align-items:flex-start;}
   .pr-header-name{font-family:Georgia,'Baloo 2',sans-serif; font-weight:700; font-size:20px;}
@@ -1324,12 +1325,44 @@ document.getElementById('report-print-btn').addEventListener('click', () => {
   document.getElementById('print-report-root').innerHTML = buildPrintReport(currentReportAttempt, currentReportDetail);
   window.print();
 });
+
+// -------- pagination paire pour l'impression groupée (recto-verso) --------
+// En recto-verso, un compte rendu qui déborde sur un nombre de pages IMPAIR (3 pages, par ex.)
+// décale tous les élèves suivants dans le même lot d'impression : l'élève d'après recommencerait
+// au verso d'une feuille au lieu du recto. On estime le nombre de pages de chaque compte rendu
+// (en le rendant hors écran à la largeur réelle d'impression) et on complète d'une page blanche
+// si besoin pour toujours arriver à un nombre pair (2, 4, 6...). L'estimation n'est pas garantie
+// pixel-parfaite (page-break-inside:avoid peut pousser une section entière à la page suivante),
+// mais couvre la grande majorité des cas.
+const PRINT_PAGE_WIDTH_PX = (210 - 14 * 2) * 96 / 25.4;  // largeur utile A4 portrait moins marges
+const PRINT_PAGE_HEIGHT_PX = (297 - 12 * 2) * 96 / 25.4; // hauteur utile A4 portrait moins marges
+function estimatePageCount(innerHtml){
+  const probe = document.createElement('div');
+  probe.className = 'pr-page';
+  probe.style.position = 'fixed';
+  probe.style.top = '0';
+  probe.style.left = '-99999px';
+  probe.style.width = PRINT_PAGE_WIDTH_PX + 'px';
+  probe.style.visibility = 'hidden';
+  probe.innerHTML = innerHtml;
+  document.body.appendChild(probe);
+  const height = probe.scrollHeight;
+  document.body.removeChild(probe);
+  return Math.max(1, Math.ceil(height / PRINT_PAGE_HEIGHT_PX));
+}
+function buildEvenPagedReport(a, detail){
+  const inner = buildPrintReport(a, detail);
+  const pages = estimatePageCount(inner);
+  const blankPage = pages % 2 !== 0 ? '<div class="pr-page pr-blank-page"></div>' : '';
+  return `<div class="pr-page">${inner}</div>${blankPage}`;
+}
 // Impression groupée : une correction par élève, chacune démarrant sur une nouvelle page
-// (y compris quand la correction précédente déborde sur plusieurs pages).
+// (y compris quand la correction précédente déborde sur plusieurs pages), et toujours complétée
+// à un nombre de pages pair pour ne pas décaler l'impression recto-verso.
 document.getElementById('print-quiz-corrections-btn').addEventListener('click', () => {
   const attempts = (currentAttempts || []).filter(a => !a.cancelled);
   if(attempts.length === 0){ alert("Aucune correction à imprimer pour cette sélection."); return; }
-  const html = attempts.map(a => `<div class="pr-page">${buildPrintReport(a, getReportDetail(a))}</div>`).join('');
+  const html = attempts.map(a => buildEvenPagedReport(a, getReportDetail(a))).join('');
   document.getElementById('print-report-root').innerHTML = html;
   window.print();
 });
