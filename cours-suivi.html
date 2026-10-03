@@ -14,6 +14,7 @@
 <script src="oral-data.js"></script>
 <script src="artad-data.js"></script>
 <script src="film-data.js"></script>
+<script src="journal-data.js"></script>
 <style>
   :root{
     --ink:#1B1F2A; --ink-soft:#5A6072; --line:#E4E0F3; --paper:#F4F2FB; --white:#fff;
@@ -121,7 +122,7 @@
     </div>
 
     <div class="toolbar">
-      <select id="f-course" title="Cours"><option value="electricians-guide">⚡ Electrician's Guide</option><option value="oral-bakery-sign">🎤 Préparer mon oral</option><option value="art-to-ad">🎨 From Art to Ad</option><option value="behind-the-screen">🎬 Behind the Screen</option></select>
+      <select id="f-course" title="Cours"><option value="electricians-guide">⚡ Electrician's Guide</option><option value="oral-bakery-sign">🎤 Préparer mon oral</option><option value="art-to-ad">🎨 From Art to Ad</option><option value="behind-the-screen">🎬 Behind the Screen</option><option value="journal-lycee">📰 Journal du lycée (français)</option></select>
       <select id="f-class"><option value="">Toutes les classes</option></select>
       <button class="btn small ghost" id="refresh" type="button">Actualiser</button>
       <label><input type="checkbox" id="auto" checked> Actualiser tout seul (10 s)</label>
@@ -131,6 +132,7 @@
     <div class="stats" id="stats"></div>
 
     <div id="bilan"></div>
+    <div id="teams"></div>
     <div id="absent"></div>
 
     <h3 class="sec">Élèves</h3>
@@ -149,10 +151,11 @@ const COURSES = {
   'electricians-guide': { data: window.ELEC_COURSE, page:'cours-electrician.html', icon:'⚡', label:"Electrician's Guide", target:/tne/ },
   'oral-bakery-sign':   { data: window.ORAL_COURSE, page:'cours-oral.html', icon:'🎤', label:'Préparer mon oral (Bakery sign)' },
   'art-to-ad':          { data: window.ARTAD_COURSE, page:'cours-art-ad.html', icon:'🎨', label:'From Art to Ad (2nde MES)', target:/^(2|seconde).*mes/ },
-  'behind-the-screen':  { data: window.FILM_COURSE, page:'cours-film.html', icon:'🎬', label:'Behind the Screen — My opinion' }
+  'behind-the-screen':  { data: window.FILM_COURSE, page:'cours-film.html', icon:'🎬', label:'Behind the Screen — My opinion' },
+  'journal-lycee':      { data: window.JOURNAL_COURSE, page:'cours-journal.html', icon:'📰', label:'Journal du lycée (français 2nde)', target:/tne/ }
 };
 const QP = (new URLSearchParams(location.search).get('course') || '').toLowerCase();
-const CK = ({oral:'oral-bakery-sign','oral-bakery-sign':'oral-bakery-sign', art:'art-to-ad','art-to-ad':'art-to-ad', artad:'art-to-ad', film:'behind-the-screen','behind-the-screen':'behind-the-screen'})[QP] || 'electricians-guide';
+const CK = ({oral:'oral-bakery-sign','oral-bakery-sign':'oral-bakery-sign', art:'art-to-ad','art-to-ad':'art-to-ad', artad:'art-to-ad', film:'behind-the-screen','behind-the-screen':'behind-the-screen', journal:'journal-lycee','journal-lycee':'journal-lycee'})[QP] || 'electricians-guide';
 const C = COURSES[CK].data;
 document.getElementById('course-title').innerHTML = COURSES[CK].icon + ' ' + COURSES[CK].label + ' <small>Suivi en direct — qui a répondu quoi</small>';
 document.title = 'Suivi · ' + COURSES[CK].label;
@@ -192,7 +195,7 @@ document.getElementById('auto').addEventListener('change', schedule);
 document.getElementById('refresh').addEventListener('click', load);
 document.getElementById('f-class').addEventListener('change', render);
 document.getElementById('f-course').value = CK;
-document.getElementById('f-course').addEventListener('change', e => { location.search = '?course=' + ({'oral-bakery-sign':'oral','art-to-ad':'art','behind-the-screen':'film'}[e.target.value] || 'elec'); });
+document.getElementById('f-course').addEventListener('change', e => { location.search = '?course=' + ({'oral-bakery-sign':'oral','art-to-ad':'art','behind-the-screen':'film','journal-lycee':'journal'}[e.target.value] || 'elec'); });
 
 async function load(){
   const { data, error } = await supa.from('course_answers').select('*').eq('course', C.id).order('updated_at', { ascending:false }).limit(5000);
@@ -248,7 +251,7 @@ function render(){
           const sk = done[st.n + '-skip'];
           if(sk && sk.answer && sk.answer !== 'Annulé') return `<div class="sc done" title="Étape ${st.n} — déjà faite (déclaré par l'élève)">${st.n}<small>déjà fait</small></div>`;
           if(!st.levels){
-            const ids = st.endId ? [st.endId] : (st.qs || []).map(q => q.id);
+            const ids = st.endId ? [st.endId] : (st.qs || []).map(q => q.id).filter(id => !(C.optional || []).includes(id));
             const d = ids.filter(id => done[id] && isDone(done[id])).length;
             const started = s.rows.some(r => String(r.qid).charAt(0) === String(st.n));
             if(!started) return `<div class="sc" title="Étape ${st.n} — pas commencée">${st.n}<small>—</small></div>`;
@@ -290,6 +293,7 @@ function render(){
         const q = QBYID[h.qid]; return `<tr><td><b>${esc(h.qid)}</b></td><td>${esc(q ? q.prompt : '')}</td><td><div class="bar ${h.pct < 40 ? 'low' : h.pct < 70 ? 'mid' : ''}"><i style="width:${h.pct}%"></i></div>${h.pct} % (${h.ok1}/${h.n})</td><td>${h.reveal}</td></tr>`; }).join('') + '</table>'
     : '<div class="empty">Pas encore assez de réponses (il faut au moins 2 élèves par question).</div>';
   if(CK === 'art-to-ad') renderBilan(students); else document.getElementById('bilan').innerHTML = '';
+  if(CK === 'journal-lycee') renderTeams(students); else document.getElementById('teams').innerHTML = '';
   renderAbsent(by, fClass);
 }
 
@@ -342,9 +346,52 @@ async function renderBilan(students){
     }).join('') : '<tr><td colspan="6" class="empty">Personne n\'a encore répondu.</td></tr>') + '</table></div>';
 }
 
+/* ---------- équipes (Journal du lycée) ---------- */
+async function renderTeams(students){
+  const box = document.getElementById('teams');
+  const T = window.JOURNAL_DATA.TYPES;
+  const teams = {};
+  students.forEach(s => {
+    const m = Object.fromEntries(s.rows.map(r => [r.qid, r]));
+    const t1 = m['1-team'] && m['1-team'].extra;
+    const name = (t1 && t1.team) || (s.rows.find(r => r.extra && r.extra.team) || {extra:{}}).extra.team || '';
+    const key = s.classe + '|' + (name ? normName(name) : '—sans');
+    const g = teams[key] = teams[key] || {name:name || 'Sans équipe (étape 1 pas faite)', classe:s.classe, members:[], rows:[]};
+    g.members.push({name:s.name, role:t1 && t1.role, m});
+    g.rows.push(...s.rows);
+  });
+  const list = Object.values(teams).sort((a,b) => a.classe.localeCompare(b.classe,'fr') || a.name.localeCompare(b.name,'fr'));
+  const pick = (g, qid) => g.rows.filter(r => r.qid === qid).sort((a,b) => String(b.updated_at).localeCompare(String(a.updated_at)))[0];
+  const paths = list.flatMap(g => g.members.map(mb => mb.m['9-maquette'] && mb.m['9-maquette'].extra && mb.m['9-maquette'].extra.une).filter(Boolean));
+  let urls = {};
+  if(paths.length){ try{ const { data } = await supa.storage.from('ad-submissions').createSignedUrls(paths, 3600); (data || []).forEach(d => { if(d.signedUrl) urls[d.path] = d.signedUrl; }); }catch(e){} }
+  const total = C.steps.length;
+  const rowsHtml = list.map(g => {
+    const ty = pick(g, '2-type'), rb = pick(g, '3-rub');
+    const typeName = ty && ty.extra && (ty.extra.typeName || (T[ty.extra.type] || {}).name) || '—';
+    const themeTxt = (rb && rb.extra && rb.extra.theme) ? ' — ' + rb.extra.theme : '';
+    const ex = rb && rb.extra || {};
+    const mem = g.members.map(mb => {
+      const done = C.steps.filter(st => st.qs.map(q => q.id).filter(id => !(C.optional || []).includes(id)).every(id => mb.m[id] && isDone(mb.m[id]))).length;
+      const u = mb.m['9-maquette'] && mb.m['9-maquette'].extra && mb.m['9-maquette'].extra.une;
+      return `<div style="margin:2px 0"><b>${esc(mb.name)}</b>${mb.role ? ' <span style="color:var(--ink-soft)">· ' + esc(mb.role) + '</span>' : ''} <span class="mark ${done === total ? 'ok' : 'na'}">${done}/${total} étapes</span>${u && urls[u] ? ` <a href="${esc(urls[u])}" target="_blank" rel="noopener"><img src="${esc(urls[u])}" alt="Une" style="height:36px;border-radius:6px;vertical-align:middle"></a>` : ''}</div>`;
+    }).join('');
+    return `<tr><td><b>${esc(g.name)}</b><div style="color:var(--ink-soft);font-size:13px">${esc(g.classe)}</div></td><td>${mem}</td><td>${esc(typeName)}${esc(themeTxt)}</td><td>${ex.title ? '<b>' + esc(ex.title) + '</b>' : '—'}<div style="color:var(--ink-soft);font-size:13px">${(ex.rubriques || []).map(esc).join(' · ')}</div></td></tr>`;
+  }).join('');
+  box.innerHTML = `<h3 class="sec">Équipes de rédaction</h3><div class="panel"><table><tr><th>Équipe</th><th>Membres (spécialité, avancement)</th><th>Type de journal</th><th>Titre et rubriques</th></tr>` +
+    (rowsHtml || '<tr><td colspan="4" class="empty">Aucune équipe pour l\'instant.</td></tr>') + '</table></div>';
+}
+
+function scoresHtml(x){
+  const G = window.JOURNAL_DATA.GRID; if(!x.scores) return '';
+  let tot = 0;
+  const parts = G.map(g => { const v = x.scores[g.id] || {}; const p = Math.max(0, Math.min(g.max, Math.round(Number(v.pts) || 0))); tot += p; return `${esc(g.name)} ${p}/${g.max}`; });
+  return `<div class="fb">📊 Grille estimée : <b>${tot}/20</b> — ${parts.join(' · ')}</div>`;
+}
 function extraHtml(r){
   const x = r.extra; if(!x) return '';
-  let o = '';
+  let o = scoresHtml(x);
+  if(x.team) o += `<div class="fb" style="color:var(--ink-soft)">👥 Équipe : ${esc(x.team)}</div>`;
   if(x.corrected && String(x.corrected).trim() !== String(r.answer||'').trim()) o += `<div class="fb" style="color:#1b7a46">✎ Version corrigée : ${esc(x.corrected)}</div>`;
   if(x.map){ const L = {colors:'Colours',colors_why:'Why? (colours)',materials:'Materials',materials_why:'Why? (materials)',font:'Font',font_why:'Why? (font)'};
     o += `<div class="fb">🧠 Carte mentale corrigée : ` + Object.keys(L).map(k => `<b>${L[k]}</b> ${esc(x.map[k] || '—')}`).join(' · ') + `</div>`;
