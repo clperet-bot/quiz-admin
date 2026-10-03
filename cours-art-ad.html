@@ -199,6 +199,8 @@ const C = window.ARTAD_COURSE, PAIRS = window.ARTAD_PAIRS, VOCAB = window.ARTAD_
 const FALLBACK_CLASSES = ['2nde MES','2nde TNE','2nde BMA','1ère MES','1ère MELEC'];
 
 /* ============ utilitaires ============ */
+// Ignore les valeurs vides (null/false) passées à append/replaceChildren au lieu d'écrire « null » à l'écran
+['append','prepend','replaceChildren'].forEach(m => { const o = Element.prototype[m]; Element.prototype[m] = function(...a){ return o.apply(this, a.filter(x => x != null && x !== false)); }; });
 function h(tag, props, ...kids){
   const el = document.createElement(tag);
   if(props) for(const [k,v] of Object.entries(props)){
