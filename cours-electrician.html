@@ -520,7 +520,7 @@ async function renderIdentify(){
     saveId(); await loadProgress(); renderHome();
   });
   app.replaceChildren(h('div', {class:'id-card'},
-    h('div', {class:'banner', style:'background-image:url(electrician/hero.jpg)'}),
+    h('div', {class:'banner', style:'background-image:url(hero.jpg)'}),
     h('div', {class:'body'},
       h('h1', null, "Electrician's Guide"), h('p', {class:'sub'}, 'Installation and Safety · English TNE'),
       h('div', {class:'field'}, h('label', null, 'Prénom'), first),
@@ -548,7 +548,7 @@ function renderHome(){
   const next = C.steps.find(s => stepUnlocked(s) && !stepDone(s));
   app.replaceChildren(
     h('div', {class:'hero'},
-      h('img', {src:'electrician/hero.jpg', alt:''}),
+      h('img', {src:'hero.jpg', alt:''}),
       h('div', {class:'t'}, h('h1', null, "ELECTRICIAN'S GUIDE"), h('h2', null, 'INSTALLATION AND SAFETY')),
       h('div', {class:'mission'}, h('b', null, 'Your mission'), h('div', null, C.mission)),
       h('div', {class:'ribbon-learn'}, h('i', null, 'Learn how to'), h('ul', null, C.learnHow.map(x => h('li', null, x)))),

@@ -28,7 +28,7 @@ const course = {
   /* ───────────────────────── 1 ───────────────────────── */
   { n:1, title:'Vocabulary & Tools', skill:'CE · LEXIQUE',
     goal:"Objectif : connaître le nom des outils et du matériel électrique en anglais, et savoir dire à quoi ils servent.",
-    image:'electrician/tools.jpg',
+    image:'tools.jpg',
     vocab:[['contactor','contacteur'],['wires','fils'],['screwdriver','tournevis'],['fuse','fusible'],['pliers','pince'],['cover','capot'],['gloves','gants'],['machine','machine'],['to use','utiliser'],['to check','vérifier'],['to open / close','ouvrir / fermer'],['to connect','connecter']],
     levels:{
       A:{ title:'Je démarre en douceur', tag:'QCM guidé', intro:null, qs:[
@@ -54,7 +54,7 @@ const course = {
   /* ───────────────────────── 2 ───────────────────────── */
   { n:2, title:'Read the User Manual', skill:'CE',
     goal:"Objectif : repérer dans un manuel technique les consignes de sécurité, les étapes d'utilisation, et le dépannage.",
-    image:'electrician/manual.jpg', imageAlt:'User manual — air compressor', imageSmall:true,
+    image:'manual.jpg', imageAlt:'User manual — air compressor', imageSmall:true,
     levels:{
       A:{ title:'Je démarre en douceur', tag:'QCM guidé', intro:'Pour chaque phrase, choisis la bonne partie du manuel.', qs:[
         {id:'2A-1',type:'mcq',prompt:'1. Wear gloves and glasses.',options:PARTS,answer:'Safety instructions',hint:"Une consigne pour se protéger : dans quelle partie du manuel ?"},
@@ -83,7 +83,7 @@ const course = {
   /* ───────────────────────── 3 ───────────────────────── */
   { n:3, title:'Check Your Understanding', skill:'CE',
     goal:"Objectif : vérifier ta compréhension du manuel — vrai/faux, et relier un problème à sa solution.",
-    image:'electrician/manual.jpg', imageAlt:'User manual — air compressor', imageSmall:true,
+    image:'manual.jpg', imageAlt:'User manual — air compressor', imageSmall:true,
     levels:{
       A:{ title:'Je démarre en douceur', tag:'vrai/faux simplifié', intro:'Read the sentences. Choose True or False.', qs:[
         {id:'3A-1',type:'tf',prompt:'1. You must wear gloves and glasses.',answer:true,why:MANUAL_TF.gloves},

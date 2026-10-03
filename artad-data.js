@@ -28,19 +28,19 @@ const VOCAB = {
 // Les 5 couples œuvre / publicité du cours (pour s'entraîner)
 // facts = description de référence pour l'IA (jamais montrée à l'élève)
 const PAIRS = [
-  { id:'marilyn', title:'Marilyn — Ray-Ban', painting:'art-ad/marilyn-painting.jpg', ad:'art-ad/marilyn-ad.jpg',
+  { id:'marilyn', title:'Marilyn — Ray-Ban', painting:'marilyn-painting.jpg', ad:'marilyn-ad.jpg',
     caption:"Pop art (Andy Warhol, Marilyn) et la publicité Ray-Ban",
     facts:"Peinture : portrait pop art de Marilyn, fond rose fuchsia, cheveux jaunes, pas de logo, pas de lunettes. Pub Ray-Ban : même portrait mais fond turquoise ; du papier déchiré (torn paper) près des yeux ; sous le papier déchiré, des lunettes de soleil rouges ; logo Ray-Ban en bas à droite." },
-  { id:'sunflowers', title:'Les tournesols — Lexus', painting:'art-ad/sunflowers-painting.jpg', ad:'art-ad/sunflowers-ad.jpg',
+  { id:'sunflowers', title:'Les tournesols — Lexus', painting:'sunflowers-painting.jpg', ad:'sunflowers-ad.jpg',
     caption:"Van Gogh, Tournesols (1888) et la publicité Lexus",
     facts:"Peinture de Van Gogh : tournesols dans un vase, couleurs chaudes jaune et orange, fond jaune doré. Pub Lexus : les tournesols sont remplacés par des phares de voiture (headlights) aux tons gris et métalliques, le vase est devenu un pot en métal, le fond reste jaune doré ; logo Lexus et slogan en bas à droite." },
-  { id:'gleaners', title:'Les glaneuses — Lay\'s', painting:'art-ad/gleaners-painting.jpg', ad:'art-ad/gleaners-ad.jpg',
+  { id:'gleaners', title:'Les glaneuses — Lay\'s', painting:'gleaners-painting.jpg', ad:'gleaners-ad.jpg',
     caption:"Millet, Les Glaneuses (1857) et la publicité Lay's",
     facts:"Peinture de Millet : trois femmes penchées dans un champ de blé, couleurs ternes et terreuses (marron, beige), aucun texte. Pub Lay's : un paquet de chips Lay's en bas à gauche devant le champ ; logo Lay's en haut à gauche ; texte rouge en haut (un savoir-faire artisanal à votre service depuis 1987) ; bandeau d'avertissement en petits caractères noirs en bas (pour votre santé, évitez de manger trop gras, trop sucré, trop salé) ; couleurs plus vives (rouge, jaune) à cause du paquet." },
-  { id:'monalisa', title:'La Joconde — Fauchon', painting:'art-ad/monalisa-painting.jpg', ad:'art-ad/monalisa-ad.jpg',
+  { id:'monalisa', title:'La Joconde — Fauchon', painting:'monalisa-painting.jpg', ad:'monalisa-ad.jpg',
     caption:"Léonard de Vinci, La Joconde et la publicité Fauchon",
     facts:"Peinture : la Mona Lisa, ses yeux et son célèbre sourire, tons marron et dorés, arrière-plan de paysage, cheveux lisses. Pub Fauchon : un éclair (eclair) cache (covers) les yeux de la femme, une main tient une fourchette (fork) près de l'éclair, une tresse (braid) rousse, gros plan, logo FAUCHON PARIS en bas, texte L'éclair Madame Joconde ; la peinture n'a ni fourchette ni texte." },
-  { id:'bubbles', title:'Bubbles — Pears\' soap', painting:'art-ad/bubbles-painting.jpg', ad:'art-ad/bubbles-ad.jpg',
+  { id:'bubbles', title:'Bubbles — Pears\' soap', painting:'bubbles-painting.jpg', ad:'bubbles-ad.jpg',
     caption:"Millais, Bubbles (1886) et la publicité Pears' soap",
     facts:"La peinture et la pub montrent presque la même image d'un garçon qui regarde une bulle. La pub a un texte en lettres anciennes ornées (fancy old-style letters) « Pears' soap » en haut, seules les premières lettres sont des majuscules ; la bulle est devant le texte ; les joues du garçon sont plus rouges dans la pub, les couleurs sont un peu plus vives ; la plante derrière lui et le pot rouge en bas sont plus visibles dans la pub." }
 ];
