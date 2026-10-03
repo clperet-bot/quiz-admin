@@ -260,7 +260,11 @@ const PATHS = {
   S:"J'ai fait le résumé, mais pas encore toute la suite (critiques et critique du film)",
   T:"J'ai tout fini : le résumé, les critiques et ma critique du film"
 };
-function path(){ const s = STATE['1-where']; if(!s || !s.done) return null; return (s.extra && s.extra.path) || Object.keys(PATHS).find(k => PATHS[k] === s.answer) || null; }
+// Élèves à qui la prof a retiré l'option « J'ai tout terminé » (ils n'ont pas fini) : tous les mots d'une règle doivent figurer dans le nom
+const BLOCK_T = [['victor'],['mathis','brun'],['colly'],['maxence'],['hadrien'],['halim'],['dimitri'],['yoann'],['paul'],['theo','tournaire']];
+function blockedT(){ if(!ID) return false; const toks = String(ID.name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z]+/).filter(Boolean); return BLOCK_T.some(r => r.every(w => toks.includes(w))); }
+function rawPath(){ const s = STATE['1-where']; if(!s || !s.done) return null; return (s.extra && s.extra.path) || Object.keys(PATHS).find(k => PATHS[k] === s.answer) || null; }
+function path(){ const p = rawPath(); return (p === 'T' && blockedT()) ? null : p; }
 function applicable(n){ const p = path(); if(n === 1) return true; if(n === 5) return true; if(n === 2) return p === 'R'; return p === 'R' || p === 'S'; }
 function required(n){ const p = path(); if(n === 1) return true; if(n === 5) return p === 'T'; return applicable(n); }
 const L3A = () => qDone('3A-1') && qDone('3A-2'), L3B = () => qDone('3B-1') && qDone('3B-2'), L3C = () => qDone('3C-1');
@@ -456,7 +460,7 @@ function viewWhere(body){
   const btns = Object.entries(PATHS).map(([k, label]) => {
     const b = h('button', {type:'button', class:'choice' + (path() === k ? ' sel' : '')}, (k === 'R' ? '⏳ ' : k === 'S' ? '📝 ' : '✅ ') + label);
     b.addEventListener('click', async () => {
-      const prev = path();
+      const prev = rawPath();
       btns.forEach(x => x.classList.remove('sel')); b.classList.add('sel');
       st.answer = label; st.done = true; st.correct = null; st.tries++; st.extra = {path:k};
       await saveAnswer(q, label, null, false, '', {path:k});
@@ -469,6 +473,7 @@ function viewWhere(body){
       }
       showMsg(); updateChrome();
     });
+    if(k === 'T' && blockedT()){ b.disabled = true; b.classList.remove('sel'); b.style.opacity = '.5'; b.style.cursor = 'not-allowed'; b.textContent = '🔒 ' + label + ' (non disponible : ta prof a vu qu\'il te reste du travail)'; }
     return b;
   });
   body.append(h('div', {class:'box'}, h('h3', null, "Où en es-tu dans ton livret « Behind the screen » ?"), btns, msg));
