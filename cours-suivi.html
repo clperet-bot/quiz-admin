@@ -199,7 +199,9 @@ async function load(){
   if(error){ document.getElementById('students').innerHTML = '<div class="empty">Erreur de chargement : ' + esc(error.message) + '</div>'; return; }
   ROWS = data || [];
   const sel = document.getElementById('f-class'); const cur = sel.value;
-  const classes = [...new Set(ROWS.map(r => r.classe))].sort((a,b) => a.localeCompare(b, 'fr'));
+  let allClasses = [];
+  try{ const r = await supa.from('classes').select('name'); allClasses = (r.data || []).map(c => c.name); }catch(e){}
+  const classes = [...new Set([...allClasses, ...ROWS.map(r => r.classe)])].sort((a,b) => a.localeCompare(b, 'fr'));
   sel.innerHTML = '<option value="">Toutes les classes</option>' + classes.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
   sel.value = classes.includes(cur) ? cur : '';
   document.getElementById('stamp').textContent = 'Mis à jour à ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
