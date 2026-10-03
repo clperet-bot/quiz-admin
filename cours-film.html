@@ -587,11 +587,11 @@ function viewB1(body){
   // 1. compréhension écrite B1
   const q1 = {id:'5-cr', step:5, level:'—', prompt:'Compréhension écrite B1'};
   const st1 = S('5-cr');
-  body.append(h('div', {class:'box'}, h('h3', null, '1. Read the text'), h('div', {class:'art'}, D.B1_TEXT.map(p => h('p', null, p))), h('div', {style:'font-size:13.5px;color:var(--ink-soft)'}, D.B1_NOTE)));
-  const sels = []; const open = taNode(3, 'Write your answer in English…');
+  body.append(h('div', {class:'box'}, h('h3', null, '1. Lis le texte (en anglais)'), h('div', {class:'art'}, D.B1_TEXT.map(p => h('p', null, p))), h('div', {style:'font-size:13.5px;color:var(--ink-soft)'}, D.B1_NOTE)));
+  const sels = []; const open = taNode(3, 'Écris ta réponse en français…');
   const qcm = h('div', null, D.B1_QCM.map((it, i) => { const s = mkSelect(it.opts); sels.push(s); return h('div', {class:'sentline'}, h('b', null, (i + 1) + '. ' + it.q), h('br'), s); }));
   const score = h('div', {class:'fb info hidden', style:'margin:8px 0 0'});
-  const qCard = aiCard({ q:q1, title:'Questions de compréhension', instruct:'5 questions à choix, puis une question à rédiger.',
+  const qCard = aiCard({ q:q1, title:'Questions de compréhension', instruct:'Le texte est en anglais, mais les questions et tes réponses sont en français : 5 questions à choix, puis une question à rédiger.',
     node:h('div', null, qcm, h('div', {class:'frm'}, h('label', null, '6. ' + D.B1_OPEN_Q), open), score),
     getText:() => {
       if(sels.some(s => !s.value) || !open.value.trim()) return '';

@@ -60,14 +60,14 @@ const B1_TEXT = [
 ];
 const B1_NOTE = "Texte original écrit pour ce cours ; la critique citée est fictive.";
 const B1_QCM = [
-  { q:'What do critics predict every summer?', opts:['That superhero films will make less money','That audiences will finally get tired of superhero films','That studios will stop making sequels','That new actors will replace the old ones'], ans:1 },
-  { q:'According to Hannah Reed, what really keeps people watching?', opts:['The special effects','The length of the battles','The human side of the story','The price of the tickets'], ans:2 },
-  { q:'What do some reviewers criticise?', opts:['The films are too short','The films are too predictable and there are too many sequels','The heroes are too weak','The villains are too similar to the heroes'], ans:1 },
-  { q:'In the last paragraph, “overrated” probably means…', opts:['considered better than it really is','too expensive','very old','impossible to understand'], ans:0 },
-  { q:"What is the writer's main message?", opts:['Superhero films are always boring','Special effects are the most important thing','A superhero film is good when we care about its characters','People should stop going to the cinema'], ans:2 }
+  { q:'Que prédisent les critiques chaque été ?', opts:['Que les films de super-héros rapporteront moins d\'argent','Que le public va finir par se lasser des films de super-héros','Que les studios vont arrêter de faire des suites','Que de nouveaux acteurs vont remplacer les anciens'], ans:1 },
+  { q:'Selon la critique Hannah Reed, qu\'est-ce qui fait vraiment revenir les spectateurs ?', opts:['Les effets spéciaux','La durée des combats','L\'aspect humain de l\'histoire','Le prix des billets'], ans:2 },
+  { q:'Que reprochent certains critiques à ces films ?', opts:['Ils sont trop courts','Ils sont trop prévisibles et il y a trop de suites','Les héros sont trop faibles','Les méchants ressemblent trop aux héros'], ans:1 },
+  { q:'Dans le dernier paragraphe, « overrated » veut probablement dire…', opts:['jugé meilleur qu\'il ne l\'est vraiment','trop cher','très ancien','impossible à comprendre'], ans:0 },
+  { q:'Quel est le message principal de l\'auteur ?', opts:['Les films de super-héros sont toujours ennuyeux','Les effets spéciaux sont ce qu\'il y a de plus important','Un film de super-héros est réussi quand on s\'attache à ses personnages','Les gens devraient arrêter d\'aller au cinéma'], ans:2 }
 ];
-const B1_OPEN_Q = 'In your own words (2 sentences), what is the difference between a film that repeats a formula and one that takes risks?';
-const B1_OPEN_RUBRIC = "Question de compréhension : la différence entre un film qui répète une formule et un film qui prend des risques. Réponse attendue (texte lu) : le film qui répète une formule est prévisible (le héros perd, retrouve de la force et gagne la bataille finale) ; le film qui prend des risques nous surprend, avec une histoire audacieuse, un méchant mémorable ou une fin émouvante. ok = true si l'élève exprime clairement les deux idées avec ses propres mots (pas de copier-coller long).";
+const B1_OPEN_Q = 'Avec tes propres mots (2 phrases, en français), quelle est la différence entre un film qui répète une formule et un film qui prend des risques ?';
+const B1_OPEN_RUBRIC = "Question de compréhension : la différence entre un film qui répète une formule et un film qui prend des risques. Réponse attendue (texte lu) : le film qui répète une formule est prévisible (le héros perd, retrouve de la force et gagne la bataille finale) ; le film qui prend des risques nous surprend, avec une histoire audacieuse, un méchant mémorable ou une fin émouvante. L'élève répond en français : accepte une réponse en français (ne pénalise pas l'absence d'anglais) et rédige ton retour en français. ok = true si l'élève exprime clairement les deux idées avec ses propres mots (pas de copier-coller long).";
 
 const B1_BANK = {
   'Décrire un film':[['gripping','captivant'],['predictable','prévisible'],['thought-provoking','qui fait réfléchir'],['visually stunning','visuellement époustouflant'],['overrated / underrated','surfait / sous-estimé'],['heartwarming','qui réchauffe le cœur'],['fast-paced / slow-moving','rythmé / lent'],['convincing','convaincant'],['memorable','mémorable'],['original','original']],

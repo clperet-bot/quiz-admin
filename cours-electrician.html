@@ -261,6 +261,7 @@ function loadId(){ try{ return JSON.parse(localStorage.getItem('electrician-id')
 function saveId(){ try{ localStorage.setItem('electrician-id', JSON.stringify(ID)); }catch(e){} }
 
 async function saveAnswer(q, answer, correct, revealed, feedback){
+  if(TEST_MODE) return;
   const payload = { p_course:C.id, p_classe:ID.classe, p_student:ID.name, p_norm:ID.norm, p_step:q.step, p_level:q.level,
     p_qid:q.id, p_prompt:(q.prompt||'').slice(0,300), p_answer:answer, p_correct:correct, p_revealed:!!revealed, p_feedback:feedback||'' };
   try{
@@ -294,7 +295,9 @@ const levelDoneCount = (s,L) => levelQs(s,L).filter(qDone).length;
 const levelDone = (s,L) => levelDoneCount(s,L) === levelQs(s,L).length;
 function finalDone(s){ return !s.finalTask || (STATE[s.finalTask.id] && STATE[s.finalTask.id].done); }
 function stepDone(s){ return ['A','B','C'].some(L => levelDone(s,L)) && finalDone(s); }
-function stepUnlocked(s){ return s.n === 1 || stepDone(C.steps[s.n-2]); }
+// Navigation libre : l'élève peut aller directement à n'importe quelle étape
+function stepUnlocked(s){ return true; }
+const TEST_MODE = new URLSearchParams(location.search).get('test') === '1';
 function stepStarted(s){ return ['A','B','C'].some(L => levelDoneCount(s,L) > 0); }
 function bestLevels(s){ return ['A','B','C'].filter(L => levelDone(s,L)); }
 
@@ -499,7 +502,7 @@ function renderQuestion(q, num){
 
 /* ============ vues ============ */
 const app = document.getElementById('app');
-function setTop(on){ document.getElementById('topbar').classList.toggle('hidden', !on); if(on) document.getElementById('who').textContent = ID.name + ' · ' + ID.classe; }
+function setTop(on){ document.getElementById('topbar').classList.toggle('hidden', !on); if(on) document.getElementById('who').textContent = (TEST_MODE ? '🧪 MODE TEST (rien n\'est enregistré) · ' : '') + ID.name + ' · ' + ID.classe; }
 document.getElementById('home-btn').addEventListener('click', () => renderHome());
 
 async function renderIdentify(){
@@ -623,7 +626,7 @@ function updateChrome(){
   else banner.replaceChildren();
   const prev = s.n > 1 ? h('button', {class:'btn ghost', type:'button', onclick:() => renderStep(s.n - 1)}, '← Étape ' + (s.n - 1)) : h('span');
   let nextBtn;
-  if(s.n < C.steps.length) nextBtn = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', disabled: done ? null : true, onclick:() => renderStep(s.n + 1)}, done ? 'Étape ' + (s.n + 1) + ' →' : '🔒 Étape ' + (s.n + 1));
+  if(s.n < C.steps.length) nextBtn = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', onclick:() => renderStep(s.n + 1)}, 'Étape ' + (s.n + 1) + ' →');
   else nextBtn = done ? h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉') : h('span');
   nav.replaceChildren(prev, nextBtn);
 }
