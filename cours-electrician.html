@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Electrician's Guide — English TNE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="electrician-data.js"></script>
+<style>
+  :root{
+    --ink:#1B1F2A; --ink-soft:#5A6072; --line:#E4E0F3; --paper:#F4F2FB; --white:#fff;
+    --violet:#7B5FE0; --violet-deep:#3D2B66; --violet-light:#EFEAFC;
+    --blue:#4C8DF6; --blue-light:#E5EFFF;
+    --green:#2E8B57; --green-bg:#E6F6EA; --green-head:#8FD19E;
+    --yellow-bg:#FFF7CF; --yellow-head:#FFE97F; --yellow-ink:#6B5300;
+    --pink-bg:#FDEAF1; --pink-head:#EE9DBA; --pink-ink:#7A1F45;
+    --red:#C0392B; --red-bg:#FDE9E6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Poppins',system-ui,sans-serif;font-size:16px;line-height:1.6;color:var(--ink);background:var(--paper);-webkit-text-size-adjust:100%;}
+  img{max-width:100%;display:block;}
+  button{font-family:inherit;}
+  .hidden{display:none !important;}
+
+  /* ---------- barre du haut ---------- */
+  .topbar{position:sticky;top:0;z-index:20;background:linear-gradient(90deg,var(--violet-deep),var(--violet));color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;}
+  .topbar .brand{font-weight:700;font-size:15px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .topbar .who{font-size:14px;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw;}
+  .topbar button{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:999px;padding:6px 14px;font-size:14px;font-weight:600;cursor:pointer;}
+  .sync-warn{background:#FFF1C9;color:#6B4B00;font-size:14px;text-align:center;padding:6px 12px;}
+
+  .wrap{max-width:940px;margin:0 auto;padding:18px 16px 60px;}
+
+  /* ---------- identification ---------- */
+  .id-card{max-width:520px;margin:24px auto;background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 8px 30px rgba(61,43,102,.12);}
+  .id-card .banner{height:150px;background:#ddd center/cover no-repeat;}
+  .id-card .body{padding:22px 24px 26px;}
+  .id-card h1{font-size:22px;margin:0 0 2px;color:var(--violet-deep);}
+  .id-card p.sub{margin:0 0 18px;color:var(--ink-soft);font-size:15px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
+  .field input,.field select{width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:16px;background:#fff;}
+  .field input:focus,.field select:focus,textarea:focus,.blank:focus,.q input[type=text]:focus{outline:none;border-color:var(--violet);}
+  .btn{background:var(--violet);color:#fff;border:0;border-radius:14px;padding:13px 22px;font-weight:600;font-size:16px;cursor:pointer;}
+  .btn:disabled{opacity:.55;cursor:default;}
+  .btn.block{width:100%;}
+  .btn.ghost{background:var(--violet-light);color:var(--violet-deep);}
+  .btn.green{background:var(--green);}
+  .err{background:var(--red-bg);color:var(--red);border-radius:12px;padding:10px 14px;font-size:15px;margin-top:12px;}
+
+  /* ---------- accueil ---------- */
+  .hero{border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 8px 30px rgba(61,43,102,.10);}
+  .hero img{width:100%;height:auto;}
+  .hero .t{padding:6px 26px 4px;}
+  .hero h1{margin:6px 0 0;font-size:clamp(26px,5vw,38px);line-height:1.15;color:var(--ink);letter-spacing:.01em;}
+  .hero h2{margin:4px 0 0;font-size:clamp(15px,3vw,19px);font-weight:600;color:var(--violet);}
+  .mission{display:grid;grid-template-columns:130px 1fr;gap:12px;padding:16px 26px 8px;}
+  .mission b{font-weight:700;}
+  .ribbon-learn{margin:10px 26px;background:linear-gradient(100deg,var(--blue),var(--violet));color:#fff;padding:16px 22px 16px 40px;clip-path:polygon(24px 0,100% 0,100% 100%,24px 100%,0 50%);border-radius:0 10px 10px 0;}
+  .ribbon-learn i{display:block;font-weight:600;margin-bottom:4px;}
+  .ribbon-learn ul{margin:0;padding-left:20px;font-weight:600;}
+  .icons{display:flex;justify-content:space-around;gap:10px;padding:14px 20px 6px;text-align:center;font-weight:600;font-size:14px;}
+  .icons .ic{width:62px;height:62px;border-radius:50%;background:var(--violet-light);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 6px;}
+  .abc{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:12px 26px;}
+  .abc div{border-radius:16px;padding:14px 16px;font-size:15px;line-height:1.45;}
+  .abc div b{display:block;font-size:16px;margin-bottom:4px;}
+  .abc .a{background:var(--green-bg);border:1px solid #cdebd6;}
+  .abc .b{background:var(--yellow-bg);border:1px solid #f0e4a4;}
+  .abc .c{background:var(--pink-bg);border:1px solid #f5cfdd;}
+  .how{padding:6px 26px 24px;font-size:15.5px;}
+
+  .roadmap{margin-top:22px;display:flex;flex-direction:column;gap:12px;}
+  .rm-row{display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .rm-row.locked{cursor:not-allowed;opacity:.55;}
+  .badge-n{flex:none;width:52px;height:52px;border-radius:50%;border:3px solid var(--violet);background:#fff;color:var(--violet);font-weight:700;font-size:22px;display:flex;align-items:center;justify-content:center;}
+  .badge-n.done{background:var(--green);border-color:var(--green);color:#fff;}
+  .rm-ribbon{flex:1;background:#fff;border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 3px 14px rgba(61,43,102,.08);border-left:8px solid var(--blue);}
+  .rm-row.done .rm-ribbon{border-left-color:var(--green);}
+  .rm-ribbon .ti{font-weight:700;font-size:17px;flex:1;min-width:150px;}
+  .pill{display:inline-block;background:var(--violet-light);color:var(--violet-deep);font-size:13px;font-weight:600;padding:3px 11px;border-radius:999px;white-space:nowrap;}
+  .pill.ok{background:var(--green-bg);color:var(--green);}
+  .pill.prog{background:var(--blue-light);color:#1F5BB8;}
+
+  /* ---------- étape ---------- */
+  .step-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .step-head .ribbon{flex:1;background:linear-gradient(100deg,var(--blue),var(--violet));color:#fff;border-radius:16px;padding:12px 18px;font-weight:700;font-size:clamp(18px,4vw,24px);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .step-head .ribbon .pill{background:rgba(255,255,255,.22);color:#fff;font-size:12.5px;margin-left:auto;}
+  .goal{background:#fff;border-left:6px solid var(--blue);border-radius:14px;padding:12px 16px;margin-bottom:14px;font-size:15.5px;}
+  .photo{border-radius:18px;overflow:hidden;margin:0 0 14px;background:#ddd;}
+  .photo.small{max-width:460px;margin-left:auto;margin-right:auto;}
+  .box{background:#fff;border-radius:16px;padding:14px 18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(61,43,102,.06);}
+  .box h3{margin:0 0 8px;font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--violet-deep);}
+  .box.bank{background:#FCE9DF;}
+  .bank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 18px;font-size:15.5px;}
+  .bank-grid b{color:#6B3410;}
+  .grammar table{border-collapse:collapse;margin-top:6px;}
+  .grammar td{padding:4px 18px 4px 0;font-size:15.5px;}
+  .grammar td:first-child{font-weight:700;}
+  ol.steps-list{margin:6px 0 0;padding-left:22px;font-size:15.5px;}
+
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px;}
+  .tab{flex:1;min-width:140px;border:2px solid transparent;border-radius:14px;padding:10px 12px;cursor:pointer;font-weight:600;font-size:15px;text-align:left;line-height:1.3;}
+  .tab small{display:block;font-weight:500;font-size:13px;opacity:.85;}
+  .tab.A{background:var(--green-bg);color:#17603a;} .tab.B{background:var(--yellow-bg);color:var(--yellow-ink);} .tab.C{background:var(--pink-bg);color:var(--pink-ink);}
+  .tab.active{border-color:currentColor;box-shadow:0 3px 12px rgba(0,0,0,.10);}
+
+  .lvl{border-radius:20px;overflow:hidden;margin-bottom:16px;}
+  .lvl.A{background:var(--green-bg);} .lvl.B{background:var(--yellow-bg);} .lvl.C{background:var(--pink-bg);}
+  .lvl-head{display:flex;align-items:center;gap:12px;padding:12px 18px;font-weight:700;font-size:17px;}
+  .lvl.A .lvl-head{background:var(--green-head);color:#0f3d24;} .lvl.B .lvl-head{background:var(--yellow-head);color:var(--yellow-ink);} .lvl.C .lvl-head{background:var(--pink-head);color:#4a0f2a;}
+  .lvl-head .lt{width:34px;height:34px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;}
+  .lvl-head .tag{margin-left:auto;font-size:13px;font-weight:600;opacity:.8;text-align:right;}
+  .lvl-body{padding:16px 18px 6px;}
+  .lvl-intro{margin:0 0 12px;font-size:15.5px;}
+  .tip{display:inline-block;background:#DCF4E0;color:#1b5d35;font-style:italic;font-weight:600;border-radius:999px;padding:6px 16px;margin:0 0 12px;font-size:15px;}
+
+  /* ---------- questions ---------- */
+  .q{background:#fff;border-radius:16px;padding:14px 16px 16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+  .q.done{border:2px solid #cdebd6;} .q.done.wrong{border-color:#f3c9c2;}
+  .q-head{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}
+  .q-n{flex:none;width:30px;height:30px;border-radius:50%;background:var(--violet);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+  .q.done .q-n{background:var(--green);} .q.done.wrong .q-n{background:#c78a82;}
+  .q-p{font-weight:500;font-size:16px;}
+  .q-bank{font-size:14px;color:var(--ink-soft);margin:-4px 0 10px 40px;}
+  .opts{display:flex;flex-wrap:wrap;gap:8px;margin-left:40px;}
+  .opt{border:2px solid var(--line);background:#fff;border-radius:12px;padding:9px 16px;font-size:16px;cursor:pointer;font-weight:500;}
+  .opt.sel{border-color:var(--violet);background:var(--violet-light);}
+  .opt.good{border-color:var(--green);background:var(--green-bg);}
+  .opt.bad{border-color:var(--red);background:var(--red-bg);}
+  .opt:disabled{cursor:default;}
+  .sentence{margin-left:40px;font-size:17px;line-height:2.3;}
+  .blank{border:0;border-bottom:2px solid var(--ink);background:#F8F7FD;font:inherit;font-size:16.5px;padding:2px 6px;text-align:center;min-width:110px;border-radius:6px 6px 0 0;}
+  .blank.good{border-color:var(--green);background:var(--green-bg);}
+  .blank.bad{border-color:var(--red);background:var(--red-bg);}
+  .fld{margin:0 0 10px 40px;}
+  .fld label{display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;}
+  .fld textarea,.fld input[type=text],.fld select,.q input.one{width:100%;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:16px;background:#fff;resize:vertical;}
+  .fld.chk label{display:flex;gap:10px;align-items:flex-start;font-size:15.5px;color:var(--ink);font-weight:500;}
+  .fld.chk input{width:20px;height:20px;margin-top:3px;}
+  .q-actions{margin:10px 0 0 40px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .q-actions .btn{padding:10px 20px;font-size:15px;border-radius:12px;}
+  .fb{margin:12px 0 0 40px;border-radius:12px;padding:10px 14px;font-size:15.5px;line-height:1.5;}
+  .fb.ok{background:var(--green-bg);color:#17603a;} .fb.ko{background:var(--red-bg);color:#8a2a1f;} .fb.info{background:var(--blue-light);color:#1F4F9E;} .fb.warn{background:#FFF1C9;color:#6B4B00;}
+  .fb .corr{display:block;margin-top:6px;font-weight:600;}
+  .answer-ro{margin:0 0 0 40px;background:#F8F7FD;border-radius:12px;padding:8px 12px;font-size:15.5px;white-space:pre-wrap;}
+  .answer-ro small{display:block;color:var(--ink-soft);font-weight:600;font-size:13px;}
+
+  .done-banner{background:var(--green);color:#fff;border-radius:16px;padding:14px 18px;margin:6px 0 16px;font-weight:600;}
+  .done-banner span{display:block;font-weight:400;font-size:15px;margin-top:2px;}
+  .lu-remind{background:#fff;border:2px solid var(--violet);border-radius:16px;padding:12px 16px;margin:0 0 16px;font-size:15.5px;}
+  .lu-remind b{color:var(--violet-deep);} .lu-remind a{display:inline-block;margin-top:8px;background:var(--violet);color:#fff;text-decoration:none;font-weight:600;border-radius:12px;padding:8px 16px;}
+  .step-nav{display:flex;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap;}
+
+  .speak-row{display:flex;gap:8px;margin:8px 0 4px;}
+  .speak-row input{flex:1;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:16px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:15px;cursor:pointer;font-weight:500;}
+  .chip:hover{border-color:var(--violet);}
+  .ext{font-size:14px;margin-top:6px;}
+  .ext a{color:var(--violet);font-weight:600;}
+
+  .map{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;}
+  .map .center{grid-column:1/-1;justify-self:center;border:3px solid var(--violet);border-radius:50%/60%;padding:16px 34px;background:var(--violet-light);font-weight:700;text-align:center;}
+  .map .br{background:#fff;border-radius:16px;padding:10px 12px;border:2px solid var(--line);}
+  .map .br:nth-of-type(2){border-color:#d4c8fa;} .map .br:nth-of-type(3){border-color:#f5cfdd;} .map .br:nth-of-type(4){border-color:#cdebd6;} .map .br:nth-of-type(5){border-color:#cfe0fb;}
+  .map label{display:block;font-weight:700;font-size:15px;margin-bottom:4px;}
+  .map textarea{width:100%;border:2px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:16px;resize:vertical;}
+
+  .finish{background:#fff;border-radius:22px;padding:26px;text-align:center;box-shadow:0 8px 30px rgba(61,43,102,.12);}
+  .finish h2{margin:0 0 6px;color:var(--violet-deep);}
+
+  @media (max-width:640px){
+    .mission{grid-template-columns:1fr;padding:12px 18px 4px;}
+    .ribbon-learn{margin:10px 14px;} .abc{grid-template-columns:1fr;padding:10px 18px;} .how{padding:6px 18px 20px;}
+    .opts,.sentence,.fld,.q-actions,.fb,.answer-ro,.q-bank{margin-left:0;}
+    .map{grid-template-columns:1fr;}
+    .lvl-head .tag{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar hidden" id="topbar">
+  <div class="brand">⚡ Electrician's Guide</div>
+  <div class="who" id="who"></div>
+  <button id="home-btn" type="button">Accueil</button>
+</div>
+<div class="sync-warn hidden" id="sync-warn">⚠ Connexion instable : certaines réponses n'ont pas encore été enregistrées. Garde cette page ouverte, on réessaie automatiquement.</div>
+
+<div class="wrap" id="app"></div>
+
+<script>
+const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+const GRADE_ENDPOINT = SUPABASE_URL + "/functions/v1/grade-advanced";
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const C = window.ELEC_COURSE;
+const LEVELUP_URL = 'https://levelup-5bt.pages.dev';
+const LU_SKILLS = {CE:'Compréhension écrite (CE)', EE:'Expression écrite (EE)', EO:'Expression orale (EO)', CO:'Compréhension orale (CO)'};
+function levelupReminder(s){
+  const key = String(s.skill).trim().split(/\s+/)[0];
+  const comp = LU_SKILLS[key] || key;
+  return h('div', {class:'lu-remind'},
+    h('div', null, '📲 ', h('b', null, 'Pense à t\'évaluer sur LevelUp !')),
+    h('div', null, 'Compétence travaillée dans cette étape : ', h('b', null, comp), '. Repère la compétence qui correspond dans LevelUp et évalue-toi tout de suite, tant que c\'est frais.'),
+    h('a', {href:LEVELUP_URL, target:'_blank', rel:'noopener'}, 'Ouvrir LevelUp'));
+}
+const FALLBACK_CLASSES = ['2nde TNE','2nde MES','2nde BMA','1ère MES','1ère MELEC'];
+
+/* ============ utilitaires ============ */
+function h(tag, props, ...kids){
+  const el = document.createElement(tag);
+  if(props) for(const [k,v] of Object.entries(props)){
+    if(v == null || v === false) continue;
+    if(k === 'class') el.className = v;
+    else if(k === 'html') el.innerHTML = v;
+    else if(k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for(const kid of kids.flat()){ if(kid == null || kid === false) continue; el.append(kid.nodeType ? kid : document.createTextNode(kid)); }
+  return el;
+}
+function norm(s){
+  return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[’‘`´]/g,"'").replace(/[.!?,;:]+$/,'').replace(/\s+/g,' ').trim();
+}
+function lev(a,b){
+  const m=a.length,n=b.length; if(!m) return n; if(!n) return m;
+  let prev=Array.from({length:n+1},(_,i)=>i);
+  for(let i=1;i<=m;i++){ const cur=[i]; for(let j=1;j<=n;j++){ cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1)); } prev=cur; }
+  return prev[n];
+}
+// compare une saisie à une réponse attendue : exact, ou faute de frappe légère (mots longs)
+function matchAnswer(input, expected){
+  let a = norm(input), b = norm(expected);
+  a = a.replace(/^i\s+/,'').replace(/^i(?=')/,'');           // « I am checking » dans un blanc qui commence après « I »
+  if(a === b) return {ok:true, exact:true};
+  if(b.length >= 6 && lev(a,b) <= 1) return {ok:true, exact:false};
+  if(b.length >= 10 && lev(a,b) <= 2) return {ok:true, exact:false};
+  return {ok:false};
+}
+function speak(text){
+  if(!('speechSynthesis' in window)){ alert("Ton navigateur ne peut pas lire à voix haute."); return; }
+  const u = new SpeechSynthesisUtterance(text); u.lang = 'en-GB'; u.rate = 0.85;
+  const v = speechSynthesis.getVoices().find(v => /^en[-_]GB/i.test(v.lang)) || speechSynthesis.getVoices().find(v => /^en/i.test(v.lang));
+  if(v) u.voice = v;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+
+/* ============ identité & état ============ */
+let ID = null;               // {first,last,classe,name,norm}
+const STATE = {};            // qid -> {tries, done, correct, revealed, answer, feedback, restored}
+const PENDING = [];          // enregistrements en attente (réseau instable)
+let curStep = null, curLevel = {};
+
+function loadId(){ try{ return JSON.parse(localStorage.getItem('electrician-id')||'null'); }catch(e){ return null; } }
+function saveId(){ try{ localStorage.setItem('electrician-id', JSON.stringify(ID)); }catch(e){} }
+
+async function saveAnswer(q, answer, correct, revealed, feedback){
+  const payload = { p_course:C.id, p_classe:ID.classe, p_student:ID.name, p_norm:ID.norm, p_step:q.step, p_level:q.level,
+    p_qid:q.id, p_prompt:(q.prompt||'').slice(0,300), p_answer:answer, p_correct:correct, p_revealed:!!revealed, p_feedback:feedback||'' };
+  try{
+    const { error } = await supa.rpc('save_course_answer', payload);
+    if(error) throw error;
+  }catch(e){ PENDING.push(payload); document.getElementById('sync-warn').classList.remove('hidden'); }
+}
+setInterval(async () => {
+  if(!PENDING.length) return;
+  const batch = PENDING.splice(0);
+  for(const p of batch){
+    try{ const { error } = await supa.rpc('save_course_answer', p); if(error) throw error; }
+    catch(e){ PENDING.push(p); }
+  }
+  if(!PENDING.length) document.getElementById('sync-warn').classList.add('hidden');
+}, 8000);
+
+async function loadProgress(){
+  Object.keys(STATE).forEach(k => delete STATE[k]);
+  const { data } = await supa.rpc('get_course_progress', { p_course:C.id, p_classe:ID.classe, p_norm:ID.norm });
+  (data || []).forEach(r => {
+    const done = r.is_correct === true || r.revealed === true || (r.is_correct === null && !!r.answer);
+    STATE[r.qid] = { tries:r.attempts || 1, done, correct:r.is_correct, revealed:r.revealed, answer:r.answer, feedback:r.feedback, restored:true };
+  });
+}
+
+/* ============ progression ============ */
+const qDone = q => !!(STATE[q.id] && STATE[q.id].done);
+const levelQs = (s,L) => s.levels[L].qs;
+const levelDoneCount = (s,L) => levelQs(s,L).filter(qDone).length;
+const levelDone = (s,L) => levelDoneCount(s,L) === levelQs(s,L).length;
+function finalDone(s){ return !s.finalTask || (STATE[s.finalTask.id] && STATE[s.finalTask.id].done); }
+function stepDone(s){ return ['A','B','C'].some(L => levelDone(s,L)) && finalDone(s); }
+function stepUnlocked(s){ return s.n === 1 || stepDone(C.steps[s.n-2]); }
+function stepStarted(s){ return ['A','B','C'].some(L => levelDoneCount(s,L) > 0); }
+function bestLevels(s){ return ['A','B','C'].filter(L => levelDone(s,L)); }
+
+/* ============ correction par l'IA (invisible pour l'élève) ============ */
+const AI_SYSTEM = `Tu es un professeur d'anglais bienveillant pour des élèves de 2nde bac pro (filière électricité), niveau A1-A2, qui s'entraînent sur un cours interactif. Tu corriges la réponse d'un.e élève à une consigne.
+
+RÈGLES DE CORRECTION
+- Sois généreux.se : tolère les fautes d'orthographe mineures, la ponctuation, les majuscules, les contractions (I'm = I am) et toute formulation correcte qui respecte la consigne même si elle diffère de la réponse modèle. Une faute isolée qui ne gêne pas la compréhension ne rend pas la réponse fausse.
+- ok = true si la réponse remplit la consigne et les critères donnés. ok = false si elle est vide, hors sujet, écrite en français alors que l'anglais est demandé, ou si elle ne respecte pas le point de grammaire demandé.
+- Le feedback est en français, tutoie l'élève ("tu", "ton", "tes"), n'écris jamais "l'élève" à la 3e personne, 40 mots maximum, ton chaleureux. Si tu dois accorder un adjectif, utilise l'écriture inclusive avec un point (ex : "motivé.e"), jamais de parenthèses.
+- Si ok = true : félicite en une phrase et, si utile, donne UNE petite piste d'amélioration facultative (ex : orthographe d'un mot).
+- Si ok = false et TENTATIVE = 1 : explique ce qui cloche avec un INDICE, sans donner la phrase corrigée complète.
+- Si ok = false et TENTATIVE >= 2 : donne la correction modèle en anglais et explique brièvement l'erreur.
+- Ne dis jamais que tu es une IA et ne parle pas de "correction automatique".
+
+Réponds UNIQUEMENT en JSON valide, sans balises markdown, exactement : {"ok":true,"feedback":"..."}`;
+
+async function gradeAI(q, fields, tries){
+  const text = q.fields.map(f => f.label + ' : ' + (fields[f.k] || '(vide)')).join('\n');
+  // 1) réponse identique à la réponse modèle : pas besoin d'appel
+  if(q.ref && q.fields.length === 1 && norm(fields[q.fields[0].k]) === norm(q.ref)) return {ok:true, feedback:'Parfait, c\'est exactement ça ! 🎉'};
+  const user = `CONSIGNE : ${q.prompt}\n` + (q.rubric ? `CRITÈRES : ${q.rubric}\n` : '') + (q.ref ? `RÉPONSE MODÈLE : ${q.ref}\n` : '') + `TENTATIVE : ${tries}\nRÉPONSE DE L'ÉLÈVE :\n${text}`;
+  const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), 30000);
+  try{
+    const res = await fetch(GRADE_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ systemPrompt:AI_SYSTEM, userContent:user }), signal:ctrl.signal });
+    if(!res.ok) throw new Error('http');
+    const d = await res.json();
+    if(d.error || typeof d.ok !== 'boolean') throw new Error('bad');
+    return { ok:d.ok, feedback:d.feedback || '' };
+  }catch(e){ return null; }
+  finally{ clearTimeout(timer); }
+}
+
+/* ============ rendus des types de questions ============ */
+// Chaque rendu renvoie {el, get(), isEmpty(), lock(), mark(res), reveal(res)}
+const R = {};
+
+R.mcq = (q) => {
+  let sel = null; const btns = [];
+  const el = h('div', {class:'opts'}, q.options.map(o => {
+    const b = h('button', {type:'button', class:'opt', onclick:() => { sel = o; btns.forEach(x => x.classList.toggle('sel', x === b)); }}, o);
+    btns.push(b); return b;
+  }));
+  const acc = [].concat(q.answer);
+  return { el, get:() => sel, isEmpty:() => sel == null,
+    lock:(on) => btns.forEach(b => b.disabled = on),
+    mark:(res) => btns.forEach(b => { b.classList.remove('good','bad'); if(b.textContent === sel) b.classList.add(res.ok ? 'good' : 'bad'); }),
+    reveal:() => btns.forEach(b => { if(acc.includes(b.textContent)) b.classList.add('good'); }) };
+};
+R.tf = (q) => {
+  const qq = Object.assign({}, q, {options:['True','False'], answer: q.answer ? 'True' : 'False'});
+  return R.mcq(qq);
+};
+R.gap = (q) => {
+  const inputs = []; const frag = h('div', {class:'sentence'});
+  q.parts.forEach(p => {
+    if(typeof p === 'string') frag.append(document.createTextNode(p));
+    else { const w = Math.max(8, Math.max(...p.a.map(x => x.length)) + 3);
+      const i = h('input', {type:'text', class:'blank', autocomplete:'off', autocapitalize:'off', spellcheck:'false', style:`width:${Math.min(w*11, 300)}px`});
+      inputs.push({i, a:p.a}); frag.append(i); }
+  });
+  return { el:frag, get:() => inputs.map(x => x.i.value.trim()), isEmpty:() => inputs.some(x => !x.i.value.trim()),
+    lock:(on) => inputs.forEach(x => x.i.disabled = on),
+    mark:(res) => inputs.forEach((x,k) => { x.i.classList.remove('good','bad'); x.i.classList.add(res.blanks[k] ? 'good' : 'bad'); }),
+    reveal:() => inputs.forEach(x => { x.i.value = x.a[0]; x.i.classList.remove('bad'); x.i.classList.add('good'); }) };
+};
+R.part = (q) => {
+  const i = h('input', {type:'text', class:'one', placeholder:'Safety instructions / Operating steps / Troubleshooting', autocomplete:'off', spellcheck:'false', style:'margin-left:40px;width:calc(100% - 40px)'});
+  return { el:i, get:() => i.value.trim(), isEmpty:() => !i.value.trim(), lock:(on) => i.disabled = on, mark:()=>{}, reveal:() => { i.value = q.show; } };
+};
+function fieldsRenderer(q){
+  const els = {}; const wrap = h('div');
+  q.fields.forEach(f => {
+    let ctl;
+    if(f.kind === 'area') ctl = h('textarea', {rows:f.rows || 3, spellcheck:'false'});
+    else if(f.kind === 'select'){ ctl = h('select', null, h('option', {value:''}, '— choisis —'), f.options.map(o => h('option', {value:o}, o))); }
+    else if(f.kind === 'check'){ ctl = h('input', {type:'checkbox'}); }
+    else ctl = h('input', {type:'text', autocomplete:'off', spellcheck:'false'});
+    els[f.k] = ctl;
+    wrap.append(f.kind === 'check'
+      ? h('div', {class:'fld chk'}, h('label', null, ctl, h('span', null, f.label)))
+      : h('div', {class:'fld'}, h('label', null, f.label), ctl));
+  });
+  const get = () => { const o = {}; q.fields.forEach(f => { o[f.k] = f.kind === 'check' ? (els[f.k].checked ? 'oui' : '') : els[f.k].value.trim(); }); return o; };
+  return { el:wrap, get, els };
+}
+R.ai = (q) => {
+  const r = fieldsRenderer(q);
+  return { el:r.el, get:r.get, isEmpty:() => Object.values(r.get()).some(v => !v), lock:(on) => Object.values(r.els).forEach(e => e.disabled = on), mark:()=>{}, reveal:()=>{} };
+};
+R.record = (q) => {
+  const r = fieldsRenderer(q);
+  return { el:r.el, get:r.get, isEmpty:() => false, lock:(on) => Object.values(r.els).forEach(e => e.disabled = on), mark:()=>{}, reveal:()=>{} };
+};
+
+/* ============ vérification (sans IA) ============ */
+const CHECK = {};
+CHECK.mcq = (q, raw, tries) => {
+  const acc = [].concat(q.answer); const ok = acc.includes(raw);
+  return ok ? {ok, feedback:'✅ Bravo !' + (q.why ? ' ' + q.why : '')}
+            : {ok, feedback:'❌ Pas tout à fait. ' + (q.hint || 'Relis bien et réessaie.'), correction:'La bonne réponse : ' + acc.join(' ou ') + '.' + (q.why ? ' ' + q.why : '')};
+};
+CHECK.tf = (q, raw, tries) => {
+  const ok = (raw === 'True') === q.answer;
+  return ok ? {ok, feedback:'✅ Exact ! ' + (q.why || '')}
+            : {ok, feedback:'❌ Pas tout à fait — relis le manuel et réessaie.', correction:'C\'était ' + (q.answer ? 'True' : 'False') + '. ' + (q.why || '')};
+};
+CHECK.gap = (q, raw, tries) => {
+  const blanks = []; let spelling = [];
+  const slots = q.parts.filter(p => typeof p !== 'string');
+  slots.forEach((p, k) => {
+    let hit = null; for(const exp of p.a){ const m = matchAnswer(raw[k], exp); if(m.ok){ hit = {exp, exact:m.exact}; if(m.exact) break; } }
+    blanks.push(!!hit); if(hit && !hit.exact) spelling.push(hit.exp);
+  });
+  const ok = blanks.every(Boolean);
+  const full = q.parts.map(p => typeof p === 'string' ? p : p.a[0]).join('');
+  if(ok) return {ok, blanks, feedback:'✅ Bravo !' + (spelling.length ? ' Attention à l\'orthographe : ' + spelling.join(', ') + '.' : '')};
+  return {ok, blanks, feedback:'❌ Regarde les cases en rouge et réessaie.' + (q.bank ? ' Aide : ' + q.bank + '.' : ''), correction:'Réponse attendue : ' + full + (q.suggest ? '' : '')};
+};
+CHECK.part = (q, raw, tries) => {
+  const v = norm(raw); const ok = q.accept.some(a => v.includes(a));
+  return ok ? {ok, feedback:'✅ Exact !' + (q.why ? ' ' + q.why : '')}
+            : {ok, feedback:'❌ Pas tout à fait. Cherche cette phrase (ou son équivalent en anglais) dans le manuel : Safety instructions, Operating steps ou Troubleshooting ?', correction:'Réponse : ' + q.show + '.' + (q.why ? ' ' + q.why : '')};
+};
+CHECK.record = (q, raw) => {
+  const vals = q.fields.filter(f => f.kind !== 'check').map(f => raw[f.k]).filter(Boolean);
+  const needChecks = q.fields.filter(f => f.kind === 'check').every(f => raw[f.k] === 'oui');
+  if(vals.length < (q.minFilled || 1)) return {ok:false, needMore:true, feedback:'Complète un peu plus avant de valider 🙂'};
+  if(!needChecks) return {ok:false, needMore:true, feedback:'Coche la case une fois que tu t\'es entraîné.e à voix haute 🙂'};
+  return {ok:null, feedback:'✔ Bien enregistré ! Ta prof peut voir ton travail.'};
+};
+
+/* ============ composant question ============ */
+function answerText(q, raw){
+  if(q.type === 'mcq' || q.type === 'tf' || q.type === 'part') return String(raw);
+  if(q.type === 'gap') return raw.join(' | ');
+  return q.fields.filter(f => f.kind !== 'check' || raw[f.k]).map(f => (q.fields.length > 1 ? f.label + ' : ' : '') + (f.kind === 'check' ? '✔ ' + f.label : raw[f.k])).join('\n');
+}
+
+function renderQuestion(q, num){
+  const st = STATE[q.id] || (STATE[q.id] = {tries:0});
+  const box = h('div', {class:'q' + (st.done ? ' done' + (st.correct === false ? ' wrong' : '') : ''), id:'q-' + q.id});
+  box.append(h('div', {class:'q-head'}, h('div', {class:'q-n'}, st.done ? (st.correct === false ? '•' : '✓') : String(num)), h('div', {class:'q-p'}, q.prompt)));
+  if(q.bank) box.append(h('div', {class:'q-bank'}, 'Banque de mots : ' + q.bank));
+
+  // déjà fait (reprise ou changement de niveau) : affichage figé
+  if(st.done && (st.restored || st.frozen)){
+    box.append(h('div', {class:'answer-ro'}, h('small', null, 'Ta réponse'), st.answer || ''));
+    if(st.feedback) box.append(h('div', {class:'fb ' + (st.correct === false ? 'ko' : 'ok')}, st.feedback));
+    return box;
+  }
+
+  const r = R[q.type](q);
+  box.append(r.el);
+  const fb = h('div', {class:'fb hidden'});
+  const btn = h('button', {type:'button', class:'btn'}, 'Vérifier');
+  box.append(h('div', {class:'q-actions'}, btn), fb);
+  const setFb = (kind, txt, corr) => { fb.className = 'fb ' + kind; fb.textContent = ''; fb.append(txt); if(corr) fb.append(h('span', {class:'corr'}, corr)); };
+
+  btn.addEventListener('click', async () => {
+    if(r.isEmpty()){ setFb('warn', 'Réponds d\'abord à la question 🙂'); return; }
+    const raw = r.get();
+    btn.disabled = true; r.lock(true);
+    let res;
+    if(q.type === 'ai'){ setFb('info', 'Correction en cours…'); res = await gradeAI(q, raw, st.tries + 1); }
+    else res = CHECK[q.type](q, raw, st.tries + 1);
+
+    if(res && res.needMore){ r.lock(false); btn.disabled = false; setFb('warn', res.feedback); return; }
+    st.tries++;
+    const ans = answerText(q, raw);
+    let ok, feedback, corr = null, revealed = false;
+    if(res == null){            // l'IA n'a pas répondu : on enregistre quand même
+      ok = null; feedback = '✔ Réponse enregistrée — ta prof la vérifiera.';
+    } else { ok = res.ok; feedback = res.feedback; corr = res.correction || null; }
+
+    if(ok === false && st.tries >= 2){ revealed = true; if(!corr && q.ref) corr = 'Modèle : ' + q.ref; }
+    st.answer = ans; st.feedback = feedback + (corr ? ' ' + corr : ''); st.correct = ok; st.revealed = revealed;
+    st.done = (ok !== false) || revealed;
+    if(res && res.blanks) r.mark(res);
+    if(q.type === 'mcq' || q.type === 'tf') r.mark({ok});
+    if(revealed) r.reveal();
+
+    if(ok === true) setFb('ok', feedback);
+    else if(ok === null) setFb('ok', feedback);
+    else if(!revealed) setFb('ko', feedback);
+    else setFb('ko', feedback, corr);
+
+    saveAnswer(q, ans, ok, revealed, st.feedback);
+
+    if(st.done){
+      st.frozen = true;
+      box.classList.add('done'); if(ok === false) box.classList.add('wrong');
+      box.querySelector('.q-n').textContent = ok === false ? '•' : '✓';
+      btn.classList.add('hidden');
+      updateChrome();
+    } else {
+      r.lock(false); btn.disabled = false; btn.textContent = 'Réessayer';
+    }
+  });
+  return box;
+}
+
+/* ============ vues ============ */
+const app = document.getElementById('app');
+function setTop(on){ document.getElementById('topbar').classList.toggle('hidden', !on); if(on) document.getElementById('who').textContent = ID.name + ' · ' + ID.classe; }
+document.getElementById('home-btn').addEventListener('click', () => renderHome());
+
+async function renderIdentify(){
+  setTop(false);
+  const saved = loadId();
+  let classes = FALLBACK_CLASSES;
+  try{ const { data } = await supa.from('classes').select('name').order('name'); if(data && data.length) classes = data.map(c => c.name); }catch(e){}
+  const first = h('input', {type:'text', id:'f-first', autocomplete:'given-name', value:saved ? saved.first : ''});
+  const last = h('input', {type:'text', id:'f-last', autocomplete:'family-name', value:saved ? saved.last : ''});
+  const sel = h('select', {id:'f-class'}, h('option', {value:''}, '— choisis ta classe —'), classes.map(c => h('option', {value:c, selected: saved && saved.classe === c ? true : null}, c)));
+  const err = h('div', {class:'err hidden'});
+  const btn = h('button', {class:'btn block', type:'button'}, 'Commencer');
+  btn.addEventListener('click', async () => {
+    const f = first.value.trim(), l = last.value.trim(), c = sel.value;
+    if(!f || !l || !c){ err.textContent = 'Merci de renseigner ton prénom, ton nom et ta classe.'; err.classList.remove('hidden'); return; }
+    err.classList.add('hidden'); btn.disabled = true; btn.textContent = 'Chargement…';
+    ID = { first:f, last:l, classe:c, name:f + ' ' + l, norm:norm(f + ' ' + l) };
+    saveId(); await loadProgress(); renderHome();
+  });
+  app.replaceChildren(h('div', {class:'id-card'},
+    h('div', {class:'banner', style:'background-image:url(electrician/hero.jpg)'}),
+    h('div', {class:'body'},
+      h('h1', null, "Electrician's Guide"), h('p', {class:'sub'}, 'Installation and Safety · English TNE'),
+      h('div', {class:'field'}, h('label', null, 'Prénom'), first),
+      h('div', {class:'field'}, h('label', null, 'Nom'), last),
+      h('div', {class:'field'}, h('label', null, 'Classe'), sel),
+      btn, err)));
+}
+
+function stepStatus(s){
+  if(!stepUnlocked(s)) return h('span', {class:'pill'}, '🔒 à débloquer');
+  if(stepDone(s)) return h('span', {class:'pill ok'}, '✅ validée · niveau ' + bestLevels(s).join('/'));
+  if(stepStarted(s)) return h('span', {class:'pill prog'}, 'en cours');
+  return h('span', {class:'pill'}, 'à faire');
+}
+
+function renderHome(){
+  setTop(true); curStep = null;
+  const allDone = C.steps.every(stepDone);
+  const rows = C.steps.map(s => {
+    const unlocked = stepUnlocked(s), done = stepDone(s);
+    return h('div', {class:'rm-row' + (unlocked ? '' : ' locked') + (done ? ' done' : ''), onclick:() => { if(unlocked) renderStep(s.n); }},
+      h('div', {class:'badge-n' + (done ? ' done' : '')}, done ? '✓' : String(s.n)),
+      h('div', {class:'rm-ribbon'}, h('div', {class:'ti'}, s.title), h('span', {class:'pill'}, s.skill), stepStatus(s)));
+  });
+  const next = C.steps.find(s => stepUnlocked(s) && !stepDone(s));
+  app.replaceChildren(
+    h('div', {class:'hero'},
+      h('img', {src:'electrician/hero.jpg', alt:''}),
+      h('div', {class:'t'}, h('h1', null, "ELECTRICIAN'S GUIDE"), h('h2', null, 'INSTALLATION AND SAFETY')),
+      h('div', {class:'mission'}, h('b', null, 'Your mission'), h('div', null, C.mission)),
+      h('div', {class:'ribbon-learn'}, h('i', null, 'Learn how to'), h('ul', null, C.learnHow.map(x => h('li', null, x)))),
+      h('div', {class:'icons'}, C.icons.map(([e,t]) => h('div', null, h('div', {class:'ic'}, e), t))),
+      h('div', {class:'abc'},
+        h('div', {class:'a'}, h('b', null, '🟢 A — Je démarre en douceur'), 'Exercices guidés, choix multiples, vocabulaire donné.'),
+        h('div', {class:'b'}, h('b', null, "🟡 B — Je m'entraîne davantage"), 'Exercices avec banque de mots et traductions en aide.'),
+        h('div', {class:'c'}, h('b', null, '🌸 C — Je me lance sans filet'), 'Production libre, sans aide, pour aller plus loin.')),
+      h('div', {class:'how'}, h('b', null, 'Comment avancer ? '), "À chaque étape, choisis le niveau qui te convient (A, B ou C) — tu peux changer de niveau à chaque étape. Va aussi loin que tu peux. Tes réponses sont corrigées tout de suite, et ta prof peut les voir : l'étape suivante se débloque quand tu as terminé un niveau.")),
+    h('div', {class:'roadmap'}, rows),
+    allDone ? finishCard() : (next ? h('div', {style:'margin-top:18px;text-align:center'}, h('button', {class:'btn', type:'button', onclick:() => renderStep(next.n)}, (stepStarted(next) ? 'Continuer · ' : 'Commencer · ') + 'étape ' + next.n)) : null));
+  window.scrollTo(0,0);
+}
+
+function finishCard(){
+  return h('div', {class:'finish', style:'margin-top:20px'},
+    h('h2', null, '🎉 Bravo, tu as terminé le parcours !'),
+    h('p', null, 'Tu es prêt.e pour ta présentation orale : « Repairing a machine ». Relis ta carte mentale et entraîne-toi à voix haute.'));
+}
+
+/* ----- vue d'une étape ----- */
+let chrome = {};
+function renderStep(n){
+  const s = C.steps[n-1]; curStep = s; setTop(true);
+  if(!curLevel[n]) curLevel[n] = (['A','B','C'].find(L => levelDoneCount(s,L) > 0 && !levelDone(s,L))) || 'A';
+  const parts = [];
+
+  parts.push(h('div', {class:'step-head'}, h('div', {class:'badge-n'}, String(s.n)), h('div', {class:'ribbon'}, s.title, h('span', {class:'pill'}, s.skill))));
+  parts.push(h('div', {class:'goal'}, '🎯 ' + s.goal));
+  if(s.image) parts.push(h('div', {class:'photo' + (s.imageSmall ? ' small' : '')}, h('img', {src:s.image, alt:s.imageAlt || '', loading:'lazy'})));
+
+  if(s.vocab) parts.push(h('div', {class:'box bank'}, h('h3', null, 'Vocabulary bank'), h('div', {class:'bank-grid'}, s.vocab.map(([en,fr]) => h('div', null, h('b', null, en), ' — ' + fr)))));
+  if(s.situation) parts.push(h('div', {class:'box'}, h('h3', null, 'Situation — you are a technician'), h('div', null, s.situation), h('ol', {class:'steps-list'}, s.stepsList.map(x => h('li', null, x)))));
+  if(s.grammar) parts.push(h('div', {class:'box grammar'}, h('h3', null, 'Grammaire'), h('b', null, s.grammar.title), h('div', null, s.grammar.rule), h('table', null, s.grammar.table.map(([a,b]) => h('tr', null, h('td', null, a), h('td', null, '→ ' + b))))));
+  if(s.vocabList) parts.push(h('div', {class:'box bank'}, h('h3', null, 'Vocabulary list'), h('div', {class:'bank-grid'}, s.vocabList.map(([en,fr]) => h('div', null, h('b', null, en), ' — ' + fr)))));
+  if(s.speak) parts.push(speakBox());
+
+  // onglets de niveau
+  const tabsEl = h('div', {class:'tabs'});
+  const lvlEl = h('div');
+  const banner = h('div');
+  const nav = h('div', {class:'step-nav'});
+  parts.push(tabsEl, lvlEl);
+  if(s.finalTask) parts.push(mindMap(s));
+  parts.push(banner, nav);
+  app.replaceChildren(...parts);
+  chrome = {s, tabsEl, lvlEl, banner, nav};
+  drawLevel(); updateChrome();
+  window.scrollTo(0,0);
+}
+
+function drawLevel(){
+  const {s, lvlEl} = chrome; const L = curLevel[s.n]; const lv = s.levels[L];
+  lvlEl.replaceChildren(h('div', {class:'lvl ' + L},
+    h('div', {class:'lvl-head'}, h('div', {class:'lt'}, L), lv.title, h('span', {class:'tag'}, lv.tag)),
+    h('div', {class:'lvl-body'},
+      lv.intro ? h('p', {class:'lvl-intro'}, lv.intro) : null,
+      lv.tip ? h('div', {class:'tip'}, lv.tip) : null,
+      lv.qs.map((q, i) => renderQuestion(q, i + 1)))));
+}
+
+function updateChrome(){
+  const {s, tabsEl, banner, nav} = chrome; if(!s) return;
+  tabsEl.replaceChildren(...['A','B','C'].map(L => {
+    const t = s.levels[L]; const d = levelDoneCount(s,L), tot = t.qs.length;
+    return h('button', {type:'button', class:'tab ' + L + (curLevel[s.n] === L ? ' active' : ''), onclick:() => { curLevel[s.n] = L; drawLevel(); updateChrome(); }},
+      (L === 'A' ? '🟢 ' : L === 'B' ? '🟡 ' : '🌸 ') + L + ' — ' + t.title, h('small', null, (d === tot ? '✅ ' : '') + d + ' / ' + tot + ' réponses validées'));
+  }));
+  const done = stepDone(s);
+  if(done) banner.replaceChildren(h('div', {class:'done-banner'}, '✅ Étape ' + s.n + ' validée !', h('span', null, s.n < C.steps.length ? 'Tu peux passer à l\'étape suivante, ou essayer un autre niveau pour aller plus loin.' : 'Parcours terminé — bravo !')), levelupReminder(s));
+  else if(levelDone(s, curLevel[s.n]) && s.finalTask) banner.replaceChildren(h('div', {class:'done-banner', style:'background:var(--blue)'}, '👏 Niveau terminé !', h('span', null, 'Il te reste ta carte mentale pour valider l\'étape.')));
+  else banner.replaceChildren();
+  const prev = s.n > 1 ? h('button', {class:'btn ghost', type:'button', onclick:() => renderStep(s.n - 1)}, '← Étape ' + (s.n - 1)) : h('span');
+  let nextBtn;
+  if(s.n < C.steps.length) nextBtn = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', disabled: done ? null : true, onclick:() => renderStep(s.n + 1)}, done ? 'Étape ' + (s.n + 1) + ' →' : '🔒 Étape ' + (s.n + 1));
+  else nextBtn = done ? h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉') : h('span');
+  nav.replaceChildren(prev, nextBtn);
+}
+
+/* ----- étape 6 : écoute + carte mentale ----- */
+function speakBox(){
+  const input = h('input', {type:'text', placeholder:'Tape un mot ou une phrase en anglais…'});
+  const words = ['contactor','screwdriver','pliers','fuse','wires','cover','overheating','indicator light','tighten','loosen','replace','monitor','remove','switch on','test the circuit'];
+  return h('div', {class:'box'}, h('h3', null, '🔊 Écoute la prononciation'),
+    h('div', null, 'Clique sur un mot de la liste, ou tape ton propre mot / ta propre phrase pour l\'entendre.'),
+    h('div', {class:'chips'}, words.map(w => h('button', {type:'button', class:'chip', onclick:() => speak(w)}, '🔊 ' + w))),
+    h('div', {class:'speak-row'}, input, h('button', {class:'btn', type:'button', onclick:() => { if(input.value.trim()) speak(input.value.trim()); }}, 'Écouter')),
+    h('div', {class:'ext'}, 'Pour un mot précis, tu peux aussi aller sur ', h('a', {href:'https://www.wordreference.com/enfr/', target:'_blank', rel:'noopener'}, 'WordReference'), '.'));
+}
+
+function mindMap(s){
+  const f = s.finalTask; const st = STATE[f.id] || (STATE[f.id] = {tries:0});
+  const q = {id:f.id, step:s.n, level:'—', prompt:'Carte mentale — Repairing a machine', type:'record'};
+  const box = h('div', {class:'box', style:'margin-top:6px'}, h('h3', null, '🧠 ' + f.title), h('div', null, f.intro));
+  if(st.done && (st.restored || st.frozen)){
+    box.append(h('div', {class:'answer-ro', style:'margin:10px 0 0'}, h('small', null, 'Ta carte mentale'), st.answer || ''), h('div', {class:'fb ok', style:'margin:10px 0 0'}, '✔ Carte mentale enregistrée.'));
+    return box;
+  }
+  const tas = {}; const map = h('div', {class:'map'}, h('div', {class:'center'}, f.center));
+  f.branches.forEach(([k, label]) => { tas[k] = h('textarea', {rows:3, spellcheck:'false', placeholder:'mots-clés…'}); map.append(h('div', {class:'br'}, h('label', null, label), tas[k])); });
+  const fb = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
+  const btn = h('button', {class:'btn', type:'button', style:'margin-top:12px'}, 'Enregistrer ma carte mentale');
+  btn.addEventListener('click', () => {
+    const filled = f.branches.filter(([k]) => tas[k].value.trim()).length;
+    if(filled < 3){ fb.className = 'fb warn'; fb.textContent = 'Complète au moins 3 branches avant d\'enregistrer 🙂'; return; }
+    const ans = f.branches.map(([k,l]) => l + ' : ' + (tas[k].value.trim() || '—')).join('\n');
+    st.tries++; st.done = true; st.correct = null; st.answer = ans; st.frozen = true; st.feedback = 'Carte mentale enregistrée';
+    saveAnswer(q, ans, null, false, st.feedback);
+    Object.values(tas).forEach(t => t.disabled = true); btn.classList.add('hidden');
+    fb.className = 'fb ok'; fb.textContent = '✔ Carte mentale enregistrée. Ta prof peut la voir.';
+    updateChrome();
+  });
+  box.append(map, btn, fb);
+  return box;
+}
+
+/* ============ démarrage ============ */
+(async function init(){
+  const saved = loadId();
+  if(saved){
+    // reprise automatique si l'élève revient sur la page (même appareil)
+    ID = saved; await loadProgress();
+    app.replaceChildren(h('div', {class:'id-card'}, h('div', {class:'body'},
+      h('h1', null, 'Re-bonjour ' + saved.first + ' !'), h('p', {class:'sub'}, saved.classe + ' — on reprend là où tu t\'étais arrêté.e ?'),
+      h('button', {class:'btn block', type:'button', onclick:() => renderHome()}, 'Reprendre'),
+      h('button', {class:'btn ghost block', type:'button', style:'margin-top:10px', onclick:() => renderIdentify()}, 'Ce n\'est pas moi'))));
+  } else renderIdentify();
+})();
+</script>
+</body>
+</html>

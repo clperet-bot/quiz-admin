@@ -379,6 +379,24 @@
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
       Suivi entraînement
     </div>
+
+    <p class="nav-group-label">Cours interactifs</p>
+    <a class="nav-item" href="cours-suivi.html" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Electrician's Guide
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=oral" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+      Préparer mon oral
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=art" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      From Art to Ad (2nde MES)
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=film" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+      Behind the Screen
+    </a>
     <div class="sidebar-footer">
       <div class="sidebar-user">
         <div class="sidebar-avatar" id="user-avatar">--</div>
@@ -608,6 +626,7 @@ async function enterApp(user){
 // -------- nav --------
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', () => {
+    if(item.dataset.external) return; // lien vers une autre page (ex : suivi du cours interactif)
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     item.classList.add('active');
     showView(item.dataset.view);
@@ -1394,16 +1413,10 @@ document.getElementById('report-print-btn').addEventListener('click', () => {
 // En recto-verso, un compte rendu qui déborde sur un nombre de pages IMPAIR (3 pages, par ex.)
 // décale tous les élèves suivants dans le même lot d'impression : l'élève d'après recommencerait
 // au verso d'une feuille au lieu du recto. On estime le nombre de pages de chaque compte rendu
-// et on complète d'une page blanche si besoin pour toujours arriver à un nombre pair (2, 4, 6...).
-//
-// Une simple division (hauteur totale du contenu / hauteur d'une page) sous-estime le nombre de
-// pages réel : les règles page-break-inside:avoid (sur .pr-section, pour ne jamais couper une
-// question en deux) poussent parfois une section entière à la page suivante, laissant un blanc
-// en bas de page que ce calcul linéaire ignore. On simule donc la VRAIE pagination avec une astuce
-// CSS multi-colonnes : un conteneur hors écran de hauteur fixe (= une page) et de column-width
-// (= une page) avec column-fill:auto se comporte comme une pagination (il remplit une "colonne"
-// avant de passer à la suivante, en respectant les mêmes règles break-inside:avoid que
-// l'impression). Le nombre de colonnes générées = le nombre de pages réelles.
+// (en le rendant hors écran à la largeur réelle d'impression) et on complète d'une page blanche
+// si besoin pour toujours arriver à un nombre pair (2, 4, 6...). L'estimation n'est pas garantie
+// pixel-parfaite (page-break-inside:avoid peut pousser une section entière à la page suivante),
+// mais couvre la grande majorité des cas.
 const PRINT_PAGE_WIDTH_PX = (210 - 14 * 2) * 96 / 25.4;  // largeur utile A4 portrait moins marges
 const PRINT_PAGE_HEIGHT_PX = (297 - 12 * 2) * 96 / 25.4; // hauteur utile A4 portrait moins marges
 function estimatePageCount(innerHtml){
@@ -1412,18 +1425,13 @@ function estimatePageCount(innerHtml){
   probe.style.position = 'fixed';
   probe.style.top = '0';
   probe.style.left = '-99999px';
+  probe.style.width = PRINT_PAGE_WIDTH_PX + 'px';
   probe.style.visibility = 'hidden';
-  probe.style.height = PRINT_PAGE_HEIGHT_PX + 'px';
-  probe.style.columnWidth = PRINT_PAGE_WIDTH_PX + 'px';
-  probe.style.webkitColumnWidth = PRINT_PAGE_WIDTH_PX + 'px';
-  probe.style.columnGap = '0px';
-  probe.style.webkitColumnGap = '0px';
-  probe.style.columnFill = 'auto';
   probe.innerHTML = innerHtml;
   document.body.appendChild(probe);
-  const totalWidth = probe.scrollWidth;
+  const height = probe.scrollHeight;
   document.body.removeChild(probe);
-  return Math.max(1, Math.round(totalWidth / PRINT_PAGE_WIDTH_PX));
+  return Math.max(1, Math.ceil(height / PRINT_PAGE_HEIGHT_PX));
 }
 function buildEvenPagedReport(a, detail){
   const inner = buildPrintReport(a, detail);

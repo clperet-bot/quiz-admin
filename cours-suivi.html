@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi du cours — Electrician's Guide</title>
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="electrician-data.js"></script>
+<script src="oral-data.js"></script>
+<script src="artad-data.js"></script>
+<script src="film-data.js"></script>
+<style>
+  :root{
+    --ink:#1B1F2A; --ink-soft:#5A6072; --line:#E4E0F3; --paper:#F4F2FB; --white:#fff;
+    --violet:#7B5FE0; --violet-deep:#3D2B66; --violet-light:#EFEAFC;
+    --blue:#4C8DF6; --blue-light:#E5EFFF;
+    --green:#2E8B57; --green-bg:#E6F6EA; --red:#C0392B; --red-bg:#FDE9E6; --amber:#B7791F; --amber-bg:#FFF4D6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Poppins',system-ui,sans-serif;font-size:15px;line-height:1.5;color:var(--ink);background:var(--paper);}
+  .hidden{display:none !important;}
+  button{font-family:inherit;}
+  .btn{background:var(--violet);color:#fff;border:0;border-radius:12px;padding:10px 18px;font-weight:600;font-size:15px;cursor:pointer;}
+  .btn.ghost{background:var(--violet-light);color:var(--violet-deep);}
+  .btn.small{padding:6px 12px;font-size:14px;border-radius:10px;}
+
+  .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .login .card{width:100%;max-width:340px;background:#fff;border-radius:20px;padding:28px;box-shadow:0 8px 30px rgba(61,43,102,.12);}
+  .login h1{margin:0 0 4px;font-size:20px;color:var(--violet-deep);}
+  .login p{margin:0 0 16px;color:var(--ink-soft);}
+  .login input{width:100%;padding:11px 13px;border:2px solid var(--line);border-radius:12px;font:inherit;margin-bottom:10px;}
+  .err{color:var(--red);font-size:14px;margin-top:8px;}
+
+  header.top{background:linear-gradient(90deg,var(--violet-deep),var(--violet));color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  header.top h1{margin:0;font-size:19px;flex:1;min-width:220px;}
+  header.top h1 small{display:block;font-weight:400;font-size:13px;opacity:.85;}
+  header.top .btn{background:rgba(255,255,255,.18);}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px 16px 60px;}
+
+  .share{display:flex;gap:18px;align-items:center;background:#fff;border-radius:18px;padding:16px 20px;box-shadow:0 2px 12px rgba(61,43,102,.07);flex-wrap:wrap;}
+  .share .qr{width:140px;height:140px;flex:none;}
+  .share .txt{flex:1;min-width:240px;}
+  .share h2{margin:0 0 4px;font-size:17px;}
+  .share .url{font-size:14px;word-break:break-all;background:var(--violet-light);border-radius:10px;padding:8px 12px;margin:8px 0;}
+  .share .row{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0 10px;}
+  .toolbar select{padding:9px 12px;border:2px solid var(--line);border-radius:12px;font:inherit;background:#fff;}
+  .toolbar label{font-size:14px;color:var(--ink-soft);display:flex;gap:6px;align-items:center;}
+  .toolbar .stamp{margin-left:auto;color:var(--ink-soft);font-size:13.5px;}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px;}
+  .stat{background:#fff;border-radius:16px;padding:12px 16px;box-shadow:0 2px 10px rgba(61,43,102,.06);}
+  .stat b{display:block;font-size:26px;line-height:1.2;color:var(--violet-deep);}
+  .stat span{font-size:13.5px;color:var(--ink-soft);}
+
+  h3.sec{margin:22px 0 8px;font-size:16px;color:var(--violet-deep);}
+  .panel{background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(61,43,102,.07);overflow:auto;}
+  table{border-collapse:collapse;width:100%;}
+  th{background:#F7F5FD;text-align:left;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);padding:10px 12px;white-space:nowrap;}
+  td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top;font-size:14.5px;}
+  tr.stu{cursor:pointer;} tr.stu:hover td{background:#FBFAFF;}
+  .chev{display:inline-block;width:16px;color:var(--ink-soft);transition:transform .15s;} tr.stu.open .chev{transform:rotate(90deg);}
+  .chips{display:flex;gap:6px;flex-wrap:nowrap;}
+  .sc{min-width:46px;text-align:center;border-radius:10px;padding:3px 6px;font-size:13px;font-weight:600;background:#F0EEF7;color:#8a8aa0;line-height:1.3;}
+  .sc small{display:block;font-weight:500;font-size:12px;}
+  .sc.prog{background:var(--blue-light);color:#1F5BB8;} .sc.done{background:var(--green-bg);color:var(--green);}
+  .flag{display:inline-block;font-size:12.5px;font-weight:600;border-radius:999px;padding:2px 9px;margin-left:6px;}
+  .flag.warn{background:var(--amber-bg);color:var(--amber);} .flag.live{background:var(--green-bg);color:var(--green);}
+  .detail td{background:#FBFAFF;padding:12px 18px 16px;}
+  .dstep{margin:0 0 12px;} .dstep h4{margin:0 0 6px;font-size:14.5px;color:var(--violet-deep);}
+  .qline{display:grid;grid-template-columns:70px 1fr;gap:4px 10px;padding:8px 0;border-top:1px dashed var(--line);font-size:14px;}
+  .qline .id{font-weight:700;color:var(--ink-soft);}
+  .qline .p{color:var(--ink-soft);} .qline .a{white-space:pre-wrap;}
+  .mark{display:inline-block;font-weight:700;border-radius:8px;padding:1px 8px;font-size:12.5px;margin-right:6px;}
+  .mark.ok{background:var(--green-bg);color:var(--green);} .mark.ko{background:var(--red-bg);color:var(--red);} .mark.na{background:#EEE;color:#555;} .mark.rev{background:var(--amber-bg);color:var(--amber);}
+  .fb{font-size:13.5px;color:var(--ink-soft);margin-top:2px;}
+  .empty{padding:26px;text-align:center;color:var(--ink-soft);}
+  .bar{height:8px;border-radius:6px;background:#EEEAF8;overflow:hidden;min-width:90px;} .bar i{display:block;height:100%;background:var(--green);}
+  .bar.low i{background:var(--red);} .bar.mid i{background:#E0A526;}
+  @media (max-width:640px){ .share .qr{margin:0 auto;} }
+</style>
+</head>
+<body>
+
+<div class="login" id="login">
+  <div class="card">
+    <h1>Suivi du cours</h1>
+    <p>Connecte-toi avec le même compte que ton espace prof.</p>
+    <input type="email" id="email" placeholder="E-mail" autocomplete="username">
+    <input type="password" id="pw" placeholder="Mot de passe" autocomplete="current-password">
+    <button class="btn" style="width:100%" id="login-btn" type="button">Se connecter</button>
+    <div class="err hidden" id="login-err">Identifiants incorrects.</div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header class="top">
+    <h1 id="course-title">⚡ Electrician's Guide <small>Suivi en direct — qui a répondu quoi</small></h1>
+    <a class="btn" href="admin.html" style="text-decoration:none">← Espace prof</a>
+  </header>
+  <div class="wrap">
+
+    <div class="share">
+      <div class="qr" id="qr"></div>
+      <div class="txt">
+        <h2>Lien et QR code à donner aux élèves</h2>
+        <div>Un seul QR pour toutes les classes : ils saisissent leur prénom, leur nom et choisissent leur classe. En visio sur Teams, colle simplement le lien dans le chat.</div>
+        <div class="url" id="url"></div>
+        <div class="row">
+          <button class="btn small" id="copy-btn" type="button">Copier le lien</button>
+          <a class="btn small ghost" id="open-link" target="_blank" rel="noopener" style="text-decoration:none">Voir comme un élève</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <select id="f-course" title="Cours"><option value="electricians-guide">⚡ Electrician's Guide</option><option value="oral-bakery-sign">🎤 Préparer mon oral</option><option value="art-to-ad">🎨 From Art to Ad</option><option value="behind-the-screen">🎬 Behind the Screen</option></select>
+      <select id="f-class"><option value="">Toutes les classes</option></select>
+      <button class="btn small ghost" id="refresh" type="button">Actualiser</button>
+      <label><input type="checkbox" id="auto" checked> Actualiser tout seul (10 s)</label>
+      <span class="stamp" id="stamp"></span>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div id="bilan"></div>
+    <div id="absent"></div>
+
+    <h3 class="sec">Élèves</h3>
+    <div class="panel" id="students"></div>
+
+    <h3 class="sec">Questions les plus difficiles (réussite au 1er essai)</h3>
+    <div class="panel" id="hard"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const COURSES = {
+  'electricians-guide': { data: window.ELEC_COURSE, page:'cours-electrician.html', icon:'⚡', label:"Electrician's Guide" },
+  'oral-bakery-sign':   { data: window.ORAL_COURSE, page:'cours-oral.html', icon:'🎤', label:'Préparer mon oral (Bakery sign)' },
+  'art-to-ad':          { data: window.ARTAD_COURSE, page:'cours-art-ad.html', icon:'🎨', label:'From Art to Ad (2nde MES)' },
+  'behind-the-screen':  { data: window.FILM_COURSE, page:'cours-film.html', icon:'🎬', label:'Behind the Screen — My opinion' }
+};
+const QP = (new URLSearchParams(location.search).get('course') || '').toLowerCase();
+const CK = ({oral:'oral-bakery-sign','oral-bakery-sign':'oral-bakery-sign', art:'art-to-ad','art-to-ad':'art-to-ad', artad:'art-to-ad', film:'behind-the-screen','behind-the-screen':'behind-the-screen'})[QP] || 'electricians-guide';
+const C = COURSES[CK].data;
+document.getElementById('course-title').innerHTML = COURSES[CK].icon + ' ' + COURSES[CK].label + ' <small>Suivi en direct — qui a répondu quoi</small>';
+document.title = 'Suivi · ' + COURSES[CK].label;
+const QBYID = Object.fromEntries(C.allQuestions.map(q => [q.id, q]));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const normName = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
+
+// lien élève = même dossier que cette page
+const STUDENT_URL = new URL(COURSES[CK].page, location.href).href;
+document.getElementById('url').textContent = STUDENT_URL;
+document.getElementById('open-link').href = STUDENT_URL;
+try{ new QRCode(document.getElementById('qr'), { text:STUDENT_URL, width:140, height:140, colorDark:'#1A1D23', colorLight:'#ffffff' }); }catch(e){ document.getElementById('qr').textContent = ''; }
+document.getElementById('copy-btn').addEventListener('click', async () => {
+  try{ await navigator.clipboard.writeText(STUDENT_URL); document.getElementById('copy-btn').textContent = 'Lien copié ✔'; }
+  catch(e){ prompt('Copie ce lien :', STUDENT_URL); }
+});
+
+/* ---------- connexion ---------- */
+async function doLogin(){
+  const { error } = await supa.auth.signInWithPassword({ email:document.getElementById('email').value.trim(), password:document.getElementById('pw').value });
+  document.getElementById('login-err').classList.toggle('hidden', !error);
+  if(!error) start();
+}
+document.getElementById('login-btn').addEventListener('click', doLogin);
+document.getElementById('pw').addEventListener('keydown', e => { if(e.key === 'Enter') doLogin(); });
+(async () => { const { data } = await supa.auth.getSession(); if(data.session) start(); })();
+
+let timer = null, ROWS = [], OPEN = new Set();
+function start(){
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  load();
+  schedule();
+}
+function schedule(){ clearInterval(timer); if(document.getElementById('auto').checked) timer = setInterval(load, 10000); }
+document.getElementById('auto').addEventListener('change', schedule);
+document.getElementById('refresh').addEventListener('click', load);
+document.getElementById('f-class').addEventListener('change', render);
+document.getElementById('f-course').value = CK;
+document.getElementById('f-course').addEventListener('change', e => { location.search = '?course=' + ({'oral-bakery-sign':'oral','art-to-ad':'art','behind-the-screen':'film'}[e.target.value] || 'elec'); });
+
+async function load(){
+  const { data, error } = await supa.from('course_answers').select('*').eq('course', C.id).order('updated_at', { ascending:false }).limit(5000);
+  if(error){ document.getElementById('students').innerHTML = '<div class="empty">Erreur de chargement : ' + esc(error.message) + '</div>'; return; }
+  ROWS = data || [];
+  const sel = document.getElementById('f-class'); const cur = sel.value;
+  const classes = [...new Set(ROWS.map(r => r.classe))].sort((a,b) => a.localeCompare(b, 'fr'));
+  sel.innerHTML = '<option value="">Toutes les classes</option>' + classes.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  sel.value = classes.includes(cur) ? cur : '';
+  document.getElementById('stamp').textContent = 'Mis à jour à ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  render();
+}
+
+function ago(iso){
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if(s < 90) return 'à l\'instant'; if(s < 3600) return Math.round(s/60) + ' min'; if(s < 86400) return Math.round(s/3600) + ' h';
+  return new Date(iso).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
+}
+const isDone = r => r.is_correct === true || r.revealed === true || (r.is_correct === null && !!r.answer);
+
+function render(){
+  const fClass = document.getElementById('f-class').value;
+  const rows = ROWS.filter(r => !fClass || r.classe === fClass);
+
+  // --- regroupement par élève (nom normalisé + classe)
+  const by = {};
+  rows.forEach(r => { const k = r.classe + '|' + r.student_norm; (by[k] = by[k] || {name:r.student_name, classe:r.classe, rows:[], last:r.updated_at}).rows.push(r); if(r.updated_at > by[k].last) by[k].last = r.updated_at; });
+  const students = Object.values(by).sort((a,b) => a.classe.localeCompare(b.classe,'fr') || a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
+
+  // --- stats
+  const live = students.filter(s => Date.now() - new Date(s.last).getTime() < 5*60*1000).length;
+  const firstTry = rows.filter(r => r.first_correct !== null);
+  const ft = firstTry.length ? Math.round(100 * firstTry.filter(r => r.first_correct).length / firstTry.length) : null;
+  const revealed = rows.filter(r => r.revealed).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><b>${students.length}</b><span>élèves ont commencé</span></div>
+    <div class="stat"><b>${live}</b><span>actifs ces 5 dernières minutes</span></div>
+    <div class="stat"><b>${rows.length}</b><span>questions répondues</span></div>
+    <div class="stat"><b>${ft === null ? '—' : ft + ' %'}</b><span>réussite du 1er coup</span></div>
+    <div class="stat"><b>${revealed}</b><span>corrections affichées (blocages)</span></div>`;
+
+  // --- tableau élèves
+  const box = document.getElementById('students');
+  if(!students.length){ box.innerHTML = '<div class="empty">Aucun élève n\'a encore commencé. Donne-leur le lien ou le QR code ci-dessus 👆</div>'; }
+  else {
+    box.innerHTML = `<table><tr><th>Élève</th><th>Classe</th><th>Progression par étape</th><th>Dernière activité</th></tr>` +
+      students.map((s, i) => {
+        const key = s.classe + '|' + normName(s.name);
+        const done = Object.fromEntries(s.rows.map(r => [r.qid, r]));
+        const chips = C.steps.map(st => {
+          const sk = done[st.n + '-skip'];
+          if(sk && sk.answer && sk.answer !== 'Annulé') return `<div class="sc done" title="Étape ${st.n} — déjà faite (déclaré par l'élève)">${st.n}<small>déjà fait</small></div>`;
+          if(!st.levels){
+            const ids = st.endId ? [st.endId] : (st.qs || []).map(q => q.id);
+            const d = ids.filter(id => done[id] && isDone(done[id])).length;
+            const started = s.rows.some(r => String(r.qid).charAt(0) === String(st.n));
+            if(!started) return `<div class="sc" title="Étape ${st.n} — pas commencée">${st.n}<small>—</small></div>`;
+            const full = d === ids.length;
+            return `<div class="sc ${full ? 'done' : 'prog'}" title="Étape ${st.n} : ${d}/${ids.length}">${st.n}<small>${d}/${ids.length}</small></div>`;
+          }
+          // meilleur niveau (le plus avancé en proportion)
+          let best = null;
+          ['A','B','C'].forEach(L => { const qs = st.levels[L].qs; const d = qs.filter(q => done[q.id] && isDone(done[q.id])).length; if(d > 0 && (!best || d/qs.length > best.d/best.t)) best = {L, d, t:qs.length}; });
+          const fin = !st.finalTask || (done[st.finalTask.id] && isDone(done[st.finalTask.id]));
+          if(!best) return `<div class="sc" title="Étape ${st.n} — pas commencée">${st.n}<small>—</small></div>`;
+          const full = best.d === best.t && fin;
+          return `<div class="sc ${full ? 'done' : 'prog'}" title="Étape ${st.n} · niveau ${best.L} : ${best.d}/${best.t}">${st.n}<small>${best.L} ${best.d}/${best.t}</small></div>`;
+        }).join('');
+        const nReveal = s.rows.filter(r => r.revealed).length;
+        const isLive = Date.now() - new Date(s.last).getTime() < 5*60*1000;
+        const open = OPEN.has(key);
+        return `<tr class="stu${open ? ' open' : ''}" data-key="${esc(key)}"><td><span class="chev">▸</span><b>${esc(s.name)}</b>${nReveal >= 3 ? `<span class="flag warn">bloqué.e ? ${nReveal} corrections</span>` : ''}${isLive ? '<span class="flag live">en ligne</span>' : ''}</td><td>${esc(s.classe)}</td><td><div class="chips">${chips}</div></td><td>${ago(s.last)}</td></tr>` +
+          (open ? `<tr class="detail"><td colspan="4">${detail(s)}</td></tr>` : '');
+      }).join('') + '</table>';
+    box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const [classe, norm, name] = b.dataset.del.split('|');
+      if(!confirm('Supprimer toutes les réponses de ' + name + ' (' + classe + ') ? Cette action est irréversible.')) return;
+      const { data, error } = await supa.from('course_answers').delete().eq('course', C.id).eq('classe', classe).eq('student_norm', norm).select();
+      if(error){ alert('Erreur : ' + error.message); return; }
+      if(!data || !data.length){ alert("Rien n'a été supprimé (droits d'accès ?). Essaie de te reconnecter."); return; }
+      OPEN.delete(classe + '|' + norm); load();
+    }));
+    box.querySelectorAll('tr.stu').forEach(tr => tr.addEventListener('click', () => { const k = tr.dataset.key; OPEN.has(k) ? OPEN.delete(k) : OPEN.add(k); render(); }));
+  }
+
+  // --- questions difficiles
+  const agg = {};
+  rows.forEach(r => { const a = agg[r.qid] = agg[r.qid] || {n:0, ok1:0, reveal:0}; if(r.first_correct !== null){ a.n++; if(r.first_correct) a.ok1++; } if(r.revealed) a.reveal++; });
+  const hard = Object.entries(agg).filter(([,a]) => a.n >= 2).map(([qid,a]) => ({qid, ...a, pct:Math.round(100*a.ok1/a.n)})).sort((x,y) => x.pct - y.pct || y.n - x.n).slice(0, 8);
+  document.getElementById('hard').innerHTML = hard.length
+    ? `<table><tr><th>Question</th><th>Énoncé</th><th>Réussite 1er essai</th><th>Corrections affichées</th></tr>` + hard.map(h => {
+        const q = QBYID[h.qid]; return `<tr><td><b>${esc(h.qid)}</b></td><td>${esc(q ? q.prompt : '')}</td><td><div class="bar ${h.pct < 40 ? 'low' : h.pct < 70 ? 'mid' : ''}"><i style="width:${h.pct}%"></i></div>${h.pct} % (${h.ok1}/${h.n})</td><td>${h.reveal}</td></tr>`; }).join('') + '</table>'
+    : '<div class="empty">Pas encore assez de réponses (il faut au moins 2 élèves par question).</div>';
+  if(CK === 'art-to-ad') renderBilan(students); else document.getElementById('bilan').innerHTML = '';
+  renderAbsent(by, fClass);
+}
+
+/* ---------- « qui n'a rien fait » (tous les cours) ---------- */
+let ROSTER = null;
+async function loadRoster(){
+  if(ROSTER) return ROSTER;
+  try{
+    const [c, s] = await Promise.all([supa.from('classes').select('id,name'), supa.from('students').select('class_id,name')]);
+    if(c.error || s.error) throw (c.error || s.error);
+    ROSTER = (c.data || []).map(cl => ({ name:cl.name, students:(s.data || []).filter(x => x.class_id === cl.id).map(x => x.name) })).filter(cl => cl.students.length);
+  }catch(e){ ROSTER = []; }
+  return ROSTER;
+}
+const tokKey = s => normName(s).replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean).sort().join(' ');
+async function renderAbsent(by, fClass){
+  const box = document.getElementById('absent');
+  const roster = await loadRoster();
+  if(!roster.length){ box.innerHTML = ''; return; }
+  const done = {}; Object.values(by).forEach(s => { (done[s.classe] = done[s.classe] || new Set()).add(tokKey(s.name)); });
+  const classes = roster.filter(cl => !fClass || cl.name === fClass);
+  const blocks = classes.map(cl => {
+    const have = done[cl.name] || new Set();
+    const none = cl.students.filter(n => !have.has(tokKey(n))).sort((a,b) => a.localeCompare(b,'fr'));
+    return `<div style="margin:6px 0"><b>${esc(cl.name)}</b> — ${none.length} sur ${cl.students.length} n'ont encore rien fait${none.length ? ' : ' + none.map(esc).join(', ') : ' 🎉'}</div>`;
+  }).join('');
+  box.innerHTML = `<h3 class="sec">Élèves qui n'ont rien fait (d'après les listes de classes)</h3><div class="panel" style="padding:12px 16px">${blocks || '<div class="empty">Aucune liste de classe.</div>'}<div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px">Comparaison par prénom et nom ; vérifie les orthographes si un élève apparaît à tort.</div></div>`;
+}
+
+/* ---------- bilan oui/non + images reçues (From Art to Ad) ---------- */
+async function renderBilan(students){
+  const box = document.getElementById('bilan');
+  const yn = r => !r ? '<span class="mark na">—</span>' : /^oui/i.test(r.answer) ? '<span class="mark ok">Oui</span>' : '<span class="mark ko">Non</span>';
+  const paths = [];
+  const rowsData = students.map(s => {
+    const m = Object.fromEntries(s.rows.map(r => [r.qid, r]));
+    const ex = m['2-send'] && m['2-send'].extra;
+    if(ex && ex.original){ paths.push(ex.original, ex.ad); }
+    return {s, m, ex};
+  });
+  let urls = {};
+  if(paths.length){ try{ const { data } = await supa.storage.from('ad-submissions').createSignedUrls(paths, 3600); (data || []).forEach(d => { if(d.signedUrl) urls[d.path] = d.signedUrl; }); }catch(e){} }
+  const img = (p, l) => p && urls[p] ? `<a href="${esc(urls[p])}" target="_blank" rel="noopener" title="${l}"><img src="${esc(urls[p])}" alt="${l}" style="height:64px;border-radius:8px;border:1px solid var(--line);margin-right:4px"></a>` : '';
+  box.innerHTML = `<h3 class="sec">Bilan : où en sont-ils ? (oui / non)</h3><div class="panel"><table><tr><th>Élève</th><th>Classe</th><th>Pub finie ?</th><th>Texte rédigé ?</th><th>Travail envoyé</th><th>Texte corrigé par l'IA</th></tr>` +
+    (rowsData.length ? rowsData.map(({s, m, ex}) => {
+      const sent = ex && ex.original ? img(ex.original, 'Œuvre originale') + img(ex.ad, 'Publicité') + (urls[ex.original] ? '' : 'envoyé') : (m['2-send'] ? '<span class="mark na">pas encore</span>' : '—');
+      const tx = m['3-text'] ? (m['3-text'].is_correct === true ? '<span class="mark ok">validé</span>' : m['3-text'].revealed ? '<span class="mark rev">correction affichée</span>' : '<span class="mark na">en cours</span>') : '—';
+      return `<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.classe)}</td><td>${yn(m['1-ad'])}</td><td>${yn(m['1-txt'])}</td><td>${sent}</td><td>${tx}</td></tr>`;
+    }).join('') : '<tr><td colspan="6" class="empty">Personne n\'a encore répondu.</td></tr>') + '</table></div>';
+}
+
+function extraHtml(r){
+  const x = r.extra; if(!x) return '';
+  let o = '';
+  if(x.corrected && String(x.corrected).trim() !== String(r.answer||'').trim()) o += `<div class="fb" style="color:#1b7a46">✎ Version corrigée : ${esc(x.corrected)}</div>`;
+  if(x.map){ const L = {colors:'Colours',colors_why:'Why? (colours)',materials:'Materials',materials_why:'Why? (materials)',font:'Font',font_why:'Why? (font)'};
+    o += `<div class="fb">🧠 Carte mentale corrigée : ` + Object.keys(L).map(k => `<b>${L[k]}</b> ${esc(x.map[k] || '—')}`).join(' · ') + `</div>`;
+    if(x.source) o += `<div class="fb">Source : ${x.source === 'photo' ? 'photo' : 'saisie au clavier'}</div>`; }
+  if(x.heard) o += `<div class="fb">🎙️ Compris : « ${esc(x.heard)} » (${x.pct} %)</div>`;
+  if(x.words) o += `<div class="fb">Mots difficiles : ` + x.words.map(w => esc(w.word) + ' ' + esc(w.ipa||'')).join(', ') + `</div>`;
+  return o;
+}
+function detail(s){
+  const byQ = Object.fromEntries(s.rows.map(r => [r.qid, r]));
+  const del = `<div style="margin:0 0 10px"><button class="btn small ghost" data-del="${esc(s.classe)}|${esc(normName(s.name))}|${esc(s.name)}" type="button">Supprimer les réponses de cet élève</button></div>`;
+  return del + C.steps.map(st => {
+    const known = C.allQuestions.filter(q => q.step === st.n && byQ[q.id]);
+    const knownIds = new Set(C.allQuestions.map(q => q.id));
+    const dyn = s.rows.filter(r => !knownIds.has(r.qid) && String(r.qid).charAt(0) === String(st.n)).sort((a,b) => String(a.qid).localeCompare(String(b.qid), 'fr', {numeric:true})).map(r => ({id:r.qid, prompt:r.prompt || r.qid}));
+    const qs = known.concat(dyn);
+    if(!qs.length) return '';
+    return `<div class="dstep"><h4>Étape ${st.n} — ${esc(st.title)}</h4>` + qs.map(q => {
+      const r = byQ[q.id];
+      const mark = r.is_correct === true ? '<span class="mark ok">✓ juste</span>' : r.is_correct === false ? '<span class="mark ko">✗ faux</span>' : '<span class="mark na">enregistré</span>';
+      const first = r.first_correct === true ? 'juste du 1er coup' : r.first_correct === false ? '1er essai faux' : '';
+      return `<div class="qline"><div class="id">${esc(q.id)}</div><div><div class="p">${esc(q.prompt)}</div><div class="a">${mark}${r.revealed ? '<span class="mark rev">correction affichée</span>' : ''}<span style="color:var(--ink-soft);font-size:13px">${r.attempts} essai${r.attempts > 1 ? 's' : ''}${first ? ' · ' + first : ''} · ${ago(r.updated_at)}</span></div><div class="a" style="margin-top:3px">${esc(r.answer)}</div>${extraHtml(r)}${r.feedback ? `<div class="fb">↳ ${esc(r.feedback)}</div>` : ''}${r.first_answer && r.first_answer !== r.answer ? `<div class="fb">1ère réponse : ${esc(r.first_answer)}</div>` : ''}</div></div>`;
+    }).join('') + '</div>';
+  }).join('') || '<div class="empty">Rien à afficher.</div>';
+}
+</script>
+</body>
+</html>
