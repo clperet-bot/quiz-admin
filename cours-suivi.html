@@ -146,9 +146,9 @@ const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const COURSES = {
-  'electricians-guide': { data: window.ELEC_COURSE, page:'cours-electrician.html', icon:'⚡', label:"Electrician's Guide" },
+  'electricians-guide': { data: window.ELEC_COURSE, page:'cours-electrician.html', icon:'⚡', label:"Electrician's Guide", target:/tne/ },
   'oral-bakery-sign':   { data: window.ORAL_COURSE, page:'cours-oral.html', icon:'🎤', label:'Préparer mon oral (Bakery sign)' },
-  'art-to-ad':          { data: window.ARTAD_COURSE, page:'cours-art-ad.html', icon:'🎨', label:'From Art to Ad (2nde MES)' },
+  'art-to-ad':          { data: window.ARTAD_COURSE, page:'cours-art-ad.html', icon:'🎨', label:'From Art to Ad (2nde MES)', target:/^(2|seconde).*mes/ },
   'behind-the-screen':  { data: window.FILM_COURSE, page:'cours-film.html', icon:'🎬', label:'Behind the Screen — My opinion' }
 };
 const QP = (new URLSearchParams(location.search).get('course') || '').toLowerCase();
@@ -310,7 +310,8 @@ async function renderAbsent(by, fClass){
   const roster = await loadRoster();
   if(!roster.length){ box.innerHTML = ''; return; }
   const done = {}; Object.values(by).forEach(s => { (done[s.classe] = done[s.classe] || new Set()).add(tokKey(s.name)); });
-  const classes = roster.filter(cl => !fClass || cl.name === fClass);
+  const tgt = COURSES[CK].target;
+  const classes = roster.filter(cl => (!fClass || cl.name === fClass) && (fClass || !tgt || tgt.test(normName(cl.name))));
   const blocks = classes.map(cl => {
     const have = done[cl.name] || new Set();
     const none = cl.students.filter(n => !have.has(tokKey(n))).sort((a,b) => a.localeCompare(b,'fr'));
