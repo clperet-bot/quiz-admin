@@ -466,7 +466,7 @@ function stepShell(n){
 function updateChrome(){
   const {n, s, banner, nav} = chrome; if(!s) return;
   const done = stepDone(n);
-  banner.replaceChildren(...(done ? [h('div', {class:'done-banner'}, '✅ Étape ' + n + ' validée !', h('span', null, n < C.steps.length ? "Tu peux passer à l'étape suivante, ou essayer un autre niveau pour aller plus loin." : 'Parcours terminé — bravo !')), levelupReminder(s)].filter(Boolean) : []));
+  banner.replaceChildren(...(done ? [h('div', {class:'done-banner'}, '✅ Étape ' + n + ' validée !', h('span', null, n < C.steps.length ? "Tu peux passer à l'étape suivante, ou essayer un autre niveau pour aller plus loin." : 'Parcours terminé — bravo !')), levelupReminder(s)].filter(Boolean) : [h('div', {class:'lvlpick', style:'margin:14px 0 0;text-align:center'}, h('b', null, '👆 Choisis un niveau (A, B ou C) en haut de la page et termine-le'), n < C.steps.length ? ' pour débloquer l\'étape ' + (n + 1) + '. Un seul niveau suffit : tu peux faire les autres si tu veux t\'entraîner plus.' : ' pour terminer le parcours.')]));
   const prev = n > 1 ? h('button', {class:'btn ghost', type:'button', onclick:() => renderStep(n - 1)}, '← Étape ' + (n - 1)) : h('span');
   let nxt;
   if(n < C.steps.length){
