@@ -89,6 +89,8 @@
   .step-nav{display:flex;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap;}
 
   .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px;}
+  .lvlnext{background:var(--green-bg);border:2px solid #9bd8b4;border-radius:14px;padding:12px 16px;margin:12px 0;font-size:15.5px;} .lvlnext-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .lvlpick{margin:4px 0 0;font-size:15.5px;color:var(--violet-deep);}
   .tab{flex:1;min-width:140px;border:2px solid transparent;border-radius:14px;padding:10px 12px;cursor:pointer;font-weight:600;font-size:15px;text-align:left;line-height:1.3;}
   .tab small{display:block;font-weight:500;font-size:13px;opacity:.85;}
   .tab.A{background:var(--green-bg);color:#17603a;} .tab.B{background:var(--yellow-bg);color:var(--yellow-ink);} .tab.C{background:var(--pink-bg);color:var(--pink-ink);}
@@ -334,10 +336,10 @@ function detCard(q, title, instruct, build, expected, describe, onDone){
   box.append(btn, fb); return box;
 }
 // quiz : items = [{q, opts, exp}]
-function quiz(q, title, instruct, items){
+function quiz(q, title, instruct, items, onDone){
   return detCard(q, title, instruct,
     selects => h('div', null, items.map((it, i) => { const s = mkSelect(it.opts); selects.push(s); return h('div', {class:'sentline'}, h('b', null, (i + 1) + '. ' + it.q), h('br'), s); })),
-    items.map(i => i.exp), vals => vals.map((v, i) => (i + 1) + '. ' + v).join(' | '));
+    items.map(i => i.exp), vals => vals.map((v, i) => (i + 1) + '. ' + v).join(' | '), onDone);
 }
 
 // exercice corrigé par l'IA, 2 essais puis version à retenir
@@ -489,6 +491,7 @@ function levelTabs(levels, counts, redraw){
 }
 function viewStep(n, body){
   const S0 = D.STEPS[n - 1], st = C.steps[n - 1];
+  const tabsHost = h('div'); body.append(h('div', {class:'lvlpick'}, h('b', null, '👇 Choisis ton niveau : '), 'A, B ou C (tu peux changer quand tu veux).'), tabsHost);
   body.append(h('details', {class:'vocab', open:true}, h('summary', null, '📚 Key words and phrases'), h('div', {class:'bank-grid'}, S0.vocab.map(([en, fr]) => h('div', null, h('b', null, en), ' — ' + fr)))));
   const modelFr = h('div', {class:'fr'}, FR.model[n - 1].map((l, i) => h('div', null, h('b', null, S0.model[i][0] + ' : '), l)));
   body.append(h('div', {class:'box'}, h('h3', null, '💬 Model dialogue'), h('div', {class:'mailmodel'}, S0.model.map(([who, line]) => h('div', {class:'part'}, h('b', null, who), h('div', null, line)))), trBtn(modelFr), modelFr));
@@ -500,7 +503,7 @@ function viewStep(n, body){
     let card;
     if(curLevel === 'A'){
       const items = S0.A.items.map((it, i) => ({q:it.q, opts:shuffled(it.opts, n * 100 + i), exp:it.opts[it.ans]}));
-      card = quiz(q, 'Choose the best answer', 'Pour chaque situation, choisis la bonne phrase.', items);
+      card = quiz(q, 'Choose the best answer', 'Pour chaque situation, choisis la bonne phrase.', items, () => draw());
       // quiz() rafraîchit la barre d'étape ; on redessine aussi les onglets
     } else if(curLevel === 'B'){
       const exp = []; S0.B.lines.forEach(l => l.forEach(p => { if(typeof p !== 'string') exp.push(p.a); }));
@@ -513,7 +516,11 @@ function viewStep(n, body){
       const ta = taNode(10, S0.C.ph);
       card = aiCard({ q, title:S0.C.title, instruct:S0.C.instruct, node:ta, getText:() => ta.value.trim(), setDisabled:v => ta.disabled = v, rubric:S0.C.rubric, minWords:S0.C.minWords, wantCorrected:true, emptyMsg:'Écris d\'abord ton texte 🙂', onDone:() => draw() });
     }
-    host.replaceChildren(levelTabs(st.levels, cnt, draw), h('div', {class:'lvl ' + curLevel}, h('div', {class:'lvl-head'}, h('div', {class:'lt'}, curLevel), st.levels[curLevel].title, h('span', {class:'tag'}, st.levels[curLevel].tag)), h('div', {class:'lvl-body'}, card)));
+    const nextStepBtn = n < C.steps.length ? h('button', {class:'btn green', type:'button', onclick:() => renderStep(n + 1)}, 'Passer à l\'étape ' + (n + 1) + ' →') : h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉');
+    const others = ['A','B','C'].filter(L => L !== curLevel && !levelDone(n, L));
+    const choice = levelDone(n, curLevel) ? h('div', {class:'lvlnext'}, h('b', null, '🎉 Niveau ' + curLevel + ' terminé !'), h('div', null, 'Tu as validé cette étape. Maintenant, tu choisis :'),
+      h('div', {class:'lvlnext-btns'}, others.map(L => h('button', {class:'btn ghost', type:'button', onclick:() => { curLevel = L; draw(); window.scrollTo(0, 0); }}, L === 'B' ? '🟡 Essayer le niveau B (plus dur)' : L === 'C' ? '🌸 Essayer le niveau C (écrire)' : '🟢 Faire le niveau A')), nextStepBtn)) : null;
+    tabsHost.replaceChildren(levelTabs(st.levels, cnt, draw)); host.replaceChildren(h('div', {class:'lvl ' + curLevel}, h('div', {class:'lvl-head'}, h('div', {class:'lt'}, curLevel), st.levels[curLevel].title, h('span', {class:'tag'}, st.levels[curLevel].tag)), h('div', {class:'lvl-body'}, card)), choice);
     updateChrome();
   };
   draw();

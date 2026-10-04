@@ -314,7 +314,7 @@ const tokKey = s => normName(s).replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(B
 async function renderAbsent(by, fClass){
   const box = document.getElementById('absent');
   const roster = await loadRoster();
-  if(!roster.length){ box.innerHTML = ''; return; }
+  if(!roster.length || (!COURSES[CK].target && !fClass)){ box.innerHTML = ''; return; } // cours sans classe cible : seuls les élèves connectés comptent
   const done = {}; Object.values(by).forEach(s => { (done[s.classe] = done[s.classe] || new Set()).add(tokKey(s.name)); });
   const tgt = COURSES[CK].target;
   const classes = roster.filter(cl => (!fClass || cl.name === fClass) && (fClass || !tgt || tgt.test(normName(cl.name))));
