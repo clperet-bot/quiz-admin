@@ -104,3 +104,18 @@ course.steps.forEach(s => ['A','B','C'].forEach(L => s.levels[L].qs.forEach((q, 
 window.TRAVEL_COURSE = course;
 window.TRAVEL_DATA = { MISSION, LEARN, STEPS };
 })();
+
+/* ---- Traductions françaises (bouton « Traduire ») ---- */
+window.TRAVEL_FR = {
+  mission: "Tu vas passer trois jours à Londres avec un.e ami.e. Tu auras besoin de l'anglais à l'aéroport, dans la rue, à l'hôtel et au restaurant — et parfois, tout ne se passera pas comme prévu ! Ta mission : apprendre les phrases clés, puis écrire tes propres mini-dialogues pour survivre pendant ton voyage.",
+  learn: ["s'enregistrer à l'aéroport", "demander et donner son chemin", "réserver une chambre d'hôtel", "commander un repas et payer", "expliquer un problème poliment"],
+  titles: ["À l'aéroport", "Trouver son chemin", "À l'hôtel", "Au restaurant", "Quand ça se passe mal"],
+  model: [
+    ["Bonjour. Votre passeport, s'il vous plaît.", "Voilà.", "Enregistrez-vous des bagages ?", "Oui, une valise.", "Vous voulez une place côté hublot ou côté couloir ?", "Côté hublot, s'il vous plaît.", "Voici votre carte d'embarquement. Votre vol part de la porte 12 à 10 h 45."],
+    ["Excusez-moi, comment est-ce que je vais à la gare ?", "Allez tout droit et prenez la deuxième rue à gauche.", "C'est loin ?", "Non, c'est à cinq minutes à pied. C'est en face de la boulangerie.", "Merci beaucoup !"],
+    ["Bonjour, je voudrais réserver une chambre, s'il vous plaît.", "Bien sûr. Pour combien de nuits ?", "Pour deux nuits, à partir de vendredi.", "Simple ou double ?", "Une chambre simple, s'il vous plaît. Combien coûte-t-elle par nuit ?", "80 euros la nuit, petit déjeuner compris.", "Parfait. Merci !"],
+    ["Vous êtes prêt.e à commander ?", "Oui. En entrée, je prendrai la soupe, s'il vous plaît.", "Et comme plat principal ?", "Le poulet, s'il vous plaît. Je suis allergique aux noix.", "Pas de problème. Quelque chose à boire ?", "De l'eau gazeuse, s'il vous plaît.", "Pourrions-nous avoir l'addition, s'il vous plaît ?"],
+    ["Excusez-moi, désolé.e de vous déranger, mais il y a un problème avec ma chambre.", "Quel est le problème ?", "La douche ne marche pas. Pourriez-vous envoyer quelqu'un, s'il vous plaît ?", "Bien sûr. Je suis vraiment désolé.", "Merci. Si ce n'est pas possible, j'aimerais changer de chambre."]
+  ],
+  read: { 2: "Depuis l'office de tourisme, allez tout droit sur deux pâtés de maisons. Tournez à droite aux feux. Passez devant la banque : le musée est sur votre gauche, en face de la poste." }
+};

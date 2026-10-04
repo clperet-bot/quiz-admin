@@ -195,6 +195,9 @@
   .typegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:8px 0;}
   .typecard{background:#fff;border:2px solid var(--line);border-radius:16px;padding:12px 14px;font-size:15px;} .typecard b{display:block;font-size:16.5px;color:var(--violet-deep);margin-bottom:4px;}
   .tip5{display:flex;gap:12px;align-items:flex-start;margin:0 0 10px;} .tip5 .n{flex:none;width:32px;height:32px;border-radius:50%;background:var(--violet);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .fr{background:#EEF4FF;border-left:4px solid var(--blue);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:15px;line-height:1.5;}
+  .trbtn{background:#fff;border:2px solid var(--blue);color:var(--blue);border-radius:999px;padding:6px 14px;font:600 14px/1 inherit;font-family:inherit;cursor:pointer;margin:8px 0 0;}
+  .frti{display:block;font-weight:500;font-size:13px;opacity:.85;} .frhead{margin:-6px 0 10px 54px;font-size:14px;color:var(--ink-soft);}
   .mailmodel{background:#fff;border:2px dashed var(--line);border-radius:14px;padding:10px 14px;margin:8px 0;}
   .mailmodel .part{display:grid;grid-template-columns:150px 1fr;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px;} .mailmodel .part:last-child{border:0;}
   .mailmodel .part b{color:var(--violet-deep);font-size:13.5px;} .mailmodel .part div{white-space:pre-wrap;}
@@ -417,19 +420,32 @@ function levelupReminder(step){
     h('div', null, 'Compétence travaillée dans cette étape : ', h('b', null, step.lu), '. Repère la compétence qui correspond dans LevelUp et évalue-toi tout de suite, tant que c\'est frais.'),
     h('a', {href:LEVELUP_URL, target:'_blank', rel:'noopener'}, 'Ouvrir LevelUp'));
 }
+function isTeacher(){ if(TEST_MODE) return true; if(!ID) return false; const t = String(ID.norm || ID.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z]+/).filter(Boolean); return t.includes('clemence') && (t.includes('peret') || t.includes('perret')); }
+const FR = window.TRAVEL_FR;
+// Étapes verrouillées dans l'ordre (retour en arrière toujours possible) ; la prof (ou ?test=1) a tout ouvert
+function stepUnlocked(n){ if(isTeacher() || n === 1) return true; for(let m = 1; m < n; m++){ if(!stepDone(m)) return false; } return true; }
+// Bouton « Traduire en français » : affiche / cache un bloc français
+function trBtn(block, label){
+  block.style.display = 'none';
+  const b = h('button', {type:'button', class:'trbtn'}, '🇫🇷 ' + (label || 'Traduire en français'));
+  b.addEventListener('click', () => { const open = block.style.display === 'none'; block.style.display = open ? '' : 'none'; b.textContent = '🇫🇷 ' + (open ? 'Cacher la traduction' : (label || 'Traduire en français')); });
+  return b;
+}
 function stepPill(s){
+  if(!stepUnlocked(s.n)) return h('span', {class:'pill'}, '🔒 à débloquer');
   if(stepDone(s.n)){ const best = ['A','B','C'].filter(L => levelDone(s.n, L)); return h('span', {class:'pill ok'}, '✅ validée · niveau ' + best.join('/')); }
   return h('span', {class:'pill'}, 'à faire');
 }
 function renderHome(){
   setTop(true);
-  const next = C.steps.find(s => !stepDone(s.n));
-  const rows = C.steps.map(s => { const ok = stepDone(s.n);
-    return h('div', {class:'rm-row' + (ok ? ' done' : ''), onclick:() => renderStep(s.n)},
-      h('div', {class:'badge-n' + (ok ? ' done' : '')}, ok ? '✓' : String(s.n)), h('div', {class:'rm-ribbon'}, h('div', {class:'ti'}, s.title), h('span', {class:'pill'}, s.skill), stepPill(s))); });
+  const missionFr = h('div', {class:'fr'}, h('b', null, 'Ta mission : '), FR.mission, h('div', {style:'margin-top:6px'}, h('b', null, 'Tu vas apprendre à : '), FR.learn.join(' · ')));
+  const next = C.steps.find(s => !stepDone(s.n) && stepUnlocked(s.n));
+  const rows = C.steps.map(s => { const ok = stepDone(s.n), un = stepUnlocked(s.n);
+    return h('div', {class:'rm-row' + (un ? '' : ' locked') + (ok ? ' done' : ''), onclick:() => { if(un) renderStep(s.n); }},
+      h('div', {class:'badge-n' + (ok ? ' done' : '')}, ok ? '✓' : String(s.n)), h('div', {class:'rm-ribbon'}, h('div', {class:'ti'}, s.title, h('small', {class:'frti'}, FR.titles[s.n - 1])), h('span', {class:'pill'}, s.skill), stepPill(s))); });
   app.replaceChildren(TEST_MODE ? h('div', {class:'test-banner', style:'border-radius:12px;margin-bottom:12px'}, '🧪 Mode test : rien n\'est enregistré') : null,
     h('div', {class:'hero'}, h('div', {class:'band'}, h('h1', null, '✈️ Travel Survival Guide'), h('p', null, 'Se débrouiller en anglais en voyage')),
-      h('div', {class:'in'}, h('b', null, 'Your mission'), h('div', {style:'margin:4px 0 8px'}, D.MISSION), h('b', null, 'Learn how to'), h('ul', null, D.LEARN.map(x => h('li', null, x))),
+      h('div', {class:'in'}, h('b', null, 'Your mission'), h('div', {style:'margin:4px 0 8px'}, D.MISSION), h('b', null, 'Learn how to'), h('ul', null, D.LEARN.map(x => h('li', null, x))), trBtn(missionFr), missionFr,
         h('div', {style:'margin-top:10px;font-size:15px'}, 'À chaque étape, tu pars du niveau ', h('b', null, 'A'), ' (je choisis la bonne réponse), puis ', h('b', null, 'B'), ' (je complète le dialogue) et ', h('b', null, 'C'), ' (j\'écris mon propre texte). Va aussi loin que tu peux ! Tes réponses sont corrigées tout de suite et ta prof peut les voir.'))),
     h('div', {class:'roadmap'}, rows),
     C.steps.every(s => stepDone(s.n)) ? finishCard() : null,
@@ -441,7 +457,7 @@ function finishCard(){ return h('div', {class:'finish'}, h('h2', null, '🎉 Tri
 let chrome = {};
 function stepShell(n){
   const s = C.steps[n-1];
-  const head = h('div', {class:'step-head'}, h('div', {class:'badge-n'}, String(n)), h('div', {class:'ribbon'}, s.title, h('span', {class:'pill'}, s.skill)));
+  const head = h('div', {class:'step-head'}, h('div', {class:'badge-n'}, String(n)), h('div', {class:'ribbon'}, s.title, h('span', {class:'pill'}, s.skill)), h('div', {class:'frhead'}, '🇫🇷 ' + FR.titles[n - 1]));
   const goal = h('div', {class:'goal'}, '🎯 ' + s.goal); const body = h('div'), banner = h('div'), nav = h('div', {class:'step-nav'});
   app.replaceChildren(head, goal, body, banner, nav); chrome = {n, s, body, banner, nav}; window.scrollTo(0,0); return body;
 }
@@ -451,11 +467,14 @@ function updateChrome(){
   banner.replaceChildren(...(done ? [h('div', {class:'done-banner'}, '✅ Étape ' + n + ' validée !', h('span', null, n < C.steps.length ? "Tu peux passer à l'étape suivante, ou essayer un autre niveau pour aller plus loin." : 'Parcours terminé — bravo !')), levelupReminder(s)].filter(Boolean) : []));
   const prev = n > 1 ? h('button', {class:'btn ghost', type:'button', onclick:() => renderStep(n - 1)}, '← Étape ' + (n - 1)) : h('span');
   let nxt;
-  if(n < C.steps.length) nxt = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', onclick:() => renderStep(n + 1)}, 'Étape ' + (n + 1) + ' →');
+  if(n < C.steps.length){
+    if(stepUnlocked(n + 1)) nxt = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', onclick:() => renderStep(n + 1)}, 'Étape ' + (n + 1) + ' →');
+    else nxt = h('button', {class:'btn', type:'button', disabled:true, style:'opacity:.5;cursor:not-allowed', title:'Valide cette étape pour débloquer la suivante'}, '🔒 Étape ' + (n + 1));
+  }
   else nxt = done ? h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉') : h('span');
   nav.replaceChildren(prev, nxt);
 }
-function renderStep(n){ curLevel = 'A'; setTop(true); const body = stepShell(n); viewStep(n, body); updateChrome(); }
+function renderStep(n){ if(!stepUnlocked(n)) return renderHome(); curLevel = 'A'; setTop(true); const body = stepShell(n); viewStep(n, body); updateChrome(); }
 
 /* ============ une étape ============ */
 function shuffled(arr, seed){
@@ -471,8 +490,9 @@ function levelTabs(levels, counts, redraw){
 function viewStep(n, body){
   const S0 = D.STEPS[n - 1], st = C.steps[n - 1];
   body.append(h('details', {class:'vocab', open:true}, h('summary', null, '📚 Key words and phrases'), h('div', {class:'bank-grid'}, S0.vocab.map(([en, fr]) => h('div', null, h('b', null, en), ' — ' + fr)))));
-  body.append(h('div', {class:'box'}, h('h3', null, '💬 Model dialogue'), h('div', {class:'mailmodel'}, S0.model.map(([who, line]) => h('div', {class:'part'}, h('b', null, who), h('div', null, line))))));
-  if(S0.read) body.append(h('div', {class:'box'}, h('h3', null, '📖 Read the directions'), h('div', {class:'art'}, h('p', null, S0.read))));
+  const modelFr = h('div', {class:'fr'}, FR.model[n - 1].map((l, i) => h('div', null, h('b', null, S0.model[i][0] + ' : '), l)));
+  body.append(h('div', {class:'box'}, h('h3', null, '💬 Model dialogue'), h('div', {class:'mailmodel'}, S0.model.map(([who, line]) => h('div', {class:'part'}, h('b', null, who), h('div', null, line)))), trBtn(modelFr), modelFr));
+  if(S0.read){ const readFr = h('div', {class:'fr'}, FR.read[n]); body.append(h('div', {class:'box'}, h('h3', null, '📖 Read the directions'), h('div', {class:'art'}, h('p', null, S0.read)), trBtn(readFr), readFr)); }
   const host = h('div'); body.append(host);
   const draw = () => {
     const cnt = {A:levelDone(n, 'A'), B:levelDone(n, 'B'), C:levelDone(n, 'C')};
