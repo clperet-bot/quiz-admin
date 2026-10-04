@@ -437,17 +437,21 @@ function levelupReminder(step){
     h('div', null, 'Compétence travaillée dans cette étape : ', h('b', null, step.lu), '. Repère la compétence qui correspond dans LevelUp et évalue-toi tout de suite, tant que c\'est frais.'),
     h('a', {href:LEVELUP_URL, target:'_blank', rel:'noopener'}, 'Ouvrir LevelUp'));
 }
+function isTeacher(){ if(TEST_MODE) return true; if(!ID) return false; const t = String(ID.norm || ID.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z]+/).filter(Boolean); return t.includes('clemence') && (t.includes('peret') || t.includes('perret')); }
+// Étapes verrouillées dans l'ordre (retour en arrière toujours possible) ; la prof (ou ?test=1) a tout ouvert
+function stepUnlocked(n){ if(isTeacher() || n === 1) return true; for(let m = 1; m < n; m++){ if(!stepDone(m)) return false; } return true; }
 function stepPill(s){
+  if(!stepUnlocked(s.n)) return h('span', {class:'pill'}, '🔒 à débloquer');
   if(stepDone(s.n)) return h('span', {class:'pill ok'}, '✅ validée');
   if(stepStarted(s.n)) return h('span', {class:'pill prog'}, 'en cours');
   return h('span', {class:'pill'}, 'à faire');
 }
 function renderHome(){
   setTop(true);
-  const next = C.steps.find(s => !stepDone(s.n));
+  const next = C.steps.find(s => !stepDone(s.n) && stepUnlocked(s.n));
   const rows = C.steps.map(s => {
-    const ok = stepDone(s.n);
-    return h('div', {class:'rm-row' + (ok ? ' done' : ''), onclick:() => renderStep(s.n)},
+    const ok = stepDone(s.n), un = stepUnlocked(s.n);
+    return h('div', {class:'rm-row' + (un ? '' : ' locked') + (ok ? ' done' : ''), onclick:() => { if(un) renderStep(s.n); }},
       h('div', {class:'badge-n' + (ok ? ' done' : '')}, ok ? '✓' : String(s.n)), h('div', {class:'rm-ribbon'}, h('div', {class:'ti'}, s.title), h('span', {class:'pill'}, s.skill), stepPill(s)));
   });
   app.replaceChildren(TEST_MODE ? h('div', {class:'test-banner', style:'border-radius:12px;margin-bottom:12px'}, '🧪 Mode test : rien n\'est enregistré') : null,
@@ -473,11 +477,14 @@ function updateChrome(){
   banner.replaceChildren(...(done ? [h('div', {class:'done-banner'}, '✅ Étape ' + n + ' validée !', h('span', null, n < C.steps.length ? "Tu peux passer à l'étape suivante." : 'Parcours terminé — bravo !')), levelupReminder(s)].filter(Boolean) : []));
   const prev = n > 1 ? h('button', {class:'btn ghost', type:'button', onclick:() => renderStep(n - 1)}, '← Étape ' + (n - 1)) : h('span');
   let nxt;
-  if(n < C.steps.length) nxt = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', onclick:() => renderStep(n + 1)}, 'Étape ' + (n + 1) + ' →');
+  if(n < C.steps.length){
+    if(stepUnlocked(n + 1)) nxt = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', onclick:() => renderStep(n + 1)}, 'Étape ' + (n + 1) + ' →');
+    else nxt = h('button', {class:'btn', type:'button', disabled:true, style:'opacity:.5;cursor:not-allowed', title:'Valide cette étape pour débloquer la suivante'}, '🔒 Étape ' + (n + 1));
+  }
   else nxt = done ? h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉') : h('span');
   nav.replaceChildren(prev, nxt);
 }
-function renderStep(n){ setTop(true); const body = stepShell(n); [null, viewTeam, viewType, viewRub, viewSubject, viewEnquete, viewMail, viewArticle, viewRelecture, viewUne][n](body); updateChrome(); }
+function renderStep(n){ if(!stepUnlocked(n)) return renderHome(); setTop(true); const body = stepShell(n); [null, viewTeam, viewType, viewRub, viewSubject, viewEnquete, viewMail, viewArticle, viewRelecture, viewUne][n](body); updateChrome(); }
 
 /* ============ ÉTAPE 1 : mon équipe ============ */
 function viewTeam(body){
@@ -506,18 +513,18 @@ function viewTeam(body){
 /* ============ ÉTAPE 2 : type de journal ============ */
 function viewType(body){
   const T = D.TYPES; const names = Object.values(T).map(t => t.name);
-  body.append(h('div', {class:'box'}, h('h3', null, 'Les 3 types de journal'), h('p', {style:'margin:0 0 6px'}, 'Par groupe, mettez-vous d\'accord sur le type de journal que vous voulez écrire, puis désignez un rapporteur pour exposer vos idées et convaincre la classe.'),
+  body.append(h('div', {class:'box'}, h('h3', null, 'Les 3 types de journal'), h('p', {style:'margin:0 0 6px'}, 'Par groupe, mettez-vous d\'accord sur le type de journal que vous voulez écrire, puis choisissez quelqu\'un du groupe pour présenter vos idées et convaincre la classe.'),
     h('div', {class:'typegrid'}, Object.values(T).map(t => h('div', {class:'typecard'}, h('b', null, t.icon + ' ' + t.name), t.desc)))));
   body.append(quiz(C.allQuestions.find(x => x.id === '2-quiz'), '1. Quel type de journal ?', 'Associe chaque phrase au bon type de journal.', D.QUIZ_TYPES.map(([q, k]) => ({q, opts:names, exp:T[k].name}))));
   const prior = X('2-type');
-  const type = mkSelect(names); const rap = inp('Prénom du rapporteur ou de la rapporteuse', prior.rapporteur);
+  const type = mkSelect(names); const rap = inp('Ex. : Léa, Yanis, Camille', prior.members || X('1-team').members);
   const why = taNode(4, 'Nous avons choisi ce type de journal parce que… Les élèves du lycée auront envie de le lire car…');
   body.append(aiCard({ q:C.allQuestions.find(x => x.id === '2-type'), title:'2. Le choix de mon équipe', instruct:'Ton équipe a déjà choisi ? Il te suffit de réécrire ici son choix et ses raisons (2 phrases).',
-    node:h('div', null, fld('Type de journal choisi', type), fld('Notre rapporteur', rap), fld('Pourquoi ce choix intéressera les élèves du lycée ? (2 phrases)', why)),
-    getText:() => (!type.value || !rap.value.trim() || !why.value.trim()) ? '' : 'TYPE CHOISI : ' + type.value + '\nRAPPORTEUR : ' + rap.value.trim() + '\nJUSTIFICATION : ' + why.value.trim(),
+    node:h('div', null, fld('Type de journal choisi', type), fld('Les membres de notre groupe', rap), fld('Pourquoi ce choix intéressera les élèves du lycée ? (2 phrases)', why)),
+    getText:() => (!type.value || !rap.value.trim() || !why.value.trim()) ? '' : 'TYPE CHOISI : ' + type.value + '\nMEMBRES DU GROUPE : ' + rap.value.trim() + '\nJUSTIFICATION : ' + why.value.trim(),
     setDisabled:v => { type.disabled = v; rap.disabled = v; why.disabled = v; }, minWords:14, wantCorrected:false,
     rubric:"Choix du type de journal d'une équipe (journal d'actualité du lycée, magazine thématique ou journal scolaire général) avec une justification. ok = true si le type est l'un des trois types, et si la justification (au moins 2 phrases) donne au moins une vraie raison liée aux lecteurs, aux élèves ou au lycée. ok = false si la justification est vide, répète seulement la définition ou ne donne aucune raison.",
-    extra:() => ({type:Object.keys(T).find(k => T[k].name === type.value) || '', typeName:type.value, rapporteur:rap.value.trim()}) }));
+    extra:() => ({type:Object.keys(T).find(k => T[k].name === type.value) || '', typeName:type.value, members:rap.value.trim()}) }));
 }
 
 /* ============ ÉTAPE 3 : rubriques ============ */

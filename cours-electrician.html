@@ -297,9 +297,10 @@ const levelDoneCount = (s,L) => levelQs(s,L).filter(qDone).length;
 const levelDone = (s,L) => levelDoneCount(s,L) === levelQs(s,L).length;
 function finalDone(s){ return !s.finalTask || (STATE[s.finalTask.id] && STATE[s.finalTask.id].done); }
 function stepDone(s){ return ['A','B','C'].some(L => levelDone(s,L)) && finalDone(s); }
-// Navigation libre : l'élève peut aller directement à n'importe quelle étape
-function stepUnlocked(s){ return true; }
 const TEST_MODE = new URLSearchParams(location.search).get('test') === '1';
+function isTeacher(){ if(TEST_MODE) return true; if(!ID) return false; const t = String(ID.norm || ID.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z]+/).filter(Boolean); return t.includes('clemence') && (t.includes('peret') || t.includes('perret')); }
+// Étapes 1 et 2 ouvertes d'emblée (retour en arrière toujours possible) ; ensuite chaque étape s'ouvre quand la précédente est validée. La prof (ou ?test=1) a tout ouvert.
+function stepUnlocked(s){ if(isTeacher() || s.n <= 2) return true; const pv = C.steps[s.n - 2]; return !pv || stepDone(pv); }
 function stepStarted(s){ return ['A','B','C'].some(L => levelDoneCount(s,L) > 0); }
 function bestLevels(s){ return ['A','B','C'].filter(L => levelDone(s,L)); }
 
@@ -577,6 +578,7 @@ function finishCard(){
 /* ----- vue d'une étape ----- */
 let chrome = {};
 function renderStep(n){
+  if(!stepUnlocked(C.steps[n-1])) return renderHome();
   const s = C.steps[n-1]; curStep = s; setTop(true);
   if(!curLevel[n]) curLevel[n] = (['A','B','C'].find(L => levelDoneCount(s,L) > 0 && !levelDone(s,L))) || 'A';
   const parts = [];
@@ -628,7 +630,10 @@ function updateChrome(){
   else banner.replaceChildren();
   const prev = s.n > 1 ? h('button', {class:'btn ghost', type:'button', onclick:() => renderStep(s.n - 1)}, '← Étape ' + (s.n - 1)) : h('span');
   let nextBtn;
-  if(s.n < C.steps.length) nextBtn = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', onclick:() => renderStep(s.n + 1)}, 'Étape ' + (s.n + 1) + ' →');
+  if(s.n < C.steps.length){
+    if(stepUnlocked(C.steps[s.n])) nextBtn = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', onclick:() => renderStep(s.n + 1)}, 'Étape ' + (s.n + 1) + ' →');
+    else nextBtn = h('button', {class:'btn', type:'button', disabled:true, style:'opacity:.5;cursor:not-allowed', title:'Valide cette étape pour débloquer la suivante'}, '🔒 Étape ' + (s.n + 1));
+  }
   else nextBtn = done ? h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉') : h('span');
   nav.replaceChildren(prev, nextBtn);
 }
