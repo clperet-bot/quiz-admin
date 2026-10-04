@@ -119,3 +119,30 @@ window.TRAVEL_FR = {
   ],
   read: { 2: "Depuis l'office de tourisme, allez tout droit sur deux pâtés de maisons. Tournez à droite aux feux. Passez devant la banque : le musée est sur votre gauche, en face de la poste." }
 };
+
+/* ---- Petit point de grammaire (affiché dans le niveau C de l'étape indiquée) ---- */
+window.TRAVEL_GRAMMAR = {
+  2: {
+    title: "L'impératif (pour donner un ordre, un conseil, un chemin)",
+    rules: [
+      ["À quoi ça sert ?", "On utilise l'impératif pour donner une indication, un conseil ou un ordre. C'est exactement ce qu'on fait quand on explique un chemin."],
+      ["Comment on le forme ?", "En anglais, c'est très simple : le verbe seul, à l'infinitif, sans « to » et sans sujet (pas de « you »). On ne le conjugue pas."],
+      ["Pour être poli.e", "On ajoute « please » au début ou à la fin de la phrase."],
+      ["Pour interdire", "On met « Don't » devant le verbe."]
+    ],
+    examples: [
+      ["Go straight on.", "Va / allez tout droit."],
+      ["Turn left at the traffic lights.", "Tournez à gauche aux feux."],
+      ["Take the second street on the right, please.", "Prenez la deuxième rue à droite, s'il vous plaît."],
+      ["Don't cross the road here.", "Ne traversez pas la route ici."]
+    ],
+    verbs: [["go","aller"],["turn","tourner"],["take","prendre"],["walk","marcher"],["cross","traverser"],["follow","suivre"],["stop","s'arrêter"]],
+    check: [
+      { q: "___ straight on for two blocks.", opts: ["Go", "You go", "Going", "To go"], ans: 0 },
+      { q: "___ left at the traffic lights.", opts: ["Turn", "Turning", "You turn", "Turns"], ans: 0 },
+      { q: "___ the second street on the right.", opts: ["Take", "Takes", "Taking", "To take"], ans: 0 },
+      { q: "___ cross the road here: it's dangerous!", opts: ["Don't", "Not", "No", "Doesn't"], ans: 0 },
+      { q: "Walk past the bank, ___.", opts: ["please", "pleasing", "pleased", "to please"], ans: 0 }
+    ]
+  }
+};

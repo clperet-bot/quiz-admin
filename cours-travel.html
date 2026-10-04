@@ -92,6 +92,7 @@
   .lvlnext{background:var(--green-bg);border:2px solid #9bd8b4;border-radius:14px;padding:12px 16px;margin:12px 0;font-size:15.5px;} .lvlnext-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
   .spk{background:var(--blue-light);border:0;border-radius:50%;width:30px;height:30px;margin-right:8px;cursor:pointer;font-size:15px;vertical-align:middle;flex:none;}
   .wbank div{min-width:0;} @media (max-width:480px){ .wbank{grid-template-columns:1fr !important;} } .wbank{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;margin-top:6px;} .wbank i{color:var(--ink-soft);}
+  .gram{background:var(--blue-light);border:2px solid var(--blue);border-radius:14px;padding:10px 14px;margin:0 0 12px;} .gram summary{cursor:pointer;font-weight:700;color:var(--violet-deep);} .gram-in{padding-top:8px;font-size:15.5px;} .gram-in p{margin:6px 0;} .gfix{color:#17603a;font-weight:600;}
   .lvlpick{margin:4px 0 0;font-size:15.5px;color:var(--violet-deep);}
   .tab{flex:1;min-width:140px;border:2px solid transparent;border-radius:14px;padding:10px 12px;cursor:pointer;font-weight:600;font-size:15px;text-align:left;line-height:1.3;}
   .tab small{display:block;font-weight:500;font-size:13px;opacity:.85;}
@@ -500,6 +501,25 @@ function levelTabs(levels, counts, redraw){
   return h('div', {class:'tabs'}, ['A','B','C'].map(L => h('button', {type:'button', class:'tab ' + L + (curLevel === L ? ' active' : ''), onclick:() => { curLevel = L; redraw(); }},
     (L === 'A' ? '🟢 ' : L === 'B' ? '🟡 ' : '🌸 ') + L + ' — ' + levels[L].title, h('small', null, (counts[L] ? '✅ ' : '') + (counts[L] ? 'terminé' : levels[L].tag)))));
 }
+// Petit point de grammaire (niveau C) : explication + mini-activité d'auto-vérification
+function grammarBox(n){
+  const G = window.TRAVEL_GRAMMAR && window.TRAVEL_GRAMMAR[n]; if(!G) return null;
+  const sels = G.check.map((it, i) => ({ it, s:mkSelect(shuffled(it.opts, n * 31 + i)), fix:h('span', {class:'gfix'}) }));
+  const res = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
+  const btn = h('button', {class:'btn', type:'button', style:'margin-top:8px', onclick:() => {
+    if(sels.some(x => !x.s.value)){ res.className = 'fb warn'; res.textContent = 'Réponds à toutes les phrases 🙂'; return; }
+    let ok = 0; sels.forEach(({it, s, fix}) => { const good = s.value === it.opts[it.ans]; if(good) ok++; s.style.borderColor = good ? 'var(--green)' : '#e0556b'; fix.textContent = good ? ' ✓' : ' → ' + it.opts[it.ans]; });
+    res.className = 'fb ' + (ok === sels.length ? 'ok' : 'info'); res.textContent = ok === sels.length ? '🎉 Parfait ! Tu maîtrises l\'impératif, tu peux écrire ton dialogue.' : ok + ' / ' + sels.length + ' — regarde les corrections en vert, relis la règle et réessaie.';
+  }}, 'Vérifier');
+  return h('details', {class:'gram'}, h('summary', null, '📘 Petit point de grammaire : ' + G.title),
+    h('div', {class:'gram-in'},
+      G.rules.map(([t, d]) => h('p', null, h('b', null, t + ' '), d)),
+      h('div', {class:'fr', style:'display:block'}, G.examples.map(([en, fr]) => h('div', null, spk(en), h('b', null, en), ' ', h('i', null, '(' + fr + ')')))),
+      h('p', {style:'margin:8px 0 2px'}, h('b', null, 'Verbes utiles : '), G.verbs.map(([en, fr]) => en + ' (' + fr + ')').join(' · ')),
+      h('h4', {style:'margin:14px 0 6px'}, '✏️ À toi de jouer — choisis la bonne forme'),
+      sels.map(({it, s, fix}, i) => h('div', {class:'sentline'}, (i + 1) + '. ', it.q.split('___')[0], s, it.q.split('___')[1] || '', fix)),
+      btn, res));
+}
 function viewStep(n, body){
   const S0 = D.STEPS[n - 1], st = C.steps[n - 1];
   const tabsHost = h('div'); body.append(h('div', {class:'lvlpick'}, h('b', null, '👇 Choisis ton niveau : '), 'A, B ou C (tu peux changer quand tu veux).'), tabsHost);
@@ -531,7 +551,7 @@ function viewStep(n, body){
     const others = ['A','B','C'].filter(L => L !== curLevel && !levelDone(n, L));
     const choice = levelDone(n, curLevel) ? h('div', {class:'lvlnext'}, h('b', null, '🎉 Niveau ' + curLevel + ' terminé !'), h('div', null, 'Tu as validé cette étape. Maintenant, tu choisis :'),
       h('div', {class:'lvlnext-btns'}, others.map(L => h('button', {class:'btn ghost', type:'button', onclick:() => { curLevel = L; draw(); window.scrollTo(0, 0); }}, L === 'B' ? '🟡 Essayer le niveau B (plus dur)' : L === 'C' ? '🌸 Essayer le niveau C (écrire)' : '🟢 Faire le niveau A')), nextStepBtn)) : null;
-    tabsHost.replaceChildren(levelTabs(st.levels, cnt, draw)); host.replaceChildren(h('div', {class:'lvl ' + curLevel}, h('div', {class:'lvl-head'}, h('div', {class:'lt'}, curLevel), st.levels[curLevel].title, h('span', {class:'tag'}, st.levels[curLevel].tag)), h('div', {class:'lvl-body'}, card)), choice);
+    tabsHost.replaceChildren(levelTabs(st.levels, cnt, draw)); host.replaceChildren(h('div', {class:'lvl ' + curLevel}, h('div', {class:'lvl-head'}, h('div', {class:'lt'}, curLevel), st.levels[curLevel].title, h('span', {class:'tag'}, st.levels[curLevel].tag)), h('div', {class:'lvl-body'}, curLevel === 'C' ? grammarBox(n) : null, card)), choice);
     updateChrome();
   };
   draw();
