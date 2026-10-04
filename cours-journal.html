@@ -352,7 +352,7 @@ function detCard(q, title, instruct, build, expected, describe, onDone){
 function quiz(q, title, instruct, items){
   return detCard(q, title, instruct,
     selects => h('div', null, items.map((it, i) => { const s = mkSelect(it.opts); selects.push(s); return h('div', {class:'sentline'}, h('b', null, (i + 1) + '. ' + it.q), h('br'), s); })),
-    items.map(i => i.exp), vals => vals.map((v, i) => (i + 1) + '. ' + v).join(' | '));
+    items.map(i => i.exp), vals => vals.map((v, i) => (i + 1) + '. ' + v).join('\n'));
 }
 
 // exercice corrigé par l'IA, 2 essais puis version à retenir

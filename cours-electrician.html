@@ -436,7 +436,7 @@ CHECK.record = (q, raw) => {
 /* ============ composant question ============ */
 function answerText(q, raw){
   if(q.type === 'mcq' || q.type === 'tf' || q.type === 'part') return String(raw);
-  if(q.type === 'gap') return raw.join(' | ');
+  if(q.type === 'gap') return raw.map((v, i) => raw.length > 1 ? (i + 1) + '. ' + v : v).join('\n');
   return q.fields.filter(f => f.kind !== 'check' || raw[f.k]).map(f => (q.fields.length > 1 ? f.label + ' : ' : '') + (f.kind === 'check' ? '✔ ' + f.label : raw[f.k])).join('\n');
 }
 
