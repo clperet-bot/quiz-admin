@@ -626,7 +626,7 @@ function updateChrome(){
   }));
   const done = stepDone(s);
   if(done) banner.replaceChildren(h('div', {class:'done-banner'}, '✅ Étape ' + s.n + ' validée !', h('span', null, s.n < C.steps.length ? 'Tu peux passer à l\'étape suivante, ou essayer un autre niveau pour aller plus loin.' : 'Parcours terminé — bravo !')), levelupReminder(s));
-  else if(levelDone(s, curLevel[s.n]) && s.finalTask) banner.replaceChildren(h('div', {class:'done-banner', style:'background:var(--blue)'}, '👏 Niveau terminé !', h('span', null, 'Il te reste ta carte mentale pour valider l\'étape.')));
+  else if(levelDone(s, curLevel[s.n]) && s.finalTask) banner.replaceChildren(h('div', {class:'done-banner', style:'background:var(--blue)'}, '👏 Niveau terminé !', h('span', null, 'Il te reste à rédiger ton texte, puis à faire ta carte mentale pour valider l\'étape.')));
   else banner.replaceChildren();
   const prev = s.n > 1 ? h('button', {class:'btn ghost', type:'button', onclick:() => renderStep(s.n - 1)}, '← Étape ' + (s.n - 1)) : h('span');
   let nextBtn;
@@ -650,29 +650,78 @@ function speakBox(){
 }
 
 function mindMap(s){
-  const f = s.finalTask; const st = STATE[f.id] || (STATE[f.id] = {tries:0});
-  const q = {id:f.id, step:s.n, level:'—', prompt:'Carte mentale — Repairing a machine', type:'record'};
-  const box = h('div', {class:'box', style:'margin-top:6px'}, h('h3', null, '🧠 ' + f.title), h('div', null, f.intro));
-  if(st.done && (st.restored || st.frozen)){
-    box.append(h('div', {class:'answer-ro', style:'margin:10px 0 0'}, h('small', null, 'Ta carte mentale'), st.answer || ''), h('div', {class:'fb ok', style:'margin:10px 0 0'}, '✔ Carte mentale enregistrée.'));
+  const f = s.finalTask; const wrap = h('div');
+  const T = f.text;
+  const st = STATE[f.id] || (STATE[f.id] = {tries:0});
+  const tst = T ? (STATE[T.id] || (STATE[T.id] = {tries:0})) : null;
+  const wc = t => (String(t).trim().match(/[A-Za-zÀ-ÿ'’-]+/g) || []).length;
+  const toks = t => new Set((norm(t).match(/[a-z'-]{3,}/g) || []));
+
+  // 1) le texte, à rédiger AVANT la carte mentale
+  function textBox(onSaved){
+    const q = {id:T.id, step:s.n, level:'—', prompt:'Texte rédigé avant la carte mentale — Repairing a machine', type:'record'};
+    const box = h('div', {class:'box', style:'margin-top:6px'}, h('h3', null, '✍️ ' + T.title), h('div', null, T.intro));
+    if(tst.done && (tst.restored || tst.frozen)){
+      box.append(h('div', {class:'answer-ro', style:'margin:10px 0 0;white-space:pre-wrap'}, h('small', null, 'Mon texte'), tst.answer || ''), h('div', {class:'fb ok', style:'margin:10px 0 0'}, '✔ Texte enregistré.'));
+      return box;
+    }
+    const prev = STATE['5C-1'] && STATE['5C-1'].answer ? String(STATE['5C-1'].answer) : '';
+    const ta = h('textarea', {rows:9, spellcheck:'false', placeholder:'Hello! Today I am going to explain how to repair…'}); if(prev) ta.value = prev;
+    const fb = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
+    const btn = h('button', {class:'btn', type:'button', style:'margin-top:10px'}, 'Enregistrer mon texte');
+    if(prev) box.append(h('div', {class:'ext', style:'margin-top:6px'}, "Ton texte de l'étape 5 a été recopié ici : améliore-le si besoin."));
+    btn.addEventListener('click', () => {
+      const t = ta.value.trim();
+      if(wc(t) < T.minWords){ fb.className = 'fb warn'; fb.textContent = 'Ton texte est trop court (' + wc(t) + ' mots) : écris au moins ' + T.minWords + ' mots 🙂'; return; }
+      tst.tries++; tst.done = true; tst.correct = null; tst.answer = t; tst.frozen = true; tst.feedback = 'Texte enregistré';
+      saveAnswer(q, t, null, false, tst.feedback);
+      ta.disabled = true; btn.classList.add('hidden'); fb.className = 'fb ok'; fb.textContent = '✔ Texte enregistré. Passe maintenant à ta carte mentale ⬇️';
+      updateChrome(); onSaved();
+    });
+    box.append(ta, btn, fb);
     return box;
   }
-  const tas = {}; const map = h('div', {class:'map'}, h('div', {class:'center'}, f.center));
-  f.branches.forEach(([k, label]) => { tas[k] = h('textarea', {rows:3, spellcheck:'false', placeholder:'mots-clés…'}); map.append(h('div', {class:'br'}, h('label', null, label), tas[k])); });
-  const fb = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
-  const btn = h('button', {class:'btn', type:'button', style:'margin-top:12px'}, 'Enregistrer ma carte mentale');
-  btn.addEventListener('click', () => {
-    const filled = f.branches.filter(([k]) => tas[k].value.trim()).length;
-    if(filled < 3){ fb.className = 'fb warn'; fb.textContent = 'Complète au moins 3 branches avant d\'enregistrer 🙂'; return; }
-    const ans = f.branches.map(([k,l]) => l + ' : ' + (tas[k].value.trim() || '—')).join('\n');
-    st.tries++; st.done = true; st.correct = null; st.answer = ans; st.frozen = true; st.feedback = 'Carte mentale enregistrée';
-    saveAnswer(q, ans, null, false, st.feedback);
-    Object.values(tas).forEach(t => t.disabled = true); btn.classList.add('hidden');
-    fb.className = 'fb ok'; fb.textContent = '✔ Carte mentale enregistrée. Ta prof peut la voir.';
-    updateChrome();
-  });
-  box.append(map, btn, fb);
-  return box;
+
+  // 2) la carte mentale : mots-clés pris dans le texte
+  function mapBox(){
+    const q = {id:f.id, step:s.n, level:'—', prompt:'Carte mentale — Repairing a machine', type:'record'};
+    const box = h('div', {class:'box', style:'margin-top:6px'}, h('h3', null, '🧠 ' + f.title), h('div', null, f.intro));
+    if(st.done && (st.restored || st.frozen)){
+      box.append(h('div', {class:'answer-ro', style:'margin:10px 0 0'}, h('small', null, 'Ta carte mentale'), st.answer || ''), h('div', {class:'fb ok', style:'margin:10px 0 0'}, '✔ Carte mentale enregistrée.'));
+      return box;
+    }
+    if(T) box.append(h('div', {class:'answer-ro', style:'margin:10px 0 0;white-space:pre-wrap'}, h('small', null, '📄 Ton texte (prends tes mots-clés ici)'), tst.answer || ''));
+    const tas = {}; const map = h('div', {class:'map'}, h('div', {class:'center'}, f.center));
+    f.branches.forEach(([k, label]) => { tas[k] = h('textarea', {rows:3, spellcheck:'false', placeholder:'mots-clés pris dans mon texte…'}); map.append(h('div', {class:'br'}, h('label', null, label), tas[k])); });
+    const fb = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
+    const btn = h('button', {class:'btn', type:'button', style:'margin-top:12px'}, 'Enregistrer ma carte mentale');
+    btn.addEventListener('click', () => {
+      const filled = f.branches.filter(([k]) => tas[k].value.trim());
+      if(filled.length < 3){ fb.className = 'fb warn'; fb.textContent = 'Complète au moins 3 branches avant d\'enregistrer 🙂'; return; }
+      const long = filled.filter(([k]) => wc(tas[k].value) > 15);
+      if(long.length){ fb.className = 'fb warn'; fb.textContent = 'Une carte mentale, ce sont des mots-clés, pas des phrases : raccourcis la branche « ' + long[0][1] + ' » 🙂'; return; }
+      if(T){
+        const tk = toks(tst.answer || '');
+        const fromText = filled.filter(([k]) => [...toks(tas[k].value)].some(w => tk.has(w)));
+        if(fromText.length < 3){ fb.className = 'fb warn'; fb.textContent = 'Prends tes mots-clés DANS ton texte : relis-le ci-dessus et recopie des mots qui y sont (au moins 3 branches doivent contenir des mots de ton texte) 🙂'; return; }
+      }
+      const ans = f.branches.map(([k,l]) => l + ' : ' + (tas[k].value.trim() || '—')).join('\n');
+      st.tries++; st.done = true; st.correct = null; st.answer = ans; st.frozen = true; st.feedback = 'Carte mentale enregistrée';
+      saveAnswer(q, ans, null, false, st.feedback);
+      Object.values(tas).forEach(t => t.disabled = true); btn.classList.add('hidden');
+      fb.className = 'fb ok'; fb.textContent = '✔ Carte mentale enregistrée. Ta prof peut la voir.';
+      updateChrome();
+    });
+    box.append(map, btn, fb);
+    return box;
+  }
+
+  if(!T){ wrap.append(mapBox()); return wrap; }
+  const mapHost = h('div');
+  const showMap = () => { mapHost.replaceChildren(mapBox()); };
+  wrap.append(textBox(showMap), mapHost);
+  if(tst.done) showMap(); else mapHost.append(h('div', {class:'ext', style:'margin:8px 0 0'}, '🔒 La carte mentale s\'ouvre quand ton texte est enregistré.'));
+  return wrap;
 }
 
 /* ============ démarrage ============ */

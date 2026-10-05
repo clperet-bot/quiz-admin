@@ -263,7 +263,7 @@ function render(){
           // meilleur niveau (le plus avancé en proportion)
           let best = null;
           ['A','B','C'].forEach(L => { const qs = st.levels[L].qs; const d = qs.filter(q => done[q.id] && isDone(done[q.id])).length; if(d > 0 && (!best || d/qs.length > best.d/best.t)) best = {L, d, t:qs.length}; });
-          const fin = !st.finalTask || (done[st.finalTask.id] && isDone(done[st.finalTask.id]));
+          const fin = !st.finalTask || ((done[st.finalTask.id] && isDone(done[st.finalTask.id])) && (!st.finalTask.text || (done[st.finalTask.text.id] && isDone(done[st.finalTask.text.id]))));
           if(!best) return `<div class="sc" title="Étape ${st.n} — pas commencée">${st.n}<small>—</small></div>`;
           const full = best.d === best.t && fin;
           return `<div class="sc ${full ? 'done' : 'prog'}" title="Étape ${st.n} · niveau ${best.L} : ${best.d}/${best.t}">${st.n}<small>${best.L} ${best.d}/${best.t}</small></div>`;

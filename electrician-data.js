@@ -176,7 +176,9 @@ const course = {
         {id:'6C-1',type:'record',prompt:'Mes 3 difficultés de prononciation',fields:[{k:'diff',label:'3 mots ou expressions difficiles + comment je les prononce',kind:'area',rows:5},{k:'done',label:"J'ai relu tout mon texte à voix haute",kind:'check'}],minFilled:2}
       ]}
     },
-    finalTask:{ id:'6-map', title:'Ta carte mentale', center:'Repairing a machine', intro:"Complète chaque branche avec les mots-clés de ton texte (pas des phrases entières). Elle t'aidera pour ta présentation orale.",
+    finalTask:{ id:'6-map', title:'Ta carte mentale', center:'Repairing a machine', intro:"Relis TON texte ci-dessus. Dans chaque branche, recopie uniquement des mots-clés pris dans ton texte (des mots ou de très courtes expressions, pas des phrases entières). Cette carte t'aidera pour ta présentation orale.",
+      text:{ id:'6-text', title:'Ton texte « Repairing a machine »', minWords:35,
+        intro:"Avant la carte mentale, rédige (ou recopie en l'améliorant) ton texte en anglais : 8 à 10 phrases pour expliquer à un stagiaire comment réparer une machine. Pense à : 1) une salutation / introduction, 2) le problème, 3) les étapes avec first, then, next, finally + BE + V-ing, 4) les outils. Tu pourras ensuite choisir des mots de ce texte pour ta carte mentale." },
       branches:[['b1','1. Greeting / Introduction'],['b2','2. Problem'],['b3','3. Steps (BE + ING)'],['b4','4. Tools']] }
   }
   ]
@@ -189,6 +191,7 @@ course.steps.forEach(s => {
     s.levels[L].qs.forEach((q, i) => { q.step = s.n; q.level = L; q.index = i; course.allQuestions.push(q); });
   });
   if(s.finalTask){
+    if(s.finalTask.text) course.allQuestions.push({id:s.finalTask.text.id, type:'record', prompt:'Texte rédigé avant la carte mentale — Repairing a machine', step:s.n, level:'—', index:0, final:true});
     course.allQuestions.push({id:s.finalTask.id, type:'record', prompt:'Carte mentale — Repairing a machine', step:s.n, level:'—', index:0, final:true});
   }
 });
