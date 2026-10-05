@@ -177,6 +177,7 @@
   .arena a.go{display:inline-block;background:#fff;color:var(--violet-deep);font-weight:700;text-decoration:none;border-radius:12px;padding:10px 18px;margin:8px 8px 0 0;}
   .frames{background:#FFF7CF;border-radius:14px;padding:10px 16px;margin:8px 0;font-size:15.5px;} .frames div{margin:3px 0;}
   @media (max-width:640px){ .pair{grid-template-columns:1fr;} }
+  textarea{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:16px;line-height:1.5;background:#fff;resize:vertical;}
 </style></head>
 <body>
 
@@ -552,7 +553,7 @@ function viewWriter(body, finish, alreadyDone){
   drawPick(); drawPair();
 
   const tabs = h('div', {class:'tabs'});
-  const ta = h('textarea', {rows:9, spellcheck:'false'}); const fb = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
+  const ta = h('textarea', {rows:11, spellcheck:'false', style:'min-height:240px'}); const fb = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
   const btn = h('button', {class:'btn', type:'button', style:'margin-top:10px'}, 'Vérifier mon texte');
   const hints = h('div');
   const levels = {A:['🟢 A — Je démarre en douceur','phrases à compléter'], B:['🟡 B — Je m\'entraîne davantage','structures proposées'], C:['🌸 C — Je me lance sans filet','texte libre']};

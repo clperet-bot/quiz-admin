@@ -163,6 +163,7 @@
     .indent,.keys,.q-actions,.fb,.corr{margin-left:0;}
     .map{grid-template-columns:1fr;} .lvl-head .tag{display:none;}
   }
+  textarea{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:16px;line-height:1.5;background:#fff;resize:vertical;}
 </style>
 </head>
 <body>
@@ -648,7 +649,7 @@ function viewPron(body){
     scriptBox.append(h('h3', null, '📝 Mon texte final'), h('div', {class:'readtext'}, scriptSt.answer));
     startSentences(); return;
   }
-  const ta = h('textarea', {rows:9, spellcheck:'false'}); let dr = ''; try{ dr = localStorage.getItem('oral-draft') || ''; }catch(e){} ta.value = dr || composedScript(); ta.addEventListener('input', () => { try{ localStorage.setItem('oral-draft', ta.value); }catch(e){} });
+  const ta = h('textarea', {rows:9, spellcheck:'false', style:'min-height:200px'}); let dr = ''; try{ dr = localStorage.getItem('oral-draft') || ''; }catch(e){} ta.value = dr || composedScript(); ta.addEventListener('input', () => { try{ localStorage.setItem('oral-draft', ta.value); }catch(e){} });
   const fb = h('div', {class:'fb warn hidden', style:'margin:8px 0 0'});
   const btn = h('button', {class:'btn', type:'button', style:'margin-top:10px'}, '✔ Valider mon texte');
   btn.addEventListener('click', async () => {
