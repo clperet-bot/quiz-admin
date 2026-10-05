@@ -93,6 +93,7 @@
   .spk{background:var(--blue-light);border:0;border-radius:50%;width:30px;height:30px;margin-right:8px;cursor:pointer;font-size:15px;vertical-align:middle;flex:none;}
   .wbank div{min-width:0;} @media (max-width:480px){ .wbank{grid-template-columns:1fr !important;} } .wbank{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;margin-top:6px;} .wbank i{color:var(--ink-soft);}
   .gram{background:var(--blue-light);border:2px solid var(--blue);border-radius:14px;padding:10px 14px;margin:0 0 12px;} .gram summary{cursor:pointer;font-weight:700;color:var(--violet-deep);} .gram-in{padding-top:8px;font-size:15.5px;} .gram-in p{margin:6px 0;} .gfix{color:#17603a;font-weight:600;}
+  .lvlfail{background:#FFF1F3;border-color:#F2A7B3;}
   .lvlpick{margin:4px 0 0;font-size:15.5px;color:var(--violet-deep);}
   .tab{flex:1;min-width:140px;border:2px solid transparent;border-radius:14px;padding:10px 12px;cursor:pointer;font-weight:600;font-size:15px;text-align:left;line-height:1.3;}
   .tab small{display:block;font-weight:500;font-size:13px;opacity:.85;}
@@ -317,6 +318,7 @@ function detCard(q, title, instruct, build, expected, describe, onDone){
   const st = S(q.id); const box = cardShell(q, title, instruct);
   if(st.done && (st.restored || st.frozen)){
     box.append(h('div', {class:'corr', style:'margin-left:0'}, h('small', null, 'Ma réponse'), st.answer || ''), st.feedback ? h('div', {class:'fb ' + (st.correct === false ? 'ko' : 'ok'), style:'margin-left:0'}, st.feedback) : null);
+    if(st.revealed) box.append(h('div', {class:'corr', style:'margin-left:0;background:var(--green-bg)'}, h('small', null, 'Correction à retenir'), describe(expected)));
     box.classList.add('done'); return box;
   }
   const selects = []; box.append(build(selects));
@@ -329,7 +331,7 @@ function detCard(q, title, instruct, build, expected, describe, onDone){
     selects.forEach((s, i) => { s.classList.toggle('good', res[i]); s.classList.toggle('bad', !res[i]); });
     st.tries++; const n = res.filter(Boolean).length; const ok = n === res.length; const revealed = !ok && st.tries >= 2;
     const answer = describe(vals);
-    let feedback = ok ? 'Bravo, tout est juste !' : revealed ? 'Pas tout à fait : la correction est affichée, relis-la bien.' : n + ' bonne' + (n > 1 ? 's' : '') + ' réponse' + (n > 1 ? 's' : '') + ' sur ' + res.length + '. Corrige les cases en rouge.';
+    let feedback = ok ? 'Bravo, tout est juste !' : revealed ? 'Tu n\'as pas assez bien réussi. La correction est affichée : relis-la bien, puis clique sur « Refaire ce niveau ».' : n + ' bonne' + (n > 1 ? 's' : '') + ' réponse' + (n > 1 ? 's' : '') + ' sur ' + res.length + '. Corrige les cases en rouge.';
     if(revealed) selects.forEach((s, i) => { s.value = expected[i]; s.classList.remove('bad'); s.classList.add('good'); });
     st.answer = answer; st.correct = ok; st.revealed = revealed; st.feedback = feedback; st.done = ok || revealed; st.extra = {score:n, total:res.length};
     saveAnswer(q, answer, ok, revealed, feedback, st.extra);
@@ -389,8 +391,13 @@ function aiCard(o){
 }
 
 /* ============ progression (navigation libre) ============ */
-const levelDone = (n, L) => qDone(n + L + '-1');
-const stepDone = n => ['A','B','C'].some(L => levelDone(n, L));
+const levelDone = (n, L) => { const st = STATE[n + L + '-1']; return !!(st && st.done && st.correct !== false); };
+const levelFailed = (n, L) => { const st = STATE[n + L + '-1']; return !!(st && st.done && st.correct === false); };
+// Refaire un niveau : on repart de zéro (la nouvelle tentative remplace l'ancienne dans le suivi)
+function resetLevel(n, L){ delete STATE[n + L + '-1']; }
+const stepDone = n => ['A','B','C'].every(L => levelDone(n, L));
+// Les 3 niveaux sont obligatoires, dans l'ordre A → B → C (la prof et ?test=1 peuvent tout ouvrir)
+const levelOpen = (n, L) => isTeacher() || L === 'A' || (L === 'B' && levelDone(n, 'A')) || (L === 'C' && levelDone(n, 'B'));
 const stepStarted = stepDone;
 let curLevel = 'A';
 
@@ -478,7 +485,7 @@ function stepShell(n){
 function updateChrome(){
   const {n, s, banner, nav} = chrome; if(!s) return;
   const done = stepDone(n);
-  banner.replaceChildren(...(done ? [h('div', {class:'done-banner'}, '✅ Étape ' + n + ' validée !', h('span', null, n < C.steps.length ? "Tu peux passer à l'étape suivante, ou essayer un autre niveau pour aller plus loin." : 'Parcours terminé — bravo !')), levelupReminder(s)].filter(Boolean) : [h('div', {class:'lvlpick', style:'margin:14px 0 0;text-align:center'}, h('b', null, '👆 Choisis un niveau (A, B ou C) en haut de la page et termine-le'), n < C.steps.length ? ' pour débloquer l\'étape ' + (n + 1) + '. Un seul niveau suffit : tu peux faire les autres si tu veux t\'entraîner plus.' : ' pour terminer le parcours.')]));
+  banner.replaceChildren(...(done ? [h('div', {class:'done-banner'}, '✅ Étape ' + n + ' validée !', h('span', null, n < C.steps.length ? "Tu as réussi les 3 niveaux : tu peux passer à l'étape suivante." : 'Parcours terminé — bravo !')), levelupReminder(s)].filter(Boolean) : [h('div', {class:'lvlpick', style:'margin:14px 0 0;text-align:center'}, ['A','B','C'].some(L => levelFailed(n, L)) ? h('b', {style:'color:#B3293F;display:block'}, '🔁 Un niveau est à refaire : relis la correction, puis clique sur « Refaire ce niveau ».') : null, h('b', null, '👆 Pour valider cette étape, fais les 3 niveaux, dans l\'ordre : A, puis B, puis C.'), n < C.steps.length ? ' L\'étape ' + (n + 1) + ' se débloque quand les trois sont terminés.' : ' Le parcours se termine quand les trois sont terminés.')]));
   const prev = n > 1 ? h('button', {class:'btn ghost', type:'button', onclick:() => renderStep(n - 1)}, '← Étape ' + (n - 1)) : h('span');
   let nxt;
   if(n < C.steps.length){
@@ -497,9 +504,9 @@ function shuffled(arr, seed){
   for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 }
-function levelTabs(levels, counts, redraw){
-  return h('div', {class:'tabs'}, ['A','B','C'].map(L => h('button', {type:'button', class:'tab ' + L + (curLevel === L ? ' active' : ''), onclick:() => { curLevel = L; redraw(); }},
-    (L === 'A' ? '🟢 ' : L === 'B' ? '🟡 ' : '🌸 ') + L + ' — ' + levels[L].title, h('small', null, (counts[L] ? '✅ ' : '') + (counts[L] ? 'terminé' : levels[L].tag)))));
+function levelTabs(levels, counts, redraw, n){
+  return h('div', {class:'tabs'}, ['A','B','C'].map(L => { const open = levelOpen(n, L); return h('button', {type:'button', class:'tab ' + L + (curLevel === L ? ' active' : ''), disabled:!open, style:open ? '' : 'opacity:.5;cursor:not-allowed', title:open ? '' : 'Termine d\'abord le niveau précédent', onclick:() => { if(!open) return; curLevel = L; redraw(); }},
+    (open ? (L === 'A' ? '🟢 ' : L === 'B' ? '🟡 ' : '🌸 ') : '🔒 ') + L + ' — ' + levels[L].title, h('small', null, (counts[L] ? '✅ ' : levelFailed(n, L) ? '🔁 ' : '') + (counts[L] ? 'terminé' : levelFailed(n, L) ? 'à refaire' : open ? levels[L].tag : 'termine le niveau d\'avant'))); }));
 }
 // Petit point de grammaire (niveau C) : explication + mini-activité d'auto-vérification
 function grammarBox(n){
@@ -522,7 +529,7 @@ function grammarBox(n){
 }
 function viewStep(n, body){
   const S0 = D.STEPS[n - 1], st = C.steps[n - 1];
-  const tabsHost = h('div'); body.append(h('div', {class:'lvlpick'}, h('b', null, '👇 Choisis ton niveau : '), 'A, B ou C (tu peux changer quand tu veux).'), tabsHost);
+  const tabsHost = h('div'); body.append(h('div', {class:'lvlpick'}, h('b', null, '👇 Ton parcours : '), 'les 3 niveaux sont obligatoires, dans l\'ordre A → B → C.'), tabsHost);
   body.append(h('details', {class:'vocab', open:true}, h('summary', null, '📚 Key words and phrases'), h('div', {class:'bank-grid'}, S0.vocab.map(([en, fr]) => h('div', null, spk(en), h('b', null, en), ' — ' + fr)))));
   const modelFr = h('div', {class:'fr'}, FR.model[n - 1].map((l, i) => h('div', null, h('b', null, S0.model[i][0] + ' : '), l)));
   body.append(h('div', {class:'box'}, h('h3', null, '💬 Model dialogue'), h('div', {class:'mailmodel'}, S0.model.map(([who, line]) => h('div', {class:'part'}, h('b', null, who), h('div', null, spk(line), line)))), h('div', null, h('button', {type:'button', class:'trbtn', style:'margin-right:8px', onclick:() => say(S0.model.map(m => m[1]).join(' '), 0.8)}, '🔊 Écouter tout le dialogue'), trBtn(modelFr)), modelFr));
@@ -547,11 +554,16 @@ function viewStep(n, body){
       const ta = taNode(10, S0.C.ph);
       card = aiCard({ q, title:S0.C.title, instruct:S0.C.instruct, node:ta, getText:() => ta.value.trim(), setDisabled:v => ta.disabled = v, rubric:S0.C.rubric, minWords:S0.C.minWords, wantCorrected:true, emptyMsg:'Écris d\'abord ton texte 🙂', onDone:() => draw() });
     }
+    if(!levelOpen(n, curLevel)) curLevel = ['A','B','C'].find(L => !levelDone(n, L) && levelOpen(n, L)) || 'A';
     const nextStepBtn = n < C.steps.length ? h('button', {class:'btn green', type:'button', onclick:() => renderStep(n + 1)}, 'Passer à l\'étape ' + (n + 1) + ' →') : h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉');
-    const others = ['A','B','C'].filter(L => L !== curLevel && !levelDone(n, L));
-    const choice = levelDone(n, curLevel) ? h('div', {class:'lvlnext'}, h('b', null, '🎉 Niveau ' + curLevel + ' terminé !'), h('div', null, 'Tu as validé cette étape. Maintenant, tu choisis :'),
-      h('div', {class:'lvlnext-btns'}, others.map(L => h('button', {class:'btn ghost', type:'button', onclick:() => { curLevel = L; draw(); window.scrollTo(0, 0); }}, L === 'B' ? '🟡 Essayer le niveau B (plus dur)' : L === 'C' ? '🌸 Essayer le niveau C (écrire)' : '🟢 Faire le niveau A')), nextStepBtn)) : null;
-    tabsHost.replaceChildren(levelTabs(st.levels, cnt, draw)); host.replaceChildren(h('div', {class:'lvl ' + curLevel}, h('div', {class:'lvl-head'}, h('div', {class:'lt'}, curLevel), st.levels[curLevel].title, h('span', {class:'tag'}, st.levels[curLevel].tag)), h('div', {class:'lvl-body'}, curLevel === 'C' ? grammarBox(n) : null, card)), choice);
+    const nextLvl = ['A','B','C'].find(L => !levelDone(n, L) && levelOpen(n, L));
+    const failed = levelFailed(n, curLevel);
+    const choice = failed ? h('div', {class:'lvlnext lvlfail'}, h('b', null, '😕 Niveau ' + curLevel + ' : pas assez réussi'),
+      h('div', null, 'Ce n\'est pas grave ! Relis la correction ci-dessus, puis refais le niveau pour le valider. Tu ne peux pas passer à la suite tant qu\'il n\'est pas réussi.'),
+      h('div', {class:'lvlnext-btns'}, h('button', {class:'btn', type:'button', onclick:() => { resetLevel(n, curLevel); draw(); window.scrollTo(0, 0); }}, '🔁 Refaire ce niveau'))) : levelDone(n, curLevel) ? h('div', {class:'lvlnext'}, h('b', null, '🎉 Niveau ' + curLevel + ' terminé !'),
+      stepDone(n) ? h('div', null, 'Bravo, tu as fait les 3 niveaux : l\'étape est validée.') : h('div', null, 'Ce n\'est pas fini : il te reste le niveau ' + ['A','B','C'].filter(L => !levelDone(n, L)).join(' et ') + '.'),
+      h('div', {class:'lvlnext-btns'}, stepDone(n) ? nextStepBtn : (nextLvl ? h('button', {class:'btn', type:'button', onclick:() => { curLevel = nextLvl; draw(); window.scrollTo(0, 0); }}, nextLvl === 'B' ? '🟡 Passer au niveau B →' : nextLvl === 'C' ? '🌸 Passer au niveau C →' : '🟢 Faire le niveau A →') : null))) : null;
+    tabsHost.replaceChildren(levelTabs(st.levels, cnt, draw, n)); host.replaceChildren(h('div', {class:'lvl ' + curLevel}, h('div', {class:'lvl-head'}, h('div', {class:'lt'}, curLevel), st.levels[curLevel].title, h('span', {class:'tag'}, st.levels[curLevel].tag)), h('div', {class:'lvl-body'}, curLevel === 'C' ? grammarBox(n) : null, card)), choice);
     updateChrome();
   };
   draw();
