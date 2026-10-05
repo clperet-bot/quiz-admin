@@ -259,7 +259,8 @@ function stepDone(n){
   if(n === 4) return qDone('4-t1') && qDone('4-t2');
   return false;
 }
-const stepUnlocked = n => n === 1 || stepDone(n - 1);
+function isTeacher(){ if(new URLSearchParams(location.search).get('test') === '1') return true; if(!ID) return false; const t = String(ID.norm || ID.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z]+/).filter(Boolean); return t.includes('clemence') && (t.includes('peret') || t.includes('perret')); }
+const stepUnlocked = n => isTeacher() || n === 1 || stepDone(n - 1);
 function stepStarted(n){
   if(n === 1) return !!(STATE['1-map']);
   if(n === 2) return ['A','B','C'].some(L => levelCount(L) > 0);
@@ -399,7 +400,7 @@ function updateChrome(){
   banner.replaceChildren(...(done ? [h('div', {class:'done-banner'}, '✅ Étape ' + n + ' validée !', h('span', null, n < C.steps.length ? "Tu peux passer à l'étape suivante." : 'Parcours terminé — bravo !')), levelupReminder(s)] : []));
   const prev = n > 1 ? h('button', {class:'btn ghost', type:'button', onclick:() => renderStep(n - 1)}, '← Étape ' + (n - 1)) : h('span');
   let nxt;
-  if(n < C.steps.length) nxt = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', disabled: done ? null : true, onclick:() => renderStep(n + 1)}, done ? 'Étape ' + (n + 1) + ' →' : '🔒 Étape ' + (n + 1));
+  if(n < C.steps.length) nxt = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', disabled: (done || isTeacher()) ? null : true, onclick:() => renderStep(n + 1)}, done ? 'Étape ' + (n + 1) + ' →' : '🔒 Étape ' + (n + 1));
   else nxt = done ? h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉') : h('span');
   nav.replaceChildren(prev, nxt);
 }
