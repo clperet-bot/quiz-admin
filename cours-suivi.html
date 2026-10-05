@@ -16,6 +16,7 @@
 <script src="film-data.js"></script>
 <script src="journal-data.js"></script>
 <script src="travel-data.js"></script>
+<script src="stage-data.js"></script>
 <style>
   :root{
     --ink:#1B1F2A; --ink-soft:#5A6072; --line:#E4E0F3; --paper:#F4F2FB; --white:#fff;
@@ -123,7 +124,7 @@
     </div>
 
     <div class="toolbar">
-      <select id="f-course" title="Cours"><option value="electricians-guide">⚡ Electrician's Guide</option><option value="oral-bakery-sign">🎤 Préparer mon oral</option><option value="art-to-ad">🎨 From Art to Ad</option><option value="behind-the-screen">🎬 Behind the Screen</option><option value="journal-lycee">📰 Journal du lycée (français)</option><option value="travel-survival">✈️ Travel Survival Guide</option></select>
+      <select id="f-course" title="Cours"><option value="electricians-guide">⚡ Electrician's Guide</option><option value="oral-bakery-sign">🎤 Préparer mon oral</option><option value="art-to-ad">🎨 From Art to Ad</option><option value="behind-the-screen">🎬 Behind the Screen</option><option value="journal-lycee">📰 Journal du lycée (français)</option><option value="travel-survival">✈️ Travel Survival Guide</option><option value="internship-report">💼 Internship Report (1ère)</option></select>
       <select id="f-class"><option value="">Toutes les classes</option></select>
       <button class="btn small ghost" id="refresh" type="button">Actualiser</button>
       <label><input type="checkbox" id="auto" checked> Actualiser tout seul (10 s)</label>
@@ -154,10 +155,11 @@ const COURSES = {
   'art-to-ad':          { data: window.ARTAD_COURSE, page:'cours-art-ad.html', icon:'🎨', label:'From Art to Ad (2nde MES)', target:/^(2|seconde).*mes/ },
   'behind-the-screen':  { data: window.FILM_COURSE, page:'cours-film.html', icon:'🎬', label:'Behind the Screen — My opinion' },
   'journal-lycee':      { data: window.JOURNAL_COURSE, page:'cours-journal.html', icon:'📰', label:'Journal du lycée (français 2nde)', target:/tne/ },
-  'travel-survival':    { data: window.TRAVEL_COURSE, page:'cours-travel.html', icon:'✈️', label:'Travel Survival Guide (anglais, en avance)' }
+  'travel-survival':    { data: window.TRAVEL_COURSE, page:'cours-travel.html', icon:'✈️', label:'Travel Survival Guide (anglais, en avance)' },
+  'internship-report':  { data: window.STAGE_COURSE, page:'cours-stage.html', icon:'💼', label:'Internship Report (anglais 1ère)', target:/^(1|premi)/ }
 };
 const QP = (new URLSearchParams(location.search).get('course') || '').toLowerCase();
-const CK = ({oral:'oral-bakery-sign','oral-bakery-sign':'oral-bakery-sign', art:'art-to-ad','art-to-ad':'art-to-ad', artad:'art-to-ad', film:'behind-the-screen','behind-the-screen':'behind-the-screen', journal:'journal-lycee','journal-lycee':'journal-lycee', travel:'travel-survival','travel-survival':'travel-survival'})[QP] || 'electricians-guide';
+const CK = ({oral:'oral-bakery-sign','oral-bakery-sign':'oral-bakery-sign', art:'art-to-ad','art-to-ad':'art-to-ad', artad:'art-to-ad', film:'behind-the-screen','behind-the-screen':'behind-the-screen', journal:'journal-lycee','journal-lycee':'journal-lycee', travel:'travel-survival','travel-survival':'travel-survival', stage:'internship-report','internship-report':'internship-report'})[QP] || 'electricians-guide';
 const C = COURSES[CK].data;
 document.getElementById('course-title').innerHTML = COURSES[CK].icon + ' ' + COURSES[CK].label + ' <small>Suivi en direct — qui a répondu quoi</small>';
 document.title = 'Suivi · ' + COURSES[CK].label;
@@ -197,7 +199,7 @@ document.getElementById('auto').addEventListener('change', schedule);
 document.getElementById('refresh').addEventListener('click', load);
 document.getElementById('f-class').addEventListener('change', render);
 document.getElementById('f-course').value = CK;
-document.getElementById('f-course').addEventListener('change', e => { location.search = '?course=' + ({'oral-bakery-sign':'oral','art-to-ad':'art','behind-the-screen':'film','journal-lycee':'journal','travel-survival':'travel'}[e.target.value] || 'elec'); });
+document.getElementById('f-course').addEventListener('change', e => { location.search = '?course=' + ({'oral-bakery-sign':'oral','art-to-ad':'art','behind-the-screen':'film','journal-lycee':'journal','travel-survival':'travel','internship-report':'stage'}[e.target.value] || 'elec'); });
 
 async function load(){
   const { data, error } = await supa.from('course_answers').select('*').eq('course', C.id).order('updated_at', { ascending:false }).limit(5000);

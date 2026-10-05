@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Travel Survival Guide</title>
+<title>Internship Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="travel-data.js"></script>
+<script src="stage-data.js"></script>
 <style>
   :root{
     --ink:#1B1F2A; --ink-soft:#5A6072; --line:#E4E0F3; --paper:#F4F2FB; --white:#fff;
@@ -217,7 +217,7 @@
 <body>
 
 <div class="topbar hidden" id="topbar">
-  <div class="brand">✈️ Travel Survival Guide</div>
+  <div class="brand">💼 Internship Report</div>
   <div class="who" id="who"></div>
   <button id="home-btn" type="button">Accueil</button>
 </div>
@@ -231,7 +231,7 @@ const GRADE_ENDPOINT = SUPABASE_URL + "/functions/v1/grade-advanced";
 const LEVELUP_URL = 'https://levelup-5bt.pages.dev';
 const BUCKET = 'ad-submissions';
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const C = window.TRAVEL_COURSE, D = window.TRAVEL_DATA;
+const C = window.STAGE_COURSE, D = window.STAGE_DATA;
 const FALLBACK_CLASSES = ['2nde MES','2nde TNE','2nde BMA','1ère MES','1ère MELEC'];
 const TEST_MODE = new URLSearchParams(location.search).get('test') === '1';
 
@@ -257,8 +257,8 @@ const words = t => (String(t).trim().match(/\S+/g) || []).length;
 
 /* ============ identité, état ============ */
 let ID = null; const STATE = {}; const PENDING = [];
-function loadId(){ try{ return JSON.parse(localStorage.getItem('travel-id')||'null'); }catch(e){ return null; } }
-function saveId(){ try{ localStorage.setItem('travel-id', JSON.stringify(ID)); }catch(e){} }
+function loadId(){ try{ return JSON.parse(localStorage.getItem('stage-id')||'null'); }catch(e){ return null; } }
+function saveId(){ try{ localStorage.setItem('stage-id', JSON.stringify(ID)); }catch(e){} }
 const X = id => (STATE[id] && STATE[id].extra) || {};
 const TEAM = () => '';
 async function saveAnswer(q, answer, correct, revealed, feedback, extra){
@@ -297,7 +297,7 @@ async function callAI(system, content, ms){
     return d;
   }catch(e){ return null; } finally{ clearTimeout(timer); }
 }
-const SYSTEM = `Tu es un professeur d'anglais bienveillant pour des élèves de lycée professionnel (2nde à 1ère), niveau A2 à B1. L'élève écrit un dialogue ou un e-mail en anglais pour une tâche précise décrite dans CRITÈRES (situation de voyage : aéroport, itinéraire, hôtel, restaurant, problème à régler).
+const SYSTEM = `Tu es un professeur d'anglais bienveillant pour des élèves de lycée professionnel (2nde à 1ère), niveau A2 à B1. L'élève écrit un texte, un mail ou un oral en anglais pour une tâche précise décrite dans CRITÈRES (situation de stage en entreprise : présenter son stage, décrire l'entreprise, raconter ses tâches au passé, un problème résolu, mail de remerciement, oral).
 
 RÈGLES
 - ok = true si le texte remplit les CRITÈRES et reste compréhensible. Tolère les fautes mineures, la ponctuation, les majuscules. ok = false s'il est vide, hors sujet, écrit en français, s'il reste des "___", ou s'il ne remplit pas les critères.
@@ -422,8 +422,8 @@ async function renderIdentify(){
     ID = { first:f, last:l, classe:c, name:f + ' ' + l, norm:norm(f + ' ' + l) };
     saveId(); await loadProgress(); renderHome();
   });
-  app.replaceChildren(TEST_MODE ? h('div', {class:'test-banner'}, '🧪 Mode test : rien n\'est enregistré') : null, h('div', {class:'id-card'}, h('div', {class:'banner'}, '✈️'),
-    h('div', {class:'body'}, h('h1', null, 'Travel Survival Guide'), h('p', {class:'sub'}, 'Se débrouiller en anglais en voyage'),
+  app.replaceChildren(TEST_MODE ? h('div', {class:'test-banner'}, '🧪 Mode test : rien n\'est enregistré') : null, h('div', {class:'id-card'}, h('div', {class:'banner'}, '💼'),
+    h('div', {class:'body'}, h('h1', null, 'Internship Report'), h('p', {class:'sub'}, 'Raconter, analyser et présenter mon stage en anglais'),
       h('div', {class:'field'}, h('label', null, 'Prénom'), first), h('div', {class:'field'}, h('label', null, 'Nom'), last), h('div', {class:'field'}, h('label', null, 'Classe'), sel), btn, err)));
 }
 function levelupReminder(step){
@@ -433,7 +433,7 @@ function levelupReminder(step){
     h('a', {href:LEVELUP_URL, target:'_blank', rel:'noopener'}, 'Ouvrir LevelUp'));
 }
 function isTeacher(){ if(TEST_MODE) return true; if(!ID) return false; const t = String(ID.norm || ID.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z]+/).filter(Boolean); return t.includes('clemence') && (t.includes('peret') || t.includes('perret')); }
-const FR = window.TRAVEL_FR;
+const FR = window.STAGE_FR;
 // Étapes verrouillées dans l'ordre (retour en arrière toujours possible) ; la prof (ou ?test=1) a tout ouvert
 function stepUnlocked(n){ if(isTeacher() || n === 1) return true; for(let m = 1; m < n; m++){ if(!stepDone(m)) return false; } return true; }
 // Bouton « Traduire en français » : affiche / cache un bloc français
@@ -465,15 +465,15 @@ function renderHome(){
     return h('div', {class:'rm-row' + (un ? '' : ' locked') + (ok ? ' done' : ''), onclick:() => { if(un) renderStep(s.n); }},
       h('div', {class:'badge-n' + (ok ? ' done' : '')}, ok ? '✓' : String(s.n)), h('div', {class:'rm-ribbon'}, h('div', {class:'ti'}, s.title, h('small', {class:'frti'}, FR.titles[s.n - 1])), h('span', {class:'pill'}, s.skill), stepPill(s))); });
   app.replaceChildren(TEST_MODE ? h('div', {class:'test-banner', style:'border-radius:12px;margin-bottom:12px'}, '🧪 Mode test : rien n\'est enregistré') : null,
-    h('div', {class:'hero'}, h('div', {class:'band'}, h('h1', null, '✈️ Travel Survival Guide'), h('p', null, 'Se débrouiller en anglais en voyage')),
+    h('div', {class:'hero'}, h('div', {class:'band'}, h('h1', null, '💼 Internship Report'), h('p', null, 'Raconter, analyser et présenter mon stage en anglais')),
       h('div', {class:'in'}, h('b', null, 'Your mission'), h('div', {style:'margin:4px 0 8px'}, D.MISSION), h('b', null, 'Learn how to'), h('ul', null, D.LEARN.map(x => h('li', null, x))), trBtn(missionFr), missionFr,
-        h('div', {style:'margin-top:10px;font-size:15px'}, 'À chaque étape, tu fais les 3 niveaux, dans l\'ordre : ', h('b', null, 'A'), ' (je choisis la bonne réponse), puis ', h('b', null, 'B'), ' (je complète le dialogue) et ', h('b', null, 'C'), ' (j\'écris mon propre texte). Il faut réussir chaque niveau pour passer à l\'étape suivante, et tu peux refaire un niveau raté. Tes réponses sont corrigées tout de suite et ta prof peut les voir.'))),
+        h('div', {style:'margin-top:10px;font-size:15px'}, 'À chaque étape, tu fais les 3 niveaux, dans l\'ordre : ', h('b', null, 'A'), ' (je choisis la bonne réponse), puis ', h('b', null, 'B'), ' (je complète le texte) et ', h('b', null, 'C'), ' (j\'écris mon propre texte). Il faut réussir chaque niveau pour passer à l\'étape suivante, et tu peux refaire un niveau raté. Tes réponses sont corrigées tout de suite et ta prof peut les voir.'))),
     h('div', {class:'roadmap'}, rows),
     C.steps.every(s => stepDone(s.n)) ? finishCard() : null,
     next ? h('div', {style:'margin-top:18px;text-align:center'}, h('button', {class:'btn', type:'button', onclick:() => renderStep(next.n)}, (stepStarted(next.n) ? 'Continuer · ' : 'Commencer · ') + 'étape ' + next.n)) : null);
   window.scrollTo(0,0);
 }
-function finishCard(){ return h('div', {class:'finish'}, h('h2', null, '🎉 Trip survived!'), h('p', null, 'Ta prof a reçu ton travail. Bravo, tu peux voyager sans stress !')); }
+function finishCard(){ return h('div', {class:'finish'}, h('h2', null, '🎉 Internship report done!'), h('p', null, 'Ta prof a reçu ton travail. Bravo, tu sais maintenant parler de ton stage en anglais !')); }
 
 let chrome = {};
 function stepShell(n){
@@ -510,7 +510,7 @@ function levelTabs(levels, counts, redraw, n){
 }
 // Petit point de grammaire (niveau C) : explication + mini-activité d'auto-vérification
 function grammarBox(n){
-  const G = window.TRAVEL_GRAMMAR && window.TRAVEL_GRAMMAR[n]; if(!G) return null;
+  const G = window.STAGE_GRAMMAR && window.STAGE_GRAMMAR[n]; if(!G) return null;
   const sels = G.check.map((it, i) => ({ it, s:mkSelect(shuffled(it.opts, n * 31 + i)), fix:h('span', {class:'gfix'}) }));
   const res = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
   const btn = h('button', {class:'btn', type:'button', style:'margin-top:8px', onclick:() => {

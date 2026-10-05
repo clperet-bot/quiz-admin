@@ -363,6 +363,7 @@ function stepPill(s){
   return h('span', {class:'pill'}, 'à faire');
 }
 function renderHome(){
+  try{ localStorage.removeItem('oral-step'); }catch(e){}
   setTop(true);
   const allDone = C.steps.every(s => stepDone(s.n));
   const next = C.steps.find(s => stepUnlocked(s.n) && !stepDone(s.n));
@@ -402,7 +403,7 @@ function updateChrome(){
   else nxt = done ? h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉') : h('span');
   nav.replaceChildren(prev, nxt);
 }
-function renderStep(n){ setTop(true); const body = stepShell(n); [null, viewMap, viewSpeech, viewPron, viewRec][n](body); updateChrome(); }
+function renderStep(n){ try{ localStorage.setItem('oral-step', String(n)); }catch(e){} setTop(true); const body = stepShell(n); [null, viewMap, viewSpeech, viewPron, viewRec][n](body); updateChrome(); }
 
 /* ============ ÉTAPE 1 : photo → carte mentale corrigée ============ */
 function readOnlyMap(m){
@@ -619,6 +620,14 @@ function compare(expected, heard){
   const ok = marks.filter((m, i) => m && tokens(exp[i]).length).length;
   return { marks, exp, pct:Math.round(100 * ok / total) };
 }
+async function ensureMic(){
+  if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return;
+  let st;
+  try{ st = await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch(e){ throw (e && (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError')) ? 'no-mic' : 'not-allowed'; }
+  st.getTracks().forEach(t => t.stop());
+  await new Promise(r => setTimeout(r, 250));
+}
 function listenOnce(){
   return new Promise((resolve, reject) => {
     const r = new SR(); r.lang = 'en-GB'; r.interimResults = false; r.maxAlternatives = 3; let got = null;
@@ -638,7 +647,7 @@ function viewPron(body){
     scriptBox.append(h('h3', null, '📝 Mon texte final'), h('div', {class:'readtext'}, scriptSt.answer));
     startSentences(); return;
   }
-  const ta = h('textarea', {rows:9, spellcheck:'false'}); ta.value = composedScript();
+  const ta = h('textarea', {rows:9, spellcheck:'false'}); let dr = ''; try{ dr = localStorage.getItem('oral-draft') || ''; }catch(e){} ta.value = dr || composedScript(); ta.addEventListener('input', () => { try{ localStorage.setItem('oral-draft', ta.value); }catch(e){} });
   const fb = h('div', {class:'fb warn hidden', style:'margin:8px 0 0'});
   const btn = h('button', {class:'btn', type:'button', style:'margin-top:10px'}, '✔ Valider mon texte');
   btn.addEventListener('click', async () => {
@@ -699,13 +708,21 @@ function sentCard(sentence, n, onDone){
   const mark = (m) => spans.forEach((sp, i) => { sp.classList.remove('good','bad'); sp.classList.add(m.marks[i] ? 'good' : 'bad'); });
   if(SR){
     const mic = h('button', {class:'btn small', type:'button'}, '🎙️ Je lis la phrase'); row.append(mic);
+    let skipBtn = null;
+    const showSkip = () => {
+      if(skipBtn) return;
+      skipBtn = h('button', {class:'btn ghost small', type:'button'}, 'Je continue sans micro');
+      skipBtn.addEventListener('click', () => { st.tries++; st.done = true; st.correct = null; st.answer = sentence + ' → entraîné.e (sans micro)'; saveAnswer({id, step:3, level:'—', prompt:'Phrase ' + n + ' : ' + sentence}, st.answer, null, false, 'Sans micro', null); card.classList.add('done'); card.querySelector('.q-n').textContent = '✓'; skipBtn.disabled = true; res.replaceChildren(h('div', {class:'fb ok', style:'margin:8px 0 0'}, '👍 C\'est noté, tu passes à la phrase suivante.')); onDone(); });
+      row.append(skipBtn);
+    };
     mic.addEventListener('click', async () => {
       mic.disabled = true; res.replaceChildren(h('div', {class:'fb info', style:'margin:8px 0 0'}, '🎙️ Je t\'écoute… lis la phrase maintenant.'));
       let heard;
-      try{ heard = await listenOnce(); }
+      try{ await ensureMic(); heard = await listenOnce(); }
       catch(e){
         mic.disabled = false;
-        const msg = e === 'not-allowed' || e === 'service-not-allowed' ? "Le micro est bloqué : autorise-le dans ton navigateur puis réessaie." : e === 'no-speech' ? "Je n'ai rien entendu. Rapproche-toi du micro et réessaie." : "Le micro ne répond pas. Réessaie, ou passe à la phrase suivante.";
+        showSkip();
+        const msg = e === 'no-mic' ? "Je ne trouve pas de micro sur cet appareil. Écoute la phrase avec 🔊, répète-la à voix haute, puis clique sur « Je continue sans micro »." : e === 'not-allowed' || e === 'service-not-allowed' ? "Le micro est bloqué : autorise-le dans ton navigateur puis réessaie." : e === 'no-speech' ? "Je n'ai rien entendu. Rapproche-toi du micro et réessaie." : "Le micro ne répond pas. Réessaie, ou passe à la phrase suivante.";
         res.replaceChildren(h('div', {class:'fb warn', style:'margin:8px 0 0'}, msg)); return;
       }
       mic.disabled = false;
@@ -808,7 +825,7 @@ function takeCard(t, n){
     ID = saved; await loadProgress();
     app.replaceChildren(h('div', {class:'id-card'}, h('div', {class:'body'},
       h('h1', null, 'Re-bonjour ' + saved.first + ' !'), h('p', {class:'sub'}, saved.classe + " — on reprend là où tu t'étais arrêté.e ?"),
-      h('button', {class:'btn block', type:'button', onclick:() => renderHome()}, 'Reprendre'),
+      h('button', {class:'btn block', type:'button', onclick:() => { let n = 0; try{ n = +localStorage.getItem('oral-step') || 0; }catch(e){} if(n >= 1 && n <= C.steps.length && stepUnlocked(n)) renderStep(n); else renderHome(); }}, 'Reprendre'),
       h('button', {class:'btn ghost block', type:'button', style:'margin-top:10px', onclick:() => renderIdentify()}, "Ce n'est pas moi"))));
   } else renderIdentify();
 })();
