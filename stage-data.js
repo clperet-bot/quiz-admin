@@ -5,8 +5,8 @@
 */
 (function(){
 
-const MISSION = `You did your work placement (or you are about to). Now you have to talk about it like a professional: present your placement, describe the company and the people, explain what you did, tell a problem you solved, thank your tutor and give your opinion — and finally prepare a clear oral presentation. Your mission: build your own "internship report" step by step, in English.`;
-const LEARN = ['present yourself and your placement', 'describe a company and the people', 'explain your tasks in the past', 'tell a problem and how you solved it', 'thank your tutor and give your opinion', 'prepare and give an oral presentation'];
+const MISSION = `Your **internship** is over (or about to start). Build your **report** and **present it orally**.`;
+const LEARN = ['**present** yourself and your placement', 'describe a **company** and the people', 'explain your **tasks** in the past', 'tell a **problem** and how you solved it', '**thank** your tutor and give your **opinion**', 'prepare an **oral** presentation'];
 
 const STEPS = [
  { title:'Presenting my internship', skill:'CE + EE', lu:'Compréhension écrite (CE) et Expression écrite (EE)',
@@ -119,8 +119,8 @@ window.STAGE_DATA = { MISSION, LEARN, STEPS };
 
 /* ---- Traductions françaises (bouton « Traduire ») ---- */
 window.STAGE_FR = {
-  mission: `Tu as fait ton stage (ou tu vas le faire). Maintenant, il faut en parler comme un.e professionnel.le : présenter ton stage, décrire l'entreprise et les personnes, expliquer ce que tu as fait, raconter un problème que tu as résolu, remercier ton tuteur et donner ton avis — et enfin préparer un oral clair. Ta mission : construire ton « rapport de stage » étape par étape, en anglais.`,
-  learn: ['te présenter et présenter ton stage', 'décrire une entreprise et les personnes', 'expliquer tes tâches au passé', 'raconter un problème et comment tu l\'as résolu', 'remercier ton tuteur et donner ton avis', 'préparer et présenter un oral'],
+  mission: `Ton **stage** est terminé (ou va commencer). Construis ton **rapport** et **présente-le à l'oral**.`,
+  learn: ['te **présenter** et présenter ton stage', 'décrire l\'**entreprise** et les personnes', 'expliquer tes **tâches** au passé', 'raconter un **problème** et sa solution', '**remercier** ton tuteur et donner ton **avis**', 'préparer un **oral**'],
   titles: ['Présenter mon stage', 'L\'entreprise et les personnes', 'Mes tâches et une journée type', 'Un problème et comment je l\'ai résolu', 'Remercier et donner mon avis', 'Préparer mon oral'],
   model: [
     ['Parle-moi de ton stage.', `Je m'appelle Léa et j'ai seize ans. Mon stage a eu lieu dans une entreprise d'électricité à Clermont-Ferrand.`, 'C\'était quand ?', 'Il a duré trois semaines, du 3 mars au 21 mars.', 'Qui était ton tuteur ?', 'Mon tuteur était M. Martin. Il était responsable du service maintenance.', 'Ça t\'a plu ?', 'Oui. J\'ai beaucoup appris pendant ces trois semaines.'],

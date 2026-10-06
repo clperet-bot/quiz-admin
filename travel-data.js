@@ -5,8 +5,8 @@
 */
 (function(){
 
-const MISSION = "You are going to spend three days in London with a friend. You will need English at the airport, in the street, at the hotel and at the restaurant — and sometimes things will go wrong! Your mission: learn the key sentences, then write your own mini-dialogues to survive your trip.";
-const LEARN = ['check in at the airport','ask for and give directions','book a hotel room','order a meal and pay','explain a problem politely'];
+const MISSION = "Three days in **London** with a friend. Get by in English: **airport, street, hotel, restaurant**.";
+const LEARN = ['**check in** at the airport','ask for and give **directions**','**book** a hotel room','**order** a meal and pay','explain a **problem** politely'];
 
 // Étapes : { title, skill, lu, goal, vocab, model, read?, A:{items}, B:{bank, lines}, C:{title, instruct, rubric, minWords, ph} }
 const STEPS = [
@@ -107,8 +107,8 @@ window.TRAVEL_DATA = { MISSION, LEARN, STEPS };
 
 /* ---- Traductions françaises (bouton « Traduire ») ---- */
 window.TRAVEL_FR = {
-  mission: "Tu vas passer trois jours à Londres avec un.e ami.e. Tu auras besoin de l'anglais à l'aéroport, dans la rue, à l'hôtel et au restaurant — et parfois, tout ne se passera pas comme prévu ! Ta mission : apprendre les phrases clés, puis écrire tes propres mini-dialogues pour survivre pendant ton voyage.",
-  learn: ["s'enregistrer à l'aéroport", "demander et donner son chemin", "réserver une chambre d'hôtel", "commander un repas et payer", "expliquer un problème poliment"],
+  mission: "Trois jours à **Londres** avec un.e ami.e. Débrouille-toi en anglais : **aéroport, rue, hôtel, restaurant**.",
+  learn: ["**s'enregistrer** à l'aéroport", "demander et donner son **chemin**", "**réserver** une chambre d'hôtel", "**commander** un repas et payer", "expliquer un **problème** poliment"],
   titles: ["À l'aéroport", "Trouver son chemin", "À l'hôtel", "Au restaurant", "Quand ça se passe mal"],
   model: [
     ["Bonjour. Votre passeport, s'il vous plaît.", "Voilà.", "Enregistrez-vous des bagages ?", "Oui, une valise.", "Vous voulez une place côté hublot ou côté couloir ?", "Côté hublot, s'il vous plaît.", "Voici votre carte d'embarquement. Votre vol part de la porte 12 à 10 h 45."],

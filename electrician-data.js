@@ -20,7 +20,7 @@ const course = {
   title: "Electrician's Guide",
   subtitle: 'Installation and Safety',
   tag: 'English TNE',
-  mission: "You are an experienced technician. A new trainee is learning about electrical equipment. Your task is to explain how to use the tools, read a technical manual, and describe a repair step by step — in English.",
+  mission: "You are an experienced **technician**. Explain your **tools**, read a **manual**, and describe a **repair** to a trainee.",
   learnHow: ['read a technical guide','install and test equipment','explain your work to a trainee'],
   icons: [['📘','Technical guide'],['🔎','Test equipment'],['🧑‍🏫','Mentor a trainee']],
   steps: [
@@ -32,7 +32,7 @@ const course = {
     vocab:[['contactor','contacteur'],['wires','fils'],['screwdriver','tournevis'],['fuse','fusible'],['pliers','pince'],['cover','capot'],['gloves','gants'],['machine','machine'],['to use','utiliser'],['to check','vérifier'],['to open / close','ouvrir / fermer'],['to connect','connecter']],
     levels:{
       A:{ title:'Je démarre en douceur', tag:'QCM guidé', intro:null, qs:[
-        {id:'1A-1',type:'mcq',prompt:'🔧 (tournevis) — choisis le bon mot anglais.',options:['pliers','screwdriver','gloves'],answer:'screwdriver',hint:"Regarde la banque de vocabulaire : « tournevis » se dit…"},
+        {id:'1A-1',type:'mcq',prompt:'🔧 (tournevis) — choisis le bon mot anglais.',options:['pliers','screwdriver','gloves'],answer:'screwdriver',hint:"Regarde la liste de vocabulaire : « tournevis » se dit…"},
         {id:'1A-2',type:'mcq',prompt:'🧤 (gants) — choisis le bon mot anglais.',options:['contactor','wires','gloves'],answer:'gloves',hint:"Regarde la banque de vocabulaire : « gants » se dit…"},
         {id:'1A-3',type:'mcq',prompt:'🛠️ (pince) — choisis le bon mot anglais.',options:['pliers','fuse','cover'],answer:'pliers',hint:"Regarde la banque de vocabulaire : « pince » se dit…"},
         {id:'1A-4',type:'gap',prompt:'Complète avec le mot qui manque.',bank:'screwdriver / gloves / pliers / contactor',parts:['I wear ',{a:['gloves']},' for safety.']},

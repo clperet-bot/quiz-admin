@@ -178,6 +178,7 @@
   .frames{background:#FFF7CF;border-radius:14px;padding:10px 16px;margin:8px 0;font-size:15.5px;} .frames div{margin:3px 0;}
   @media (max-width:640px){ .pair{grid-template-columns:1fr;} }
   textarea{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:16px;line-height:1.5;background:#fff;resize:vertical;}
+  .hl{background:linear-gradient(transparent 55%,#FFE97F 55%);font-weight:700;padding:0 2px;}
 </style></head>
 <body>
 
@@ -376,13 +377,14 @@ function renderHome(){
   app.replaceChildren(
     h('div', {class:'hero'},
       h('div', {class:'band'}, h('h1', null, '🎨 From Art to Ad'), h('p', null, 'Ma publicité et mon texte de comparaison')),
-      h('div', {class:'in'}, h('b', null, 'Comment ça marche ? '), "On commence par faire le point : où en es-tu dans ta publicité et dans ton texte ? Ensuite, le parcours s'adapte à ta situation. Tes réponses sont envoyées à ta prof.")),
+      h('div', {class:'in'}, rich("**Fais le point** sur ta pub et ton texte : le parcours **s'adapte** à toi."))),
     h('div', {class:'roadmap'}, rows),
     allDone ? finishCard() : (next ? h('div', {style:'margin-top:18px;text-align:center'}, h('button', {class:'btn', type:'button', onclick:() => renderStep(next.n)}, (stepStarted(next.n) ? 'Continuer · ' : 'Commencer · ') + 'étape ' + next.n)) : null));
   window.scrollTo(0,0);
 }
 function finishCard(){ return h('div', {class:'finish'}, h('h2', null, '🎉 Parcours terminé !'), h('p', null, 'Ta prof a bien reçu ton travail. Tu peux continuer à t\'entraîner sur ClassArena quand tu veux.'), arenaCard(false)); }
 
+const rich = s => { const sp = document.createElement('span'); sp.innerHTML = String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/\*\*(.+?)\*\*/g, '<b class="hl">$1</b>'); return sp; };
 let chrome = {};
 function stepShell(n){
   const s = C.steps[n-1];

@@ -183,6 +183,7 @@
     .lvl-head .tag{display:none;}
   }
   textarea{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:16px;line-height:1.5;background:#fff;resize:vertical;}
+  .hl{background:linear-gradient(transparent 55%,#FFE97F 55%);font-weight:700;padding:0 2px;}
 </style>
 </head>
 <body>
@@ -447,7 +448,7 @@ function renderQuestion(q, num){
   const st = STATE[q.id] || (STATE[q.id] = {tries:0});
   const box = h('div', {class:'q' + (st.done ? ' done' + (st.correct === false ? ' wrong' : '') : ''), id:'q-' + q.id});
   box.append(h('div', {class:'q-head'}, h('div', {class:'q-n'}, st.done ? (st.correct === false ? '•' : '✓') : String(num)), h('div', {class:'q-p'}, q.prompt)));
-  if(q.bank) box.append(h('div', {class:'q-bank'}, 'Banque de mots : ' + q.bank));
+  if(q.bank) box.append(h('div', {class:'q-bank'}, 'La liste : ' + q.bank));
 
   // déjà fait (reprise ou changement de niveau) : affichage figé
   if(st.done && (st.restored || st.frozen)){
@@ -559,13 +560,13 @@ function renderHome(){
     h('div', {class:'hero'},
       h('img', {src:'hero.jpg', alt:''}),
       h('div', {class:'t'}, h('h1', null, "ELECTRICIAN'S GUIDE"), h('h2', null, 'INSTALLATION AND SAFETY')),
-      h('div', {class:'mission'}, h('b', null, 'Your mission'), h('div', null, C.mission)),
+      h('div', {class:'mission'}, h('b', null, 'Your mission'), h('div', null, rich(C.mission))),
       h('div', {class:'ribbon-learn'}, h('i', null, 'Learn how to'), h('ul', null, C.learnHow.map(x => h('li', null, x)))),
       h('div', {class:'icons'}, C.icons.map(([e,t]) => h('div', null, h('div', {class:'ic'}, e), t))),
       h('div', {class:'abc'},
-        h('div', {class:'a'}, h('b', null, '🟢 A — Je démarre en douceur'), 'Exercices guidés, choix multiples, vocabulaire donné.'),
-        h('div', {class:'b'}, h('b', null, "🟡 B — Je m'entraîne davantage"), 'Exercices avec banque de mots et traductions en aide.'),
-        h('div', {class:'c'}, h('b', null, '🌸 C — Je me lance sans filet'), 'Production libre, sans aide, pour aller plus loin.')),
+        h('div', {class:'a'}, h('b', null, '🟢 A — Je démarre en douceur'), 'Exercices guidés et choix multiples.'),
+        h('div', {class:'b'}, h('b', null, "🟡 B — Je m'entraîne davantage"), 'Exercices avec la liste de mots et les traductions.'),
+        h('div', {class:'c'}, h('b', null, '🌸 C — Je me lance sans filet'), 'Production libre, sans aide.')),
       h('div', {class:'how'}, h('b', null, 'Comment avancer ? '), "À chaque étape, choisis le niveau qui te convient (A, B ou C) — tu peux changer de niveau à chaque étape. Va aussi loin que tu peux. Tes réponses sont corrigées tout de suite, et ta prof peut les voir : l'étape suivante se débloque quand tu as terminé un niveau.")),
     h('div', {class:'roadmap'}, rows),
     allDone ? finishCard() : (next ? h('div', {style:'margin-top:18px;text-align:center'}, h('button', {class:'btn', type:'button', onclick:() => renderStep(next.n)}, (stepStarted(next) ? 'Continuer · ' : 'Commencer · ') + 'étape ' + next.n)) : null));
@@ -579,6 +580,7 @@ function finishCard(){
 }
 
 /* ----- vue d'une étape ----- */
+const rich = s => { const sp = document.createElement('span'); sp.innerHTML = String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/\*\*(.+?)\*\*/g, '<b class="hl">$1</b>'); return sp; };
 let chrome = {};
 function renderStep(n){
   if(!stepUnlocked(C.steps[n-1])) return renderHome();

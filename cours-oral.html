@@ -164,6 +164,7 @@
     .map{grid-template-columns:1fr;} .lvl-head .tag{display:none;}
   }
   textarea{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:16px;line-height:1.5;background:#fff;resize:vertical;}
+  .hl{background:linear-gradient(transparent 55%,#FFE97F 55%);font-weight:700;padding:0 2px;}
 </style>
 </head>
 <body>
@@ -375,15 +376,16 @@ function renderHome(){
   app.replaceChildren(
     h('div', {class:'hero'},
       h('div', {class:'band'}, h('h1', null, '🎤 Préparer mon oral'), h('p', null, 'From client brief to shop sign — Present your project in English')),
-      h('div', {class:'in'}, h('b', null, 'Ton projet : '), "tu as créé un panneau pour la boulangerie Green Leaf Bakery. Ici, on se prépare à le présenter à l'oral.",
-        h('ul', null, h('li', null, "ta carte mentale est refaite proprement et corrigée à partir d'une photo,"), h('li', null, 'tu écris et corriges ton discours,'), h('li', null, 'tu travailles la prononciation phrase par phrase,'), h('li', null, "tu t'enregistres et tu te réécoutes pour progresser."))),
-      h('div', {class:'in', style:'padding-top:0'}, h('b', null, 'Comment avancer ? '), "Les étapes se débloquent l'une après l'autre. Tes réponses sont corrigées tout de suite et ta prof peut les voir. Ton enregistrement audio reste sur ton appareil.")),
+      h('div', {class:'in'}, h('b', null, 'Ton projet : '), rich("ton panneau pour **Green Leaf Bakery**. Prépare-toi à le **présenter à l'oral**."),
+        h('ul', null, h('li', null, rich('ta **carte mentale**,')), h('li', null, rich('ton **discours**,')), h('li', null, rich('la **prononciation**,')), h('li', null, rich('ton **enregistrement**.')))),
+      h('div', {class:'in', style:'padding-top:0'}, h('b', null, 'Comment avancer ? '), rich("Les étapes se **débloquent** une par une. Ton audio reste sur **ton appareil**."))),
     h('div', {class:'roadmap'}, rows),
     allDone ? finishCard() : (next ? h('div', {style:'margin-top:18px;text-align:center'}, h('button', {class:'btn', type:'button', onclick:() => renderStep(next.n)}, (stepStarted(next.n) ? 'Continuer · ' : 'Commencer · ') + 'étape ' + next.n)) : null));
   window.scrollTo(0,0);
 }
 function finishCard(){ return h('div', {class:'finish'}, h('h2', null, '🎉 Tu es prêt.e pour ton oral !'), h('p', null, 'Relis ta carte mentale, réécoute-toi une dernière fois et respire : tu connais ton sujet.')); }
 
+const rich = s => { const sp = document.createElement('span'); sp.innerHTML = String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/\*\*(.+?)\*\*/g, '<b class="hl">$1</b>'); return sp; };
 let chrome = {};
 function stepShell(n){
   const s = C.steps[n-1];
@@ -549,7 +551,7 @@ function viewSpeech(body){
   draw();
 }
 function vocabBox(){
-  return h('details', {class:'vocab'}, h('summary', null, '📖 Banque de vocabulaire'),
+  return h('details', {class:'vocab'}, h('summary', null, '📖 Liste de vocabulaire'),
     Object.entries(VOCAB).map(([t, list]) => h('div', null, h('div', {class:'vh'}, t), h('div', {class:'bank-grid'}, list.map(([en, fr]) => h('div', null, h('b', null, en), ' — ' + fr))))));
 }
 function keysFor(p){

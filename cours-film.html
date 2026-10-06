@@ -191,6 +191,7 @@
   .frm{margin:0 0 8px;} .frm label{display:block;font-weight:600;font-size:15px;margin-bottom:3px;}
   .frm input[type=text],.fld input[type=text]{width:100%;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:16px;}
   textarea{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:16px;line-height:1.5;background:#fff;resize:vertical;}
+  .hl{background:linear-gradient(transparent 55%,#FFE97F 55%);font-weight:700;padding:0 2px;}
 </style></head>
 <body>
 
@@ -435,7 +436,7 @@ function renderHome(){
   });
   app.replaceChildren(
     h('div', {class:'hero'}, h('div', {class:'band'}, h('h1', null, '🎬 Behind the Screen'), h('p', null, 'My opinion · Spider-Man: Brand New Day')),
-      h('div', {class:'in'}, h('b', null, 'Comment ça marche ? '), "Dis-nous d'abord où tu en es dans ton livret : le parcours te propose ensuite uniquement ce qu'il te reste à faire, et ceux qui ont tout fini ont un défi plus complexe (niveau B1). Tes réponses sont corrigées tout de suite et ta prof peut les voir.")),
+      h('div', {class:'in'}, rich("**1.** Dis où tu en es. **2.** Fais ce qu'il te **reste**. **3.** Tout fini ? Un **défi B1** t'attend."))),
     h('div', {class:'roadmap'}, rows),
     allRequiredDone() && path() ? finishCard() : null,
     next ? h('div', {style:'margin-top:18px;text-align:center'}, h('button', {class:'btn', type:'button', onclick:() => renderStep(next.n)}, (stepStarted(next.n) ? 'Continuer · ' : 'Commencer · ') + 'étape ' + next.n)) : null,
@@ -444,6 +445,7 @@ function renderHome(){
 }
 function finishCard(){ return h('div', {class:'finish'}, h('h2', null, '🎉 Parcours terminé !'), h('p', null, 'Ta prof a reçu ton travail. Bravo !')); }
 
+const rich = s => { const sp = document.createElement('span'); sp.innerHTML = String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/\*\*(.+?)\*\*/g, '<b class="hl">$1</b>'); return sp; };
 let chrome = {};
 function stepShell(n){
   const s = C.steps[n-1];

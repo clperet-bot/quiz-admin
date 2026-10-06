@@ -262,6 +262,7 @@
   .spk{background:var(--blue-light);}
   textarea{border-radius:18px !important;}
   @media (max-width:560px){ .rm-row{width:100%;} .pol{width:78px;} .pol .ph{height:54px;font-size:26px;} .y2026{font-size:36px;} }
+  .hl{background:linear-gradient(transparent 55%,#FFE97F 55%);font-weight:700;padding:0 2px;}
 </style></head>
 <body>
 
@@ -512,15 +513,15 @@ function polStrip(){ return h('div', null, h('div', {class:'y2026'}, ...'2026'.s
 function neonTitle(){ return h('div', {class:'neonwrap'}, h('h1', {class:'neon'}, h('span', {class:'n1'}, 'My Year'), h('span', {class:'n2'}, 'in Pictures'))); }
 function renderHome(){
   setTop(true);
-  const missionFr = h('div', {class:'fr'}, h('b', null, 'Ta mission : '), FR.mission, h('div', {style:'margin-top:6px'}, h('b', null, 'Tu vas apprendre à : '), FR.learn.join(' · ')));
+  const missionFr = h('div', {class:'fr'}, h('b', null, 'Ta mission : '), rich(FR.mission), h('div', {style:'margin-top:6px'}, h('b', null, 'Tu vas apprendre à : '), ...FR.learn.flatMap((x, i) => [i ? ' · ' : '', rich(x)])));
   const next = C.steps.find(s => !stepDone(s.n) && stepUnlocked(s.n));
   const rows = C.steps.map(s => { const ok = stepDone(s.n), un = stepUnlocked(s.n);
     return h('div', {class:'rm-row' + (un ? '' : ' locked') + (ok ? ' done' : ''), onclick:() => { if(un) renderStep(s.n); }},
       h('div', {class:'badge-n' + (ok ? ' done' : '')}, ok ? '✓' : String(s.n)), h('div', {class:'rm-ribbon'}, h('div', {class:'ti'}, s.title, h('small', {class:'frti'}, FR.titles[s.n - 1])), h('span', {class:'pill'}, s.skill), stepPill(s))); });
   app.replaceChildren(TEST_MODE ? h('div', {class:'test-banner', style:'border-radius:12px;margin-bottom:12px'}, '🧪 Mode test : rien n\'est enregistré') : null,
     h('div', {class:'hero'}, h('div', {class:'band'}, neonTitle(), h('p', null, 'Raconter mon année en photos en anglais'), polStrip()),
-      h('div', {class:'in'}, h('b', null, 'Your mission'), h('div', {style:'margin:4px 0 8px'}, D.MISSION), h('b', null, 'Learn how to'), h('ul', null, D.LEARN.map(x => h('li', null, x))), trBtn(missionFr), missionFr,
-        h('div', {style:'margin-top:10px;font-size:15px'}, 'À chaque étape, tu fais les 3 niveaux, dans l\'ordre : ', h('b', null, 'A'), ' (je choisis la bonne réponse), puis ', h('b', null, 'B'), ' (je complète le texte) et ', h('b', null, 'C'), ' (j\'écris mon propre texte). Il faut réussir chaque niveau pour passer à l\'étape suivante, et tu peux refaire un niveau raté. Tes réponses sont corrigées tout de suite et ta prof peut les voir.'))),
+      h('div', {class:'in'}, h('b', null, 'Your mission'), h('div', {style:'margin:4px 0 8px'}, rich(D.MISSION)), h('b', null, 'Learn how to'), h('ul', null, D.LEARN.map(x => h('li', null, rich(x)))), trBtn(missionFr), missionFr,
+        h('div', {style:'margin-top:10px;font-size:15px'}, rich('**A → B → C**, dans l\'ordre. Niveau raté ? Tu peux le **refaire**.')))),
     h('div', {class:'roadmap'}, rows.flatMap((r, i) => i < rows.length - 1 ? [r, h('div', {class:'arrowgap' + (i % 2 ? ' l' : '')})] : [r])),
     C.steps.every(s => stepDone(s.n)) ? finishCard() : null,
     next ? h('div', {style:'margin-top:18px;text-align:center'}, h('button', {class:'btn', type:'button', onclick:() => renderStep(next.n)}, (stepStarted(next.n) ? 'Continuer · ' : 'Commencer · ') + 'étape ' + next.n)) : null);
@@ -528,6 +529,7 @@ function renderHome(){
 }
 function finishCard(){ return h('div', {class:'finish'}, h('h2', null, '🎉 My Year in Pictures done!'), h('p', null, 'Ta prof a reçu ton travail. Bravo, tu sais maintenant raconter ton année en anglais !')); }
 
+const rich = s => { const sp = document.createElement('span'); sp.innerHTML = String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/\*\*(.+?)\*\*/g, '<b class="hl">$1</b>'); return sp; };
 let chrome = {};
 function stepShell(n){
   const s = C.steps[n-1];
