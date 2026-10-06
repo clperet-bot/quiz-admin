@@ -579,7 +579,7 @@ function hebdoBox(onPick){
     Object.entries(groups).map(([g, its], idx) => h('details', {open:idx === 0}, h('summary', {style:'cursor:pointer;font-weight:700;color:var(--violet-deep);margin:6px 0'}, (g === D.G_NOW ? '🔥 ' : '') + g),
       g === D.G_NOW ? h('div', {class:'fb info', style:'margin:0 0 8px'}, 'Ces sujets sont d\'actualité. Reste factuel.le : rapporte les faits vérifiés et les différents points de vue, sans rumeur, sans prendre parti et sans accuser personne. Ne cite un.e élève que s\'il ou elle est d\'accord.') : null,
       its.map(it => mk(it)))),
-    h('details', null, h('summary', {style:'cursor:pointer;font-weight:700;color:var(--violet-deep);margin:6px 0'}, 'Autres idées d\'événements'), D.EVENTS.map(([t, w]) => mk({title:t, who:w}))));
+    h('details', null, h('summary', {style:'cursor:pointer;font-weight:700;color:var(--violet-deep);margin:6px 0'}, 'Autres idées de sujets d\'actualité'), D.EVENTS.map(([t, w]) => mk({title:t, who:w}))));
 }
 function viewSubject(body){
   const prior = X('4-subject');

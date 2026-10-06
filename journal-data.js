@@ -110,15 +110,15 @@ const FONTS = ['Sérieuse (lettres classiques, comme un vrai quotidien)','Modern
   Volontairement laissés de côté : les rappels aux enseignants et les absences de personnels.
   Chaque élément : { group, title, text, who }
 */
-// Idées d'événements proposées dans le cours (fiche « Rédaction et enquête »)
+// Autres idées de sujets d'actualité (manifestations, blocus…), proposées dans le cours
 const EVENTS = [
-  ['Une alerte incendie a fait évacuer le lycée.','la direction ou un surveillant'],
-  ['Un professeur a gagné un prix d\'innovation pédagogique.','ce professeur'],
-  ['Une élève a remporté un concours régional de robotique.','cette élève'],
-  ['Un groupe d\'élèves a organisé une collecte pour une association.','un élève du groupe ou un professeur'],
-  ['Une tempête a endommagé une partie du gymnase.','le professeur d\'EPS ou la direction'],
-  ['Un ancien élève est venu raconter son parcours professionnel.','cet ancien élève ou le professeur qui l\'a invité'],
-  ['Le proviseur a annoncé un changement d\'emploi du temps pour une durée d\'un mois.','le proviseur ou la vie scolaire']
+  ['Les manifestations lycéennes : pourquoi des élèves défilent-ils ?','des élèves qui ont manifesté, des élèves qui ont choisi de ne pas y aller'],
+  ['Les blocus devant les lycées : que se passe-t-il à l\'entrée de l\'établissement ?','la vie scolaire, la direction, des élèves'],
+  ['Un reportage dans un cortège : les slogans, l\'ambiance, les pancartes','des manifestant.es et des passant.es (avec leur accord)'],
+  ['Le droit de manifester et de bloquer : ce que dit la loi, ce que dit le règlement du lycée','un professeur d\'histoire-géographie ou de droit, la vie scolaire'],
+  ['Les cours manqués : comment rattraper pendant les blocus et les manifestations ?','des professeurs, des élèves, la direction'],
+  ['Pour ou contre le blocus : le point de vue des élèves, des parents et des professeurs','des élèves, des parents, des professeurs'],
+  ['Les examens et le bac pro : les manifestations changent-elles quelque chose ?','des élèves de terminale, des professeurs principaux']
 ];
 
 const G_NOW = 'L\'actualité du moment';
