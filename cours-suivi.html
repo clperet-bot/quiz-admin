@@ -18,6 +18,8 @@
 <script src="travel-data.js"></script>
 <script src="stage-data.js"></script>
 <script src="year-data.js"></script>
+<script src="music-data.js"></script>
+<script src="city-data.js"></script>
 <style>
   :root{
     --ink:#1B1F2A; --ink-soft:#5A6072; --line:#E4E0F3; --paper:#F4F2FB; --white:#fff;
@@ -125,7 +127,7 @@
     </div>
 
     <div class="toolbar">
-      <select id="f-course" title="Cours"><option value="electricians-guide">⚡ Electrician's Guide</option><option value="oral-bakery-sign">🎤 Préparer mon oral</option><option value="art-to-ad">🎨 From Art to Ad</option><option value="behind-the-screen">🎬 Behind the Screen</option><option value="journal-lycee">📰 Journal du lycée (français)</option><option value="travel-survival">✈️ Travel Survival Guide</option><option value="internship-report">💼 Internship Report (1ère)</option><option value="year-in-pictures">📸 My Year in Pictures</option></select>
+      <select id="f-course" title="Cours"><option value="electricians-guide">⚡ Electrician's Guide</option><option value="oral-bakery-sign">🎤 Préparer mon oral</option><option value="art-to-ad">🎨 From Art to Ad</option><option value="behind-the-screen">🎬 Behind the Screen</option><option value="journal-lycee">📰 Journal du lycée (français)</option><option value="travel-survival">✈️ Travel Survival Guide</option><option value="internship-report">💼 Internship Report (1ère)</option><option value="year-in-pictures">📸 My Year in Pictures</option><option value="music-and-me">🎧 Music &amp; Me</option><option value="survive-the-city">🚇 Survive the City</option></select>
       <select id="f-class"><option value="">Toutes les classes</option></select>
       <button class="btn small ghost" id="refresh" type="button">Actualiser</button>
       <label><input type="checkbox" id="auto" checked> Actualiser tout seul (10 s)</label>
@@ -158,10 +160,12 @@ const COURSES = {
   'journal-lycee':      { data: window.JOURNAL_COURSE, page:'cours-journal.html', icon:'📰', label:'Journal du lycée (français 2nde)', target:/tne/ },
   'travel-survival':    { data: window.TRAVEL_COURSE, page:'cours-travel.html', icon:'✈️', label:'Travel Survival Guide (anglais, en avance)', mandatory:true },
   'internship-report':  { data: window.STAGE_COURSE, page:'cours-stage.html', icon:'💼', label:'Internship Report (anglais 1ère)', target:/^(1|premi)/, mandatory:true },
-  'year-in-pictures':   { data: window.YEAR_COURSE, page:'cours-year.html', icon:'📸', label:'My Year in Pictures (anglais)', mandatory:true }
+  'year-in-pictures':   { data: window.YEAR_COURSE, page:'cours-year.html', icon:'📸', label:'My Year in Pictures (anglais)', mandatory:true },
+  'music-and-me':       { data: window.MUSIC_COURSE, page:'cours-music.html', icon:'🎧', label:'Music & Me (anglais)', mandatory:true },
+  'survive-the-city':   { data: window.CITY_COURSE, page:'cours-city.html', icon:'🚇', label:'Survive the City (anglais)', mandatory:true }
 };
 const QP = (new URLSearchParams(location.search).get('course') || '').toLowerCase();
-const CK = ({oral:'oral-bakery-sign','oral-bakery-sign':'oral-bakery-sign', art:'art-to-ad','art-to-ad':'art-to-ad', artad:'art-to-ad', film:'behind-the-screen','behind-the-screen':'behind-the-screen', journal:'journal-lycee','journal-lycee':'journal-lycee', travel:'travel-survival','travel-survival':'travel-survival', stage:'internship-report', year:'year-in-pictures','year-in-pictures':'year-in-pictures','internship-report':'internship-report'})[QP] || 'electricians-guide';
+const CK = ({oral:'oral-bakery-sign','oral-bakery-sign':'oral-bakery-sign', art:'art-to-ad','art-to-ad':'art-to-ad', artad:'art-to-ad', film:'behind-the-screen','behind-the-screen':'behind-the-screen', journal:'journal-lycee','journal-lycee':'journal-lycee', travel:'travel-survival','travel-survival':'travel-survival', stage:'internship-report', year:'year-in-pictures','year-in-pictures':'year-in-pictures', music:'music-and-me','music-and-me':'music-and-me', city:'survive-the-city','survive-the-city':'survive-the-city','internship-report':'internship-report'})[QP] || 'electricians-guide';
 const C = COURSES[CK].data;
 document.getElementById('course-title').innerHTML = COURSES[CK].icon + ' ' + COURSES[CK].label + ' <small>Suivi en direct — qui a répondu quoi</small>';
 document.title = 'Suivi · ' + COURSES[CK].label;
@@ -201,7 +205,7 @@ document.getElementById('auto').addEventListener('change', schedule);
 document.getElementById('refresh').addEventListener('click', load);
 document.getElementById('f-class').addEventListener('change', render);
 document.getElementById('f-course').value = CK;
-document.getElementById('f-course').addEventListener('change', e => { location.search = '?course=' + ({'oral-bakery-sign':'oral','art-to-ad':'art','behind-the-screen':'film','journal-lycee':'journal','travel-survival':'travel','internship-report':'stage','year-in-pictures':'year'}[e.target.value] || 'elec'); });
+document.getElementById('f-course').addEventListener('change', e => { location.search = '?course=' + ({'oral-bakery-sign':'oral','art-to-ad':'art','behind-the-screen':'film','journal-lycee':'journal','travel-survival':'travel','internship-report':'stage','year-in-pictures':'year','music-and-me':'music','survive-the-city':'city'}[e.target.value] || 'elec'); });
 
 async function load(){
   const { data, error } = await supa.from('course_answers').select('*').eq('course', C.id).order('updated_at', { ascending:false }).limit(5000);
@@ -219,8 +223,9 @@ async function load(){
 
 function ago(iso){
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if(s < 90) return 'à l\'instant'; if(s < 3600) return Math.round(s/60) + ' min'; if(s < 86400) return Math.round(s/3600) + ' h';
-  return new Date(iso).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
+  if(s < 90) return 'à l\'instant'; if(s < 3600) return Math.round(s/60) + ' min';
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'}) + ' à ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}).replace(':', 'h');
 }
 const isDone = r => r.is_correct === true || r.revealed === true || (r.is_correct === null && !!r.answer);
 
@@ -266,7 +271,7 @@ function render(){
           }
           // cours à niveaux obligatoires : on montre A, B, C séparément (✓ = réussi, ↻ = raté à refaire)
           if(COURSES[CK].mandatory){
-            const ld = ['A','B','C'].map(L => { const qs = st.levels[L].qs; const rr = qs.map(q => done[q.id]).filter(Boolean); const all = rr.length === qs.length && rr.every(isDone); const ok = all && rr.every(r => r.is_correct !== false && !r.revealed); return {L, started:rr.length > 0, ok, fail:all && !ok}; });
+            const ld = ['A','B','C'].map(L => { const qs = st.levels[L].qs; const rr = qs.map(q => done[q.id]).filter(Boolean); const all = rr.length === qs.length && rr.every(isDone); const ok = all && rr.every(r => r.is_correct !== false); return {L, started:rr.length > 0, ok, fail:all && !ok}; });
             const fin = !st.finalTask || (done[st.finalTask.id] && isDone(done[st.finalTask.id]));
             if(!ld.some(x => x.started)) return `<div class="sc" title="Étape ${st.n} — pas commencée">${st.n}<small>—</small></div>`;
             const full = ld.every(x => x.ok) && fin;
@@ -428,7 +433,7 @@ function detail(s){
       const r = byQ[q.id];
       const mark = r.is_correct === true ? '<span class="mark ok">✓ juste</span>' : r.is_correct === false ? '<span class="mark ko">✗ faux</span>' : '<span class="mark na">enregistré</span>';
       const first = r.first_correct === true ? 'juste du 1er coup' : r.first_correct === false ? '1er essai faux' : '';
-      return `<div class="qline"><div class="id">${esc(q.id)}</div><div><div class="p">${esc(q.prompt)}</div><div class="a">${mark}${r.revealed ? '<span class="mark rev">correction affichée</span>' : ''}<span style="color:var(--ink-soft);font-size:13px">${r.attempts} essai${r.attempts > 1 ? 's' : ''}${first ? ' · ' + first : ''} · ${ago(r.updated_at)}</span></div><div class="a" style="margin-top:3px">${esc(r.answer)}</div>${extraHtml(r)}${r.feedback ? `<div class="fb">↳ ${esc(r.feedback)}</div>` : ''}${r.first_answer && r.first_answer !== r.answer ? `<div class="fb">1ère réponse : ${esc(r.first_answer)}</div>` : ''}</div></div>`;
+      return `<div class="qline"><div class="id">${esc(q.id)}</div><div><div class="p">${esc(q.prompt)}</div><div class="a">${mark}${r.revealed ? (r.is_correct === true ? '<span class="mark ok">refait et réussi ✓</span>' : '<span class="mark rev">correction affichée</span>') : ''}<span style="color:var(--ink-soft);font-size:13px">${r.attempts} essai${r.attempts > 1 ? 's' : ''}${first ? ' · ' + first : ''} · ${ago(r.updated_at)}</span></div><div class="a" style="margin-top:3px">${esc(r.answer)}</div>${extraHtml(r)}${r.feedback ? `<div class="fb">↳ ${esc(r.feedback)}</div>` : ''}${r.first_answer && r.first_answer !== r.answer ? `<div class="fb">1ère réponse : ${esc(r.first_answer)}</div>` : ''}</div></div>`;
     }).join('') + '</div>';
   }).join('') || '<div class="empty">Rien à afficher.</div>';
 }
