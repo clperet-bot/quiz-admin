@@ -86,6 +86,12 @@
   .lu-remind{background:#fff;border:2px solid var(--violet);border-radius:16px;padding:12px 16px;margin:0 0 16px;font-size:15.5px;}
   .lu-remind b{color:var(--violet-deep);}
   .lu-remind a{display:inline-block;margin-top:8px;background:var(--violet);color:#fff;text-decoration:none;font-weight:600;border-radius:12px;padding:8px 16px;}
+  .todo-box{background:var(--amber-bg);color:#5a3f00;border:2px solid #E8B923;border-radius:16px;padding:14px 16px;margin:6px 0 14px;font-size:15.5px;}
+  .todo-box .todo-t{margin:8px 0 4px;font-weight:600;}
+  .todo-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border-radius:12px;padding:8px 10px;margin-top:6px;font-weight:600;}
+  .todo-row .btn{white-space:nowrap;flex:none;}
+  .locked-btn{opacity:.55;cursor:pointer;}
+  .flash{animation:flash 2.2s ease;} @keyframes flash{0%,60%{box-shadow:0 0 0 4px #E8B923;}100%{box-shadow:0 0 0 0 transparent;}}
   .step-nav{display:flex;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap;}
 
   .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px;}
@@ -250,6 +256,10 @@ const words = t => (String(t).trim().match(/\S+/g) || []).length;
 
 /* ============ identité, état ============ */
 let ID = null; const STATE = {}; const PENDING = [];
+// sauvegardes en attente (réseau coupé) : gardées aussi dans le navigateur pour ne rien perdre si la page est rechargée
+function pendKey(){ return 'journal-pending'; }
+function persistPending(){ try{ localStorage.setItem(pendKey(), JSON.stringify(PENDING)); }catch(e){} }
+function restorePending(){ try{ const a = JSON.parse(localStorage.getItem(pendKey()) || '[]'); if(Array.isArray(a)) a.forEach(p => PENDING.push(p)); }catch(e){} }
 function loadId(){ try{ return JSON.parse(localStorage.getItem('journal-id')||'null'); }catch(e){ return null; } }
 function saveId(){ try{ localStorage.setItem('journal-id', JSON.stringify(ID)); }catch(e){} }
 const X = id => (STATE[id] && STATE[id].extra) || {};
@@ -271,17 +281,25 @@ async function saveAnswer(q, answer, correct, revealed, feedback, extra){
   const payload = { p_course:C.id, p_classe:ID.classe, p_student:ID.name, p_norm:ID.norm, p_step:q.step, p_level:q.level || '—',
     p_qid:q.id, p_prompt:clip(q.prompt, 300), p_answer:clip(answer, 6000), p_correct:correct, p_revealed:!!revealed, p_feedback:clip(feedback, 1500), p_extra:Object.keys(ex).length ? ex : null };
   try{ const { error } = await supa.rpc('save_course_answer_v2', payload); if(error) throw error; }
-  catch(e){ PENDING.push(payload); document.getElementById('sync-warn').classList.remove('hidden'); }
+  catch(e){ PENDING.push(payload); persistPending(); document.getElementById('sync-warn').classList.remove('hidden'); }
 }
 setInterval(async () => {
   if(!PENDING.length) return;
   const batch = PENDING.splice(0);
   for(const p of batch){ try{ const { error } = await supa.rpc('save_course_answer_v2', p); if(error) throw error; } catch(e){ PENDING.push(p); } }
+  persistPending();
   if(!PENDING.length) document.getElementById('sync-warn').classList.add('hidden');
 }, 8000);
+async function flushPending(){
+  restorePending(); if(!PENDING.length) return;
+  const batch = PENDING.splice(0);
+  for(const p of batch){ try{ const { error } = await supa.rpc('save_course_answer_v2', p); if(error) throw error; } catch(e){ PENDING.push(p); } }
+  persistPending();
+}
 async function loadProgress(){
   Object.keys(STATE).forEach(k => delete STATE[k]);
   if(TEST_MODE) return;
+  await flushPending();
   const { data } = await supa.rpc('get_course_progress_v2', { p_course:C.id, p_classe:ID.classe, p_norm:ID.norm });
   (data || []).forEach(r => {
     const done = r.is_correct === true || r.revealed === true || (r.is_correct === null && !!r.answer);
@@ -474,15 +492,32 @@ function stepShell(n){
   const goal = h('div', {class:'goal'}, '🎯 ' + s.goal); const body = h('div'), banner = h('div'), nav = h('div', {class:'step-nav'});
   app.replaceChildren(head, goal, body, banner, nav); chrome = {n, s, body, banner, nav}; window.scrollTo(0,0); return body;
 }
+const CIRC = ['⓪','①','②','③','④','⑤','⑥','⑦','⑧','⑨'];
+function todoList(n){
+  return reqIds(C.steps[n-1]).filter(id => !qDone(id)).map(id => {
+    const el = document.getElementById('q-' + id); const t = el && el.querySelector('.q-p');
+    let label = t && t.firstChild ? t.firstChild.textContent.trim() : ''; const q = C.steps[n-1].qs.find(x => x.id === id);
+    if(!label) label = q.prompt;
+    const m = label.match(/^(\d)\.\s*(.*)$/); if(m) label = CIRC[+m[1]] + ' ' + m[2];
+    return {id, label};
+  });
+}
+function goToCard(id){ const el = document.getElementById('q-' + id); if(!el) return; el.scrollIntoView({behavior:'smooth', block:'start'}); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2200); }
+function todoBox(n){
+  const todo = todoList(n); if(!todo.length) return null;
+  return h('div', {class:'todo-box', id:'todo-box'}, h('b', null, '🔒 ' + (n < C.steps.length ? 'L\'étape ' + (n + 1) + ' s\'ouvre' : 'Le parcours sera terminé') + ' quand tout est fait.'),
+    h('div', {class:'todo-t'}, 'Il te reste :'),
+    todo.map(t => h('div', {class:'todo-row'}, h('span', null, t.label), h('button', {class:'btn small ghost', type:'button', onclick:() => goToCard(t.id)}, 'Y aller'))));
+}
 function updateChrome(){
   const {n, s, banner, nav} = chrome; if(!s) return;
   const done = stepDone(n);
-  banner.replaceChildren(...(done ? [h('div', {class:'done-banner'}, '✅ Étape ' + n + ' validée !', h('span', null, n < C.steps.length ? "Tu peux passer à l'étape suivante." : 'Parcours terminé — bravo !')), levelupReminder(s)].filter(Boolean) : []));
+  banner.replaceChildren(...(done ? [h('div', {class:'done-banner'}, '✅ Étape ' + n + ' validée !', h('span', null, n < C.steps.length ? "Tu peux passer à l'étape suivante." : 'Parcours terminé — bravo !')), levelupReminder(s)].filter(Boolean) : [isTeacher() ? null : todoBox(n)].filter(Boolean)));
   const prev = n > 1 ? h('button', {class:'btn ghost', type:'button', onclick:() => renderStep(n - 1)}, '← Étape ' + (n - 1)) : h('span');
   let nxt;
   if(n < C.steps.length){
     if(stepUnlocked(n + 1)) nxt = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', onclick:() => renderStep(n + 1)}, 'Étape ' + (n + 1) + ' →');
-    else nxt = h('button', {class:'btn', type:'button', disabled:true, style:'opacity:.5;cursor:not-allowed', title:'Valide cette étape pour débloquer la suivante'}, '🔒 Étape ' + (n + 1));
+    else nxt = h('button', {class:'btn locked-btn', type:'button', 'aria-disabled':'true', onclick:() => { const b = document.getElementById('todo-box'); if(b){ b.scrollIntoView({behavior:'smooth', block:'center'}); b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 2200); } }}, '🔒 Étape ' + (n + 1));
   }
   else nxt = done ? h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉') : h('span');
   nav.replaceChildren(prev, nxt);
@@ -587,7 +622,7 @@ function viewSubject(body){
   const subject = inp('Ex. : Les cours à distance pendant les manifestations', prior.subject);
   const rub = rubs.length ? mkSelect(rubs) : inp('Ex. : Actualité du lycée', prior.rubrique); if(prior.rubrique) rub.value = prior.rubrique;
   const who = inp('Ex. : Mme Martin (professeure), Yanis (délégué), la CPE, la direction', prior.who);
-  const why = taNode(3, 'Ce sujet intéressera les lecteurs parce que…');
+  const why = taNode(3, 'Ce sujet intéressera les lecteurs parce que…', prior.why);
   const profs = D.PROFILES.map(l => { const c = h('input', {type:'checkbox'}); c.checked = (prior.profiles || []).includes(l); return [l, c]; });
   body.append(h('div', {class:'box'}, h('h3', null, 'Étape 1 de l\'enquête : choisir son sujet'), h('div', {style:'font-size:15.5px'}, 'Ton sujet doit être en lien avec le lycée ou les élèves : un événement (sortie, tournoi, spectacle), un projet, une activité d\'un club, un portrait d\'élève ou de professeur, un débat sur un sujet qui concerne les jeunes. Tu peux aussi parler de ',
     h('b', null, 'ce qui se passe en ce moment'), ' : les cours à distance, les manifestations dans les lycées, ce qui s\'est passé à Godefroy…')));
@@ -604,7 +639,7 @@ function viewSubject(body){
     gate:() => { const sel = profs.filter(([, c]) => c.checked).map(([l]) => l); if(sel.length < 3) return 'Pour une vraie pluralité de témoignages, choisis au moins 3 profils différents (tu en as ' + sel.length + ') 🙂'; if(sel.every(l => l === D.PROFILES[0])) return 'Tu ne peux pas interroger que des élèves : ajoute au moins un autre profil (professeur, personnel, direction…) 🙂'; return null; },
     setDisabled:v => { subject.disabled = v; rub.disabled = v; who.disabled = v; why.disabled = v; profs.forEach(([, c]) => c.disabled = v); }, minWords:16, context:() => typeCtx('sujets'),
     rubric:"Choix du sujet d'un article pour un journal de lycée et des personnes à interviewer. ok = true si : (1) le sujet est précis, en lien avec le lycée ou les élèves, et cohérent avec le type de journal et la rubrique (pour un journal d'actualité : un sujet récent) ; (2) les personnes à interviewer sont identifiables (nom ou fonction), peuvent vraiment répondre sur ce sujet et sont de profils variés (pluralité : pas que des élèves) ; (3) la raison donnée montre pourquoi les lecteurs voudront le lire. Pour un sujet sensible (manifestations, altercations), il doit rester factuel, sans accuser personne. ok = false si le sujet est trop vague (ex. « le lycée », « le sport »), sans lien avec le lycée, ou si les personnes ne peuvent pas répondre ou sont toutes du même profil.",
-    extra:() => ({subject:subject.value.trim(), rubrique:rub.value.trim(), who:who.value.trim(), profiles:profs.filter(([, c]) => c.checked).map(([l]) => l)}) }));
+    extra:() => ({subject:subject.value.trim(), rubrique:rub.value.trim(), who:who.value.trim(), why:why.value.trim(), profiles:profs.filter(([, c]) => c.checked).map(([l]) => l)}) }));
 }
 
 /* ============ ÉTAPE 5 : préparer l'enquête ============ */
