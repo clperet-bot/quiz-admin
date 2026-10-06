@@ -296,6 +296,9 @@
   .step-head .ribbon{background:transparent;color:#0C0724;border-radius:0;padding:10px 18px;font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:clamp(30px,6vw,44px);letter-spacing:.04em;line-height:1;align-items:center;}
   .step-head .ribbon .pill{background:#0C0724;color:var(--cya);border-color:#0C0724;font-family:'Space Mono',monospace;font-size:12px;}
   .step-head .frhead{flex-basis:100%;margin:0;padding:6px 18px 8px;background:#0C0724;color:var(--cya);font-size:13px;border-radius:0 0 12px 12px;border-top:2px dashed rgba(255,255,255,.35);}
+  .planbox .planrow{display:flex;gap:10px;align-items:baseline;padding:7px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap;} .planbox .planrow:last-child{border-bottom:0;}
+  .planbox .plt{flex:none;min-width:170px;color:var(--yel);font-family:'Space Mono',monospace;font-size:14px;}
+  .prefill-note{background:var(--yel);color:#0C0724;border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:14.5px;font-weight:700;}
   .goal{background:var(--card);border:2px solid var(--line);border-left:8px solid var(--yel);border-radius:14px;color:var(--txt);font-size:16.5px;}
   .box{background:var(--card);border:2px solid var(--line);border-radius:16px;box-shadow:none;color:var(--txt);}
   .box h3{font-size:26px;color:var(--yel);letter-spacing:.05em;margin:0 0 10px;}
@@ -436,7 +439,7 @@ async function callAI(system, content, ms){
     return d;
   }catch(e){ return null; } finally{ clearTimeout(timer); }
 }
-const SYSTEM = `Tu es un professeur d'anglais bienveillant pour des élèves de lycée professionnel, niveau A2 à B1. L'élève écrit un texte ou un oral en anglais pour une tâche précise décrite dans CRITÈRES (projet « Music & Me » : parler de sa musique en anglais, goûts musicaux au présent simple, présenter un.e artiste, décrire un morceau avec who / which, donner son avis avec because / although et des comparatifs, raconter un concert au prétérit, présenter sa playlist à l'oral).
+const SYSTEM = `Tu es un professeur d'anglais bienveillant pour des élèves de lycée professionnel, niveau A2 à B1. L'élève écrit un texte ou un oral en anglais pour une tâche précise décrite dans CRITÈRES (projet « Music & Me » : présenter sa musique à la classe pour choisir les morceaux de la fête de fin d'année. Les textes des étapes 1 à 4 sont les parties de la présentation finale : goûts musicaux au présent simple, présenter un.e artiste, décrire un morceau avec who / which, donner son avis avec because / although et des comparatifs, puis la présentation complète de l'étape 5 avec introduction, conclusion et question).
 
 RÈGLES
 - ok = true si le texte remplit les CRITÈRES et reste compréhensible. Tolère les fautes mineures, la ponctuation, les majuscules. ok = false s'il est vide, hors sujet, écrit en français, s'il reste des "___", ou s'il ne remplit pas les critères.
@@ -678,6 +681,8 @@ function viewStep(n, body){
   const modelFr = h('div', {class:'fr'}, FR.model[n - 1].map((l, i) => h('div', null, h('b', null, S0.model[i][0] + ' : '), l)));
   body.append(h('div', {class:'box'}, h('h3', null, '🎤 Model'), h('div', {class:'mailmodel'}, S0.model.map(([who, line]) => h('div', {class:'part'}, h('b', null, who), h('div', null, spk(line), line)))), h('div', null, h('button', {type:'button', class:'trbtn', style:'margin-right:8px', onclick:() => say(S0.model.map(m => m[1]).join(' '), 0.8)}, '🔊 Écouter tout le modèle'), trBtn(modelFr)), modelFr));
   if(S0.read){ const readFr = h('div', {class:'fr'}, FR.read[n]); body.append(h('div', {class:'box'}, h('h3', null, '📖 Read the directions'), h('div', {class:'art'}, h('p', null, S0.read)), h('div', null, h('button', {type:'button', class:'trbtn', style:'margin-right:8px', onclick:() => say(S0.read, 0.8)}, '🔊 Écouter le texte'), trBtn(readFr)), readFr)); }
+  if(S0.plan){ const planFr = h('div', {class:'fr'}, FR.plan.map(([t, x]) => h('div', null, h('b', null, t + ' : '), x)));
+    body.append(h('div', {class:'box planbox'}, h('h3', null, '📋 My plan'), h('div', {class:'planlist'}, S0.plan.map(([t, x], i) => h('div', {class:'planrow'}, h('b', {class:'plt'}, t), h('span', null, x)))), h('div', null, trBtn(planFr)), planFr)); }
   const host = h('div'); body.append(host);
   const draw = () => {
     const cnt = {A:levelDone(n, 'A'), B:levelDone(n, 'B'), C:levelDone(n, 'C')};
@@ -695,8 +700,12 @@ function viewStep(n, body){
         S0.B.lines.map(line => h('div', {class:'sentline'}, line.map(p => { if(typeof p === 'string') return p; const s = mkSelect(bank.map(b => b[0])); sels.push(s); return s; })))),
         exp, vals => { let i = 0; return S0.B.lines.map(line => line.map(p => typeof p === 'string' ? p : vals[i++]).join('')).join('\n'); }, () => draw());
     } else {
-      const ta = taNode(10, S0.C.ph);
-      card = aiCard({ q, title:S0.C.title, instruct:S0.C.instruct, node:ta, getText:() => ta.value.trim(), setDisabled:v => ta.disabled = v, rubric:S0.C.rubric, minWords:S0.C.minWords, wantCorrected:true, emptyMsg:'Écris d\'abord ton texte 🙂', onDone:() => draw() });
+      // Étape finale : on pré-remplit (modifiable) avec les textes C des étapes précédentes (réponse corrigée si elle existe)
+      let init = '', missing = 0;
+      if(S0.C.prefillFrom){ const parts = S0.C.prefillFrom.map(k => { const p = STATE[k + 'C-1']; if(!p || !p.answer) return ''; const c = p.extra && p.extra.corrected; return String((p.correct !== false && c) ? c : p.answer).trim(); }); missing = parts.filter(x => !x).length; init = parts.filter(Boolean).join('\n\n'); }
+      const ta = taNode(init ? 18 : 12, S0.C.ph, init);
+      const taBox = init ? h('div', null, h('div', {class:'prefill-note'}, '✍️ Tes textes des étapes 1 à 4 sont déjà là. Ajoute ton introduction au début, ta conclusion et ta question à la fin, puis relis et améliore.' + (missing ? ' Il manque ' + missing + ' partie' + (missing > 1 ? 's' : '') + ' : écris-' + (missing > 1 ? 'les' : 'la') + ' toi-même en suivant le plan.' : '')), ta) : ta;
+      card = aiCard({ q, title:S0.C.title, instruct:S0.C.instruct, node:taBox, getText:() => ta.value.trim(), setDisabled:v => ta.disabled = v, rubric:S0.C.rubric, minWords:S0.C.minWords, wantCorrected:true, emptyMsg:'Écris d\'abord ton texte 🙂', onDone:() => draw() });
     }
     if(!levelOpen(n, curLevel)) curLevel = ['A','B','C'].find(L => !levelDone(n, L) && levelOpen(n, L)) || 'A';
     const nextStepBtn = n < C.steps.length ? h('button', {class:'btn green', type:'button', onclick:() => renderStep(n + 1)}, 'Passer à l\'étape ' + (n + 1) + ' →') : h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉');

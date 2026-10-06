@@ -1,111 +1,96 @@
 /*
-  Survive the City — me débrouiller en anglais dans une grande ville (séjour, échange).
-  6 étapes, niveaux A / B / C à chaque étape.
+  Survive the City — présenter 3 lieux de sa ville à la classe pour la visite d'une classe anglaise.
+  5 étapes qui se cumulent : le texte écrit au niveau C de chaque étape devient une PARTIE de la présentation finale (étape 5).
+  Niveaux A / B / C à chaque étape.
   Partagé par la page élève (cours-city.html), le suivi enseignante (cours-suivi.html) et la fiche papier.
 */
 (function(){
 
-const MISSION = `An **English class** is visiting next month. Learn to **manage in the city**, then **present 3 places** to your class for the visit.`;
-const LEARN = ['buy a **ticket** and ask about **times**', 'say **where** things are', 'ask **prices** and **compare**', 'make **plans** with friends', 'tell **what went wrong**', 'recommend **3 places**'];
+const MISSION = `An **English class** is visiting next month. Step by step, prepare **3 places** to **present to your class**: the class will choose the **programme**.`;
+const LEARN = ['say **how to get there**', 'say **where** it is', 'talk about **food and prices**', 'suggest a **plan** for the visit', '**present** your city guide'];
+
+// Plan de la présentation finale (étape 5)
+const PLAN = [['Intro','Hello everyone! For the visit of our English friends…'],['Place 1','where it is + how to get there'],['Place 2','food, prices + the oldest / the best…'],['Place 3','the most… + your advice with should'],['The plan','the programme for the visit'],['Conclusion','thank the class + ask a question']];
 
 const LU1 = 'Compréhension écrite (CE) et Expression écrite (EE)';
+const SAME = ' Garde ces 3 lieux et ce texte : tu les réutiliseras à l\'étape 5.';
 
 const STEPS = [
- { title:'Getting around', skill:'CE + EE', lu:LU1,
-   goal:`Objectif : acheter un ticket et poser des questions sur les horaires.`,
-   vocab:[['a return ticket','un aller-retour'],['a day pass','un pass pour la journée'],['the timetable','l\'horaire / le tableau des horaires'],['the platform','le quai'],['the next train / bus','le prochain train / bus'],['It leaves at…','il part à…'],['How often…?','à quelle fréquence… ?'],['to change trains','changer de train'],['to get off','descendre'],['the last bus','le dernier bus']],
-   model:[['You','A return ticket to the museum, please.'],['Clerk','Here you are. That\'s six euros.'],['You','What time does the next train leave?'],['Clerk','It leaves at ten fifteen.'],['You','Which platform does it leave from? And how often do trains run?'],['Clerk','Platform four. There is a train every ten minutes.']],
+ { title:'Getting there', skill:'CE + EE', lu:LU1,
+   goal:`Objectif : expliquer comment aller à tes 3 lieux (transport, ticket, horaires).`,
+   vocab:[['take bus 12 / the tram / the train','prendre le bus 12 / le tram / le train'],['a single / a return ticket','un aller simple / un aller-retour'],['a day pass','un pass pour la journée'],['the timetable','l\'horaire'],['the platform','le quai'],['It leaves at…','il part à…'],['every ten minutes','toutes les dix minutes'],['to get off at…','descendre à…']],
+   model:[['1. The museum','To get to the museum, take bus 12: a single ticket costs two euros and the bus leaves every ten minutes.'],['2. The castle','For the castle, take the train from platform 3 at 10.30: a return ticket is six euros.'],['3. The park','To go to the park, take tram A and get off at Central Square: the last tram is at 11.45 p.m.']],
    A:{ title:'Je choisis la bonne réponse', items:[
-     { q:'What time ___ the next bus leave?', opts:['does','do','is','are'], ans:0 },
-     { q:'___ do the trains run on Sundays?', opts:['How often','How much','How many','How old'], ans:0 },
-     { q:'You want to go to the station and come back. You ask for…', opts:['a return ticket','a single ticket','a timetable','a platform'], ans:0 },
-     { q:'The last train ___ at 11.45 p.m.', opts:['leaves','leave','leaving','is leave'], ans:0 },
-     { q:'Which sentence is correct?', opts:['Which platform does the train leave from?','Which platform the train leaves from?','Which platform does the train leaves from?','Which platform do the train leave from?'], ans:0 } ] },
-   B:{ title:'Je complète le texte', bank:[['return','retour'],['platform','quai'],['timetable','horaire'],['often','souvent'],['off','descendre'],['change','changer']],
-     lines:[['A ',{a:'return'},' ticket to the museum, please.'],['Which ',{a:'platform'},' does the train leave from?'],['Check the ',{a:'timetable'},': the last bus is at 11 p.m.'],['How ',{a:'often'},' do the buses run on Sundays?'],['Get ',{a:'off'},' at the next stop.'],['You must ',{a:'change'},' trains at Central Station.']] },
-   C:{ title:`Je pose mes questions`, instruct:`Tu es à la gare. Écris un dialogue de 6 répliques avec l'employé.e : tu achètes ton ticket et tu poses tes questions sur le train.`, ph:`You: A ticket to …, please.\nClerk: …\nYou: What time …`,
-     rubric:`Dialogue de 6 répliques à la gare entre l'élève et un.e employé.e (les répliques de l'employé.e peuvent être très courtes). ok = true si l'élève demande un ticket (single, return, day pass...), pose au moins deux questions correctes parmi : What time does… leave ? / Which platform… ? / How often… ? (auxiliaire does + verbe de base, ou construction correcte), et si l'ensemble est compréhensible. Tolère les petites fautes.`, minWords:40 } },
+     { q:'To get to the museum, ___ bus 12.', opts:['take','go','get','make'], ans:0 },
+     { q:'The next train ___ at ten fifteen.', opts:['leaves','leave','leaving','is leave'], ans:0 },
+     { q:'You want to go to the castle and come back today. You buy…', opts:['a return ticket','a single ticket','a timetable','a platform'], ans:0 },
+     { q:'There is a bus ___ ten minutes.', opts:['every','each','all','at'], ans:0 } ] },
+   B:{ title:'Je complète le texte', bank:[['platform','quai'],['timetable','horaire'],['off','descendre'],['single','simple'],['change','changer']],
+     lines:[['Check the ',{a:'timetable'},': the last bus is at 11 p.m.'],['The train leaves from ',{a:'platform'},' 3.'],['Get ',{a:'off'},' at Central Square.'],['I don\'t come back today. A ',{a:'single'},' ticket, please.']] },
+   C:{ title:`J'explique comment y aller`, instruct:`Choisis 3 lieux de ta ville (ou d'une ville imaginaire). Écris 3 paragraphes séparés par une ligne vide, un par lieu, de 1 ou 2 phrases : le transport, le prix du ticket et l'horaire.` + SAME, ph:`To get to my first place, take …\n\nFor my second place, …\n\nTo go to my third place, …`,
+     rubric:`Trois paragraphes (un par lieu) expliquant comment aller à 3 lieux de la ville. ok = true si les 3 lieux sont traités, si au moins quatre éléments différents sont donnés avec des constructions correctes parmi : take + transport (bus, tram, train), single / return ticket ou day pass avec un prix, It leaves at… / the last bus is at…, every … minutes, platform, get off, et si l'ensemble est compréhensible. Tolère les petites fautes.`, minWords:30 } },
 
  { title:'Where is it?', skill:'CE + EE', lu:LU1,
-   goal:`Objectif : situer des lieux dans la ville et demander s'il y en a près d'ici.`,
-   vocab:[['next to','à côté de'],['opposite','en face de'],['between … and …','entre … et …'],['behind','derrière'],['in front of','devant'],['on the corner (of)','au coin (de)'],['across the street','de l\'autre côté de la rue'],['at the end of the street','au bout de la rue'],['Is there a … near here?','y a-t-il un … près d\'ici ?'],['There is / There are','il y a (singulier / pluriel)']],
-   model:[['You','Excuse me, is there a pharmacy near here?'],['Passer-by','Yes, there is. It\'s opposite the library.'],['You','And are there any cafés around here?'],['Passer-by','Yes, there are two. One is next to the bank.'],['You','Is the cinema far?'],['Passer-by','No. It\'s between the supermarket and the post office.']],
+   goal:`Objectif : situer tes 3 lieux dans la ville.`,
+   vocab:[['next to','à côté de'],['opposite','en face de'],['between … and …','entre … et …'],['behind','derrière'],['in front of','devant'],['on the corner (of)','au coin (de)'],['at the end of the street','au bout de la rue'],['There is / There are','il y a (singulier / pluriel)']],
+   model:[['1. The museum','The museum is in the old town, next to the cathedral.'],['2. The castle','The castle is on a hill behind the station, and there are two cafés opposite the entrance.'],['3. The park','The park is between the river and the school, and there is a bakery on the corner.']],
    A:{ title:'Je choisis la bonne réponse', items:[
-     { q:'There ___ two banks in my street.', opts:['are','is','be','has'], ans:0 },
-     { q:'___ a bakery near here?', opts:['Is there','Are there','There is','Does there'], ans:0 },
-     { q:'The cinema is ___ the bank and the park.', opts:['between','behind','opposite of','among to'], ans:0 },
-     { q:'The school is on one side of the road and the park is on the other side. The park is ___ the school.', opts:['opposite','between','behind','at'], ans:0 },
-     { q:'Which sentence is correct?', opts:['There aren\'t any shops on the corner.','There isn\'t any shops on the corner.','It hasn\'t any shops on the corner.','There not are any shops on the corner.'], ans:0 } ] },
-   B:{ title:'Je complète le texte', bank:[['next','à côté'],['opposite','en face de'],['between','entre'],['behind','derrière'],['corner','coin'],['near','près']],
-     lines:[['The pharmacy is ',{a:'next'},' to the bank.'],['The café is ',{a:'opposite'},' the station: I can see it from the door.'],['The park is ',{a:'between'},' the school and the museum.'],['The bike parking is ',{a:'behind'},' the library, at the back.'],['The bakery is on the ',{a:'corner'},' of the street.'],['Is there a supermarket ',{a:'near'},' here?']] },
-   C:{ title:`Je décris mon quartier`, instruct:`Écris 6 phrases pour situer 6 lieux de ta ville (ou d'une ville imaginaire). Utilise « there is » ou « there are » et 4 prépositions différentes.`, ph:`There is a bakery next to …\nThere are two cafés …`,
-     rubric:`Six phrases situant des lieux de la ville. ok = true si au moins 5 phrases sont compréhensibles, si « there is » et « there are » sont utilisés au moins une fois chacun correctement (accord singulier / pluriel) et si au moins 4 prépositions de lieu différentes sont correctes (next to, opposite, between, behind, in front of, on the corner, near...).`, minWords:40 } },
+     { q:'There ___ two cafés in front of the castle.', opts:['are','is','be','has'], ans:0 },
+     { q:'___ a bank near the museum?', opts:['Is there','Are there','There is','Does there'], ans:0 },
+     { q:'The cinema is on one side of the street and the bank is on the other side. The bank is ___ the cinema.', opts:['opposite','between','behind','at'], ans:0 },
+     { q:'Which sentence is correct?', opts:['There aren\'t any shops near the station.','There isn\'t any shops near the station.','It hasn\'t any shops near the station.','There not are any shops near the station.'], ans:0 } ] },
+   B:{ title:'Je complète le texte', bank:[['next','à côté'],['between','entre'],['corner','coin'],['front','devant'],['behind','derrière']],
+     lines:[['The museum is ',{a:'next'},' to the cathedral.'],['The park is ',{a:'between'},' the river and the school.'],['The bakery is on the ',{a:'corner'},' of the street.'],['There is a big square in ',{a:'front'},' of the castle.']] },
+   C:{ title:`Je situe mes lieux`, instruct:`Pour chacun de tes 3 lieux, écris 1 phrase pour dire où il est, avec 3 paragraphes séparés par une ligne vide. Utilise « there is » et « there are », et des prépositions de lieu différentes.` + SAME, ph:`My first place is next to …\n\nMy second place …\n\nThere are …`,
+     rubric:`Trois paragraphes (un par lieu) qui situent les 3 lieux de la ville. ok = true si les 3 lieux sont situés, si « there is » et « there are » sont utilisés au moins une fois chacun correctement (accord singulier / pluriel) et si au moins 3 prépositions de lieu différentes sont correctes (next to, opposite, between, behind, in front of, on the corner, near...). Tolère les petites fautes.`, minWords:30 } },
 
- { title:'Shopping', skill:'CE + EE', lu:LU1,
-   goal:`Objectif : demander un prix, essayer, comparer et dire que c'est trop cher.`,
-   vocab:[['How much is this jacket?','combien coûte cette veste ?'],['How much are these shoes?','combien coûtent ces chaussures ?'],['Can I try it on?','puis-je l\'essayer ?'],['the fitting room','la cabine d\'essayage'],['It\'s too expensive.','c\'est trop cher.'],['Do you have a cheaper one?','en avez-vous un moins cher ?'],['a bigger / smaller size','une taille au-dessus / en dessous'],['It\'s on sale.','c\'est en solde.'],['I\'ll take it.','je le prends.'],['Can I pay by card?','puis-je payer par carte ?']],
-   model:[['You','Excuse me, how much is this jacket?'],['Seller','It\'s sixty euros.'],['You','That\'s too expensive. Do you have a cheaper one?'],['Seller','Yes, this one is forty euros. It\'s on sale.'],['You','It\'s nice. Can I try it on?'],['Seller','Of course. The fitting room is over there.']],
+ { title:'Eating & shopping', skill:'CE + EE', lu:LU1,
+   goal:`Objectif : dire où manger et acheter, donner les prix et comparer.`,
+   vocab:[['How much is it? / How much are they?','combien ça coûte ?'],['It costs … euros.','ça coûte … euros.'],['cheap / expensive','pas cher / cher'],['cheaper than…','moins cher que…'],['more expensive than…','plus cher que…'],['a souvenir shop','une boutique de souvenirs'],['lunch / a snack','le déjeuner / un en-cas'],['It\'s free.','c\'est gratuit.']],
+   model:[['1. The museum','There is a café next to the museum: a sandwich is four euros, so it is cheap.'],['2. The castle','The restaurant at the castle is expensive, but the café in the village is cheaper than the restaurant.'],['3. The park','The park is free, but the T-shirts in the shop are more expensive than the postcards.']],
    A:{ title:'Je choisis la bonne réponse', items:[
-     { q:'___ are these trainers?', opts:['How much','How many','How long','How often'], ans:0 },
-     { q:'This T-shirt costs 10 euros. That one costs 15 euros. This one is ___.', opts:['cheaper','cheapest','more cheap','the cheaper'], ans:0 },
-     { q:'There isn\'t ___ milk in the fridge.', opts:['any','some','many','a'], ans:0 },
-     { q:'Can I ___ these shoes on?', opts:['try','test','taste','look'], ans:0 },
-     { q:'A watch costs 200 euros. A phone costs 500 euros. The phone is ___ than the watch.', opts:['more expensive','expensiver','most expensive','more expensively'], ans:0 } ] },
-   B:{ title:'Je complète le texte', bank:[['much','combien'],['try','essayer'],['too','trop'],['cheaper','moins cher'],['any','de'],['lot','beaucoup']],
-     lines:[['How ',{a:'much'},' is this T-shirt?'],['Can I ',{a:'try'},' it on?'],['It\'s ',{a:'too'},' expensive for me: I only have 20 euros.'],['Do you have a ',{a:'cheaper'},' one?'],['Sorry, we don\'t have ',{a:'any'},' small sizes.'],['There are a ',{a:'lot'},' of people in the shop today.']] },
-   C:{ title:`Je fais mes achats`, instruct:`Tu es dans un magasin de vêtements. Écris un dialogue de 6 répliques : tu demandes un prix, tu négocies un moins cher et tu veux essayer.`, ph:`You: Excuse me, how much …\nSeller: …\nYou: …`,
-     rubric:`Dialogue de 6 répliques dans un magasin entre l'élève et un.e vendeur.se. ok = true si l'élève demande un prix avec How much is / are (accord correct), utilise au moins un comparatif correct (cheaper, bigger, more expensive...) ou une expression comme too expensive, et demande à essayer (Can I try it on ?). Tolère les petites fautes si le sens est clair.`, minWords:45 } },
+     { q:'___ is a sandwich at this café?', opts:['How much','How many','How long','How often'], ans:0 },
+     { q:'A burger costs 12 euros. A sandwich costs 4 euros. A sandwich is ___ than a burger.', opts:['cheaper','cheapest','more cheap','the cheaper'], ans:0 },
+     { q:'A T-shirt costs 15 euros. A postcard costs 1 euro. A T-shirt is ___ than a postcard.', opts:['more expensive','expensiver','most expensive','more expensively'], ans:0 },
+     { q:'How much ___ these postcards?', opts:['are','is','do','does'], ans:0 } ] },
+   B:{ title:'Je complète le texte', bank:[['costs','coûte'],['much','combien'],['cheaper','moins cher'],['expensive','cher'],['free','gratuit']],
+     lines:[['A coffee ',{a:'costs'},' two euros.'],['How ',{a:'much'},' is the ticket to the castle?'],['The café is ',{a:'cheaper'},' than the restaurant.'],['The T-shirts are more ',{a:'expensive'},' than the postcards.']] },
+   C:{ title:`Je parle de manger et d'acheter`, instruct:`Pour chacun de tes 3 lieux, écris 1 ou 2 phrases, en 3 paragraphes séparés par une ligne vide : où manger ou acheter, les prix, et une comparaison.` + SAME, ph:`Near my first place, there is …\n\nAt my second place, …\n\nAt my third place, …`,
+     rubric:`Trois paragraphes (un par lieu) sur où manger ou acheter et les prix. ok = true si les 3 lieux sont traités, si au moins deux prix sont donnés correctement (is / costs … euros, It's free) et si au moins un comparatif correct est utilisé (cheaper than, more expensive than, bigger than...), et si l'ensemble est compréhensible. Tolère les petites fautes.`, minWords:35 } },
 
- { title:'Making plans', skill:'CE + EE', lu:LU1,
-   goal:`Objectif : inviter, accepter et refuser poliment.`,
-   vocab:[['Are you free on Saturday?','es-tu libre samedi ?'],['Shall we go to the cinema?','et si on allait au cinéma ?'],['Let\'s meet at six.','retrouvons-nous à six heures.'],['Do you want to come?','tu veux venir ?'],['Sounds great!','ça a l\'air super !'],['I\'d love to.','avec plaisir.'],['I\'m afraid I can\'t.','je suis désolé.e, je ne peux pas.'],['I\'m going to visit my cousin.','je vais rendre visite à mon cousin.'],['What about Sunday?','et si c\'était dimanche ?'],['See you there!','à tout à l\'heure !']],
-   model:[['Friend','Are you free on Saturday?'],['You','Yes, I am.'],['Friend','Shall we go to the cinema?'],['You','Sounds great! Let\'s meet at six.'],['Friend','Do you want to go bowling on Sunday too?'],['You','I\'m afraid I can\'t. I\'m going to see my cousin.']],
+ { title:'Making a plan', skill:'CE + EE', lu:LU1,
+   goal:`Objectif : proposer un programme pour la visite et refuser une idée avec une raison.`,
+   vocab:[['Shall we visit…?','et si on visitait… ?'],['Let\'s have lunch at…','déjeunons à…'],['Why don\'t we…?','et si on… ?'],['at ten o\'clock / at half past two','à dix heures / à deux heures et demie'],['in the morning / in the afternoon','le matin / l\'après-midi'],['then / after lunch','ensuite / après le déjeuner'],['We could…','on pourrait…'],['I\'m afraid we can\'t, because…','désolé.e, on ne peut pas, parce que…']],
+   model:[['1. Morning','In the morning, shall we visit the museum at ten o\'clock and have lunch in the café?'],['2. Afternoon','After lunch, why don\'t we go to the castle? Let\'s take the train at half past two.'],['3. Evening','Let\'s finish in the park at five. We could also go to the stadium, but I\'m afraid we can\'t: it is closed on Sundays.']],
    A:{ title:'Je choisis la bonne réponse', items:[
-     { q:'___ we go to the park?', opts:['Shall','Do','Will to','Are'], ans:0 },
-     { q:'Let\'s ___ at 7 p.m.', opts:['meet','to meet','meeting','meets'], ans:0 },
-     { q:'Do you want ___ come to the match?', opts:['to','for','that','-ing'], ans:0 },
-     { q:'Tomorrow I ___ visit my grandparents.', opts:['am going to','go to','will going','am go to'], ans:0 },
-     { q:'Your friend invites you but you are busy. You say:', opts:['I\'m afraid I can\'t.','I\'m afraid I don\'t.','Yes, I\'m not.','I can\'t afraid.'], ans:0 } ] },
-   B:{ title:'Je complète le texte', bank:[['Shall','et si'],['Let\'s','allons'],['want','veux'],['going','(aller)'],['afraid','désolé.e'],['free','libre']],
-     lines:[[{a:'Shall'},' we meet at the station?'],[{a:'Let\'s'},' go to the beach!'],['Do you ',{a:'want'},' to come with us?'],['I\'m ',{a:'going'},' to watch a film tonight.'],['I\'m ',{a:'afraid'},' I can\'t come on Friday.'],['Are you ',{a:'free'},' on Sunday afternoon?']] },
-   C:{ title:`J'organise ma sortie`, instruct:`Tu invites un.e ami.e en ville. Écris un dialogue de 6 répliques : propose une sortie, fixe un lieu et une heure, puis refuse poliment une autre idée en donnant une raison.`, ph:`You: Shall we …?\nFriend: …\nYou: Let's …`,
-     rubric:`Dialogue de 6 répliques pour organiser une sortie. ok = true si l'élève utilise au moins deux structures parmi Shall we + base / Let's + base / Do you want to + base / Are you free…?, accepte avec une expression (Sounds great, I'd love to...), refuse poliment avec « I'm afraid I can't » ou équivalent et donne une raison avec be going to ou une autre structure correcte. Tolère les petites fautes si le sens est clair.`, minWords:45 } },
-
- { title:'Something went wrong', skill:'CE + EE', lu:LU1,
-   goal:`Objectif : signaler un problème à un.e agent et raconter ce qui s'est passé.`,
-   vocab:[['I\'ve lost my wallet.','j\'ai perdu mon portefeuille.'],['Someone stole my phone.','on m\'a volé mon téléphone.'],['I left my bag on the bus.','j\'ai oublié mon sac dans le bus.'],['I missed the last train.','j\'ai raté le dernier train.'],['The bus was late.','le bus avait du retard.'],['the lost property office','le bureau des objets trouvés'],['to report a problem','signaler un problème'],['What happened?','que s\'est-il passé ?'],['I was walking when…','je marchais quand…'],['It happened while…','c\'est arrivé pendant que…']],
-   model:[['Agent','Hello. What\'s the problem?'],['You','I\'ve lost my bag.'],['Agent','When did you lose it?'],['You','This morning. I was waiting for the bus when I put it on the ground.'],['Agent','And what happened next?'],['You','The bus arrived, so I got on. I forgot my bag.']],
-   A:{ title:'Je choisis la bonne réponse', items:[
-     { q:'Yesterday, I ___ my keys in a café.', opts:['lost','losed','have lose','was lose'], ans:0 },
-     { q:'I was walking in the street ___ a man took my bag.', opts:['when','because','so','although'], ans:0 },
-     { q:'I ___ the last bus, so I walked home.', opts:['missed','miss','was miss','have missing'], ans:0 },
-     { q:'What ___ you doing when it happened?', opts:['were','was','did','are'], ans:0 },
-     { q:'Someone ___ my wallet in the metro.', opts:['stole','stealed','stolen','steal'], ans:0 } ] },
-   B:{ title:'Je complète le texte', bank:[['lost','ai perdu'],['stole','a volé'],['missed','avons raté'],['when','quand'],['was','était'],['report','signaler']],
-     lines:[['I\'m sorry, I ',{a:'lost'},' my wallet.'],['A man ',{a:'stole'},' my phone on the bus.'],['We ',{a:'missed'},' the last train, so we took a taxi.'],['I was waiting for a friend ',{a:'when'},' I saw the accident.'],['It ',{a:'was'},' raining when I left the shop.'],['I would like to ',{a:'report'},' a problem, please.']] },
-   C:{ title:`Je raconte ma mésaventure`, instruct:`Invente un problème en ville (objet perdu ou volé, retard). Écris un dialogue de 8 répliques avec un.e agent : dis ce qui s'est passé et ce que tu faisais à ce moment-là.`, ph:`Agent: What's the problem?\nYou: I've lost …\nAgent: When …?`,
-     rubric:`Dialogue de 8 répliques entre l'élève et un.e agent à propos d'un problème en ville. ok = true si l'élève signale le problème (I've lost / Someone stole / I missed...), utilise au moins deux verbes au prétérit correctement (lost, left, missed, stole, arrived...) et au moins une phrase au passé continu (was / were + -ing) avec when ou while. Tolère les petites fautes si le sens est clair.`, minWords:60 } },
+     { q:'___ we visit the museum at ten o\'clock?', opts:['Shall','Do','Will to','Are'], ans:0 },
+     { q:'Let\'s ___ lunch in the café.', opts:['have','to have','having','has'], ans:0 },
+     { q:'Why don\'t we ___ the castle in the afternoon?', opts:['visit','visiting','to visit','visits'], ans:0 },
+     { q:'The stadium is closed on Sundays. Which sentence is correct?', opts:['I\'m afraid we can\'t go: it is closed.','I\'m afraid we don\'t go: it is closed.','We afraid can\'t go: it is closed.','I\'m afraid we can go: it is closed.'], ans:0 } ] },
+   B:{ title:'Je complète le texte', bank:[['Shall','et si'],['Let\'s','allons'],['afraid','désolé.e'],['o\'clock','heures'],['Why','pourquoi']],
+     lines:[[{a:'Shall'},' we meet at the station?'],[{a:'Let\'s'},' have lunch at the market!'],['I\'m ',{a:'afraid'},' we can\'t go there: it is closed.'],['The museum opens at ten ',{a:'o\'clock'},'.']] },
+   C:{ title:`J'organise la visite`, instruct:`Propose un programme avec tes 3 lieux. Écris 3 paragraphes séparés par une ligne vide : le matin, l'après-midi, le soir. Donne des horaires, utilise « Shall we », « Let's » ou « Why don't we », et refuse une autre idée en donnant une raison.` + SAME, ph:`In the morning, …\n\nIn the afternoon, …\n\nIn the evening, …`,
+     rubric:`Programme de visite en 3 paragraphes (matin, après-midi, soir) avec les 3 lieux. ok = true si au moins deux horaires sont donnés, si au moins deux structures différentes parmi Shall we / Let's / Why don't we / We could + verbe de base sont utilisées correctement, et si une autre idée est refusée poliment avec « I'm afraid we can't » (ou équivalent) et une raison. Tolère les petites fautes si le sens est clair.`, minWords:35 } },
 
  { title:'My city guide', skill:'EE + EO', lu:'Expression écrite (EE) et Expression orale (EO)',
-   goal:`Objectif : présenter 3 lieux à la classe pour la visite des élèves anglais.`,
-   vocab:[['You should visit…','tu devrais visiter…'],['You shouldn\'t miss…','ne rate pas…'],['the best place to… is…','le meilleur endroit pour… est…'],['the most interesting…','le plus intéressant…'],['the biggest / the oldest','le plus grand / le plus ancien'],['It\'s famous for…','c\'est célèbre pour…'],['a hidden gem','un trésor caché'],['First of all, / Also, / Finally,','pour commencer, / de plus, / enfin,'],['because / but','parce que / mais'],['It\'s worth a visit.','ça vaut le détour.']],
-   model:[['1. Intro','Hello everyone! For the visit of our English friends, here are my top three places.'],['2. Place 1','First of all, you should visit the old town. It\'s the most beautiful area, because the streets are small and the buildings are very old.'],['3. Place 2','Also, the best place to eat is the market. It\'s cheap and it\'s famous for its fresh food.'],['4. Place 3','Finally, you shouldn\'t miss the park. It\'s a hidden gem and it\'s the most relaxing place in the city.'],['5. Tip','But don\'t go there on Sunday, because it\'s very busy.'],['6. Conclusion','It\'s worth a visit! Thank you for listening.']],
+   goal:`Objectif : présenter 3 lieux à la classe pour la visite, avec tes textes des étapes 1 à 4.`,
+   vocab:[['First of all, / Also, / Finally,','pour commencer, / de plus, / enfin,'],['You should visit…','tu devrais visiter…'],['You shouldn\'t miss…','ne rate pas…'],['the best place to… is…','le meilleur endroit pour… est…'],['the most interesting…','le plus intéressant…'],['the biggest / the oldest','le plus grand / le plus ancien'],['because / but','parce que / mais'],['It\'s worth a visit.','ça vaut le détour.']],
+   model:[['1. Intro','Hello everyone! For the visit of our English friends, here are my three places and my plan.'],['2. Place 1','First of all, you should visit the museum. It is in the old town, next to the cathedral. To get there, take bus 12: a single ticket costs two euros.'],['3. Place 2','Also, the castle is the oldest building in town. It is on a hill behind the station: take the train at 10.30. The café in the village is cheaper than the restaurant.'],['4. Place 3','Finally, you shouldn\'t miss the park: it is the most relaxing place in the city. It is between the river and the school, and it is free.'],['5. The plan','Shall we visit the museum at ten o\'clock, then go to the castle at half past two? Let\'s finish in the park at five. We could also go to the stadium, but I\'m afraid we can\'t: it is closed on Sundays.'],['6. Conclusion','It\'s worth a visit! Thank you for listening. Which place do you prefer?']],
    A:{ title:'Je choisis la bonne réponse', items:[
      { q:'You ___ visit the old town. It\'s beautiful.', opts:['should','must to','are should','shall to'], ans:0 },
-     { q:'This is the number one place in the city. It\'s ___ place.', opts:['the best','the goodest','the most good','the better'], ans:0 },
-     { q:'It\'s ___ interesting building in town.', opts:['the most','the more','most','the interestingest'], ans:0 },
-     { q:'The park is beautiful, ___ it is very crowded on Sundays.', opts:['but','so','because','finally'], ans:0 },
-     { q:'Which sentence gives good advice?', opts:['You should try the local food.','You should to try the local food.','You shoulds try the local food.','You should trying the local food.'], ans:0 } ] },
-   B:{ title:'Je complète le texte', bank:[['should','devrais'],['best','meilleur'],['most','le plus'],['because','parce que'],['Finally','enfin'],['famous','célèbre']],
-     lines:[['You ',{a:'should'},' visit the castle.'],['The market is the ',{a:'best'},' place to buy fresh food.'],['It is the ',{a:'most'},' beautiful park in the city.'],['I love this café ',{a:'because'},' the coffee is excellent.'],[{a:'Finally'},', you shouldn\'t miss the river at night.'],['This street is ',{a:'famous'},' for its street food.']] },
-   C:{ title:`J'écris mon city guide`, instruct:`Tu parles à ta classe, qui choisira le programme de la visite. Présente 3 lieux de ta ville (ou imaginaire) : pour chacun, un conseil, un superlatif et une raison. Utilise des connecteurs. Ensuite, entraîne-toi à le dire à voix haute avec les boutons 🔊 du modèle.`, ph:`Hello everyone! \nFirst of all, you should visit …\nAlso, …\nFinally, …`,
-     rubric:`Guide de ville d'au moins 8 phrases présentant 3 lieux. ok = true si les 3 lieux sont présents, si « should » ou « shouldn't » est utilisé correctement au moins deux fois, si au moins deux superlatifs corrects sont utilisés (the best, the most interesting, the biggest, the oldest...) et si au moins deux connecteurs différents (first of all, also, finally, because, but...) sont utilisés. Tolère les petites fautes si le sens est clair.`, minWords:90 } }
+     { q:'The park is ___ relaxing place in the city.', opts:['the most','the more','most','the relaxingest'], ans:0 },
+     { q:'You should visit the market, ___ the food is fresh and cheap.', opts:['because','but','finally','so'], ans:0 },
+     { q:'Which connector do you use to start the LAST place?', opts:['Finally,','First of all,','Because','But'], ans:0 } ] },
+   B:{ title:'Je complète le texte', bank:[['should','devrais'],['most','le plus'],['because','parce que'],['best','meilleur'],['Also','de plus']],
+     lines:[['You ',{a:'should'},' visit the castle.'],['The park is the ',{a:'most'},' relaxing place in the city.'],['The market is the ',{a:'best'},' place to eat in town.'],['Go to the market ',{a:'because'},' the food is excellent.']] },
+   C:{ title:`Je présente ma ville`, instruct:`Tu présentes ta ville à ta classe, qui choisira le programme. Suis le plan : réutilise tes textes des étapes 1 à 4 (déjà dans la zone), réorganise-les lieu par lieu, puis ajoute introduction, connecteurs, conseils avec « should », superlatifs et conclusion avec une question. Vise 12 à 15 phrases.`, ph:`Hello everyone! For the visit of our English friends, …\n\nFirst of all, …\n\nAlso, …\n\nFinally, …`,
+     rubric:`Présentation orale écrite de la ville, destinée à la classe, d'environ 12 à 15 phrases, qui doit suivre ce plan : (1) introduction qui salue la classe et parle de la visite des amis anglais ; (2) à (4) trois lieux, chacun situé (there is / are, prépositions) avec comment y aller (take, ticket, horaire) ; au moins un lieu avec nourriture ou prix et un comparatif ; (5) un programme de la visite (Shall we / Let's / Why don't we + horaires, éventuellement une idée refusée avec une raison) ; (6) conclusion avec remerciement et une question à la classe. ok = true si cette structure est présente, si « should » ou « shouldn't » est utilisé correctement au moins une fois, si au moins deux superlatifs corrects sont utilisés (the best, the most interesting, the biggest, the oldest...) et si au moins deux connecteurs différents (first of all, also, finally, because, but...) sont utilisés. ok = false si l'élève a seulement collé ses textes précédents sans introduction, conclusion, connecteurs ou superlatifs, s'il reste « … » ou s'il manque une partie du plan. Tolère les petites fautes si le sens est clair.`, minWords:110 } }
 ];
 
 const course = {
   id:'survive-the-city',
   title:'Survive the City',
-  subtitle:'Me débrouiller en anglais dans une grande ville',
+  subtitle:'Présenter 3 lieux de ma ville à la classe',
   studentPage:'cours-city.html',
   steps: STEPS.map((s, i) => ({ n:i + 1, title:s.title, skill:s.skill, lu:s.lu, goal:s.goal,
     levels:{
@@ -117,137 +102,103 @@ course.allQuestions = [];
 course.steps.forEach(s => ['A','B','C'].forEach(L => s.levels[L].qs.forEach((q, k) => { q.step = s.n; q.level = L; q.index = k; course.allQuestions.push(q); })));
 
 window.CITY_COURSE = course;
-window.CITY_DATA = { MISSION, LEARN, STEPS };
+window.CITY_DATA = { MISSION, LEARN, PLAN, STEPS };
 
 /* ---- Traductions françaises (bouton « Traduire ») ---- */
 window.CITY_FR = {
-  mission: `Une **classe anglaise** vient en visite le mois prochain. Apprends à **te débrouiller en ville**, puis **présente 3 lieux** à ta classe pour la visite.`,
-  learn: ['acheter un **ticket** et demander les **horaires**', 'dire **où** sont les choses', 'demander des **prix** et **comparer**', 'faire des **projets** avec des amis', 'raconter **ce qui s\'est mal passé**', 'recommander **3 lieux**'],
-  titles: ['Me déplacer', 'C\'est où ?', 'Faire les magasins', 'Faire des projets', 'Quand ça tourne mal', 'Mon guide de la ville'],
+  mission: `Une **classe anglaise** vient en visite le mois prochain. Étape par étape, prépare **3 lieux** à **présenter à ta classe** : la classe choisira le **programme**.`,
+  learn: ['dire **comment y aller**', 'dire **où** c\'est', 'parler de **nourriture et de prix**', 'proposer un **programme** pour la visite', '**présenter** ton guide de la ville'],
+  titles: ['Y aller', 'C\'est où ?', 'Manger et acheter', 'Faire un programme', 'Mon guide de la ville'],
+  plan: ['Bonjour à tous ! Pour la visite de nos amis anglais…', 'où c\'est + comment y aller', 'nourriture, prix + le plus ancien / le meilleur…', 'le plus… + ton conseil avec should', 'le programme de la visite', 'remercier la classe + poser une question'],
   model: [
-    ['Un aller-retour pour le musée, s\'il vous plaît.', 'Voilà. Ça fait six euros.', 'À quelle heure part le prochain train ?', 'Il part à dix heures quinze.', 'De quel quai part-il ? Et à quelle fréquence passent les trains ?', 'Quai quatre. Il y a un train toutes les dix minutes.'],
-    ['Excusez-moi, y a-t-il une pharmacie près d\'ici ?', 'Oui. Elle est en face de la bibliothèque.', 'Et y a-t-il des cafés dans le coin ?', 'Oui, il y en a deux. L\'un est à côté de la banque.', 'Le cinéma est-il loin ?', 'Non. Il est entre le supermarché et la poste.'],
-    ['Excusez-moi, combien coûte cette veste ?', 'Elle coûte soixante euros.', 'C\'est trop cher. En avez-vous une moins chère ?', 'Oui, celle-ci coûte quarante euros. Elle est en solde.', 'Elle est jolie. Puis-je l\'essayer ?', 'Bien sûr. La cabine d\'essayage est là-bas.'],
-    ['Es-tu libre samedi ?', 'Oui.', 'Et si on allait au cinéma ?', 'Super ! Retrouvons-nous à six heures.', 'Tu veux aussi aller au bowling dimanche ?', 'Je suis désolé.e, je ne peux pas. Je vais voir mon cousin.'],
-    ['Bonjour. Quel est le problème ?', 'J\'ai perdu mon sac.', 'Quand l\'avez-vous perdu ?', 'Ce matin. J\'attendais le bus quand je l\'ai posé par terre.', 'Et que s\'est-il passé ensuite ?', 'Le bus est arrivé, alors je suis monté.e. J\'ai oublié mon sac.'],
-    ['Bonjour à tous ! Pour la visite de nos amis anglais, voici mes trois lieux préférés.', 'Pour commencer, tu devrais visiter la vieille ville. C\'est le plus beau quartier, parce que les rues sont petites et les bâtiments très anciens.', 'De plus, le meilleur endroit pour manger est le marché. Il n\'est pas cher et il est célèbre pour ses produits frais.', 'Enfin, ne rate pas le parc. C\'est un trésor caché et c\'est l\'endroit le plus reposant de la ville.', 'Mais n\'y va pas le dimanche, parce qu\'il y a beaucoup de monde.', 'Ça vaut le détour ! Merci de m\'avoir écouté.e.']
+    ['Pour aller au musée, prenez le bus 12 : un aller simple coûte deux euros et le bus passe toutes les dix minutes.', 'Pour le château, prenez le train au quai 3 à 10 h 30 : un aller-retour coûte six euros.', 'Pour aller au parc, prenez le tram A et descendez à la place Centrale : le dernier tram est à 23 h 45.'],
+    ['Le musée est dans la vieille ville, à côté de la cathédrale.', 'Le château est sur une colline derrière la gare, et il y a deux cafés en face de l\'entrée.', 'Le parc est entre la rivière et l\'école, et il y a une boulangerie au coin.'],
+    ['Il y a un café à côté du musée : un sandwich coûte quatre euros, donc ce n\'est pas cher.', 'Le restaurant du château est cher, mais le café du village est moins cher que le restaurant.', 'Le parc est gratuit, mais les T-shirts de la boutique sont plus chers que les cartes postales.'],
+    ['Le matin, et si on visitait le musée à dix heures et qu\'on déjeunait au café ?', 'Après le déjeuner, pourquoi ne pas aller au château ? Prenons le train à deux heures et demie.', 'Finissons au parc à cinq heures. On pourrait aussi aller au stade, mais désolé.e, on ne peut pas : il est fermé le dimanche.'],
+    ['Bonjour à tous ! Pour la visite de nos amis anglais, voici mes trois lieux et mon programme.', 'Pour commencer, tu devrais visiter le musée. Il est dans la vieille ville, à côté de la cathédrale. Pour y aller, prends le bus 12 : un aller simple coûte deux euros.', 'De plus, le château est le plus vieux bâtiment de la ville. Il est sur une colline derrière la gare : prends le train à 10 h 30. Le café du village est moins cher que le restaurant.', 'Enfin, ne rate pas le parc : c\'est l\'endroit le plus reposant de la ville. Il est entre la rivière et l\'école, et il est gratuit.', 'Et si on visitait le musée à dix heures, puis le château à deux heures et demie ? Finissons au parc à cinq heures. On pourrait aussi aller au stade, mais désolé.e, on ne peut pas : il est fermé le dimanche.', 'Ça vaut le détour ! Merci de m\'avoir écouté.e. Quel lieu préférez-vous ?']
   ]
 };
 
-/* ---- Petit point de grammaire (affiché dans le niveau C de l'étape indiquée) ---- */
+/* ---- Petit point de grammaire (rappel en 3 lignes sur papier ; web : affiché dans le niveau C de l'étape indiquée) ---- */
 window.CITY_GRAMMAR = {
   1: {
-    title: 'Les questions : What time, Which, How often',
+    title: 'Comment y aller : take, ticket, horaires',
     rules: [
-      ['L\'heure', '« What time does + sujet + verbe de base ? » : What time does the bus leave ?'],
-      ['Le choix', '« Which platform / Which bus … ? » pour choisir parmi plusieurs.'],
-      ['La fréquence', '« How often … ? » : Every ten minutes. Twice an hour.'],
-      ['Présent simple', 'he / she / it → verbe + s : The train leaves at 9.15. (at half past nine)']
+      ['Le transport', '« take + bus 12 / the tram / the train » : To get to the museum, take bus 12.'],
+      ['Le ticket', 'a single ticket (aller simple), a return ticket (aller-retour), a day pass.'],
+      ['L\'horaire', 'The bus leaves at 9.15 (he / she / it → verbe + s). Every ten minutes.']
     ],
-    examples: [['What time does the museum open ?', 'À quelle heure ouvre le musée ?'], ['Which platform does it leave from ?', 'De quel quai part-il ?'], ['How often do the buses run ?', 'À quelle fréquence passent les bus ?'], ['The train arrives at 6.30.', 'Le train arrive à 6 h 30.']],
-    verbs: [['leave / leaves','partir'],['arrive / arrives','arriver'],['run / runs','circuler'],['stop / stops','s\'arrêter'],['change trains','changer de train'],['get off','descendre']],
+    examples: [['To get to the park, take tram A.', 'Pour aller au parc, prends le tram A.'], ['The train leaves from platform 3.', 'Le train part du quai 3.']],
+    verbs: [['leave / leaves','partir'],['arrive / arrives','arriver'],['get off','descendre'],['change trains','changer de train']],
     verbsLabel: 'Verbes utiles',
     check: [
-      { q: 'What time ___ the last train arrive?', opts: ['does', 'do', 'is', 'are'], ans: 0 },
-      { q: 'The bus ___ every ten minutes.', opts: ['runs', 'run', 'running', 'is run'], ans: 0 },
-      { q: '___ platform does it leave from?', opts: ['Which', 'Who', 'When', 'Whose'], ans: 0 },
-      { q: 'How ___ do the trains stop here?', opts: ['often', 'much', 'long ago', 'old'], ans: 0 },
-      { q: 'The shop ___ at 9 a.m.', opts: ['opens', 'open', 'opening', 'is open at'], ans: 0 }
+      { q: 'We ___ off at the next stop.', opts: ['get', 'go', 'take', 'put'], ans: 0 },
+      { q: 'The last train ___ at 11.45 p.m.', opts: ['leaves', 'leave', 'leaving', 'is leave'], ans: 0 },
+      { q: 'Which platform ___ the train leave from?', opts: ['does', 'do', 'is', 'are'], ans: 0 }
     ]
   },
   2: {
-    title: 'There is / There are et les prépositions de lieu',
+    title: 'There is / There are et où ?',
     rules: [
-      ['There is / are', '« There is » + singulier, « There are » + pluriel : There is a bank. There are two cafés.'],
-      ['Questions', '« Is there a … ? » « Are there any … ? » Réponse : Yes, there is. No, there aren\'t.'],
+      ['There is / are', '« There is » + singulier, « There are » + pluriel : There are two cafés.'],
       ['Négation', 'There isn\'t a … / There aren\'t any …'],
       ['Où ?', 'next to, opposite, between … and …, behind, in front of, on the corner.']
     ],
-    examples: [['Is there a pharmacy near here ?', 'Y a-t-il une pharmacie près d\'ici ?'], ['There are two banks in my street.', 'Il y a deux banques dans ma rue.'], ['The café is opposite the station.', 'Le café est en face de la gare.'], ['The cinema is between the bank and the park.', 'Le cinéma est entre la banque et le parc.']],
-    verbs: [['next to','à côté de'],['opposite','en face de'],['between','entre'],['behind','derrière'],['in front of','devant'],['on the corner','au coin']],
+    examples: [['There is a bank next to the museum.', 'Il y a une banque à côté du musée.'], ['The park is between the river and the school.', 'Le parc est entre la rivière et l\'école.']],
+    verbs: [['next to','à côté de'],['opposite','en face de'],['behind','derrière'],['in front of','devant']],
     verbsLabel: 'Où est-ce ?',
     check: [
-      { q: 'There ___ a supermarket next to the station.', opts: ['is', 'are', 'be', 'have'], ans: 0 },
+      { q: 'There ___ a supermarket near the station.', opts: ['is', 'are', 'be', 'have'], ans: 0 },
       { q: '___ any restaurants near here?', opts: ['Are there', 'Is there', 'There are', 'Do there'], ans: 0 },
-      { q: 'There ___ any parks in this area.', opts: ['aren\'t', 'isn\'t', 'not', 'don\'t'], ans: 0 },
-      { q: 'The bank is ___ the café and the library.', opts: ['between', 'behind', 'next', 'under of'], ans: 0 },
-      { q: 'The bakery is ___ the corner of the street.', opts: ['on', 'in', 'at to', 'by of'], ans: 0 }
+      { q: 'The bank is ___ the corner of the street.', opts: ['on', 'in', 'at to', 'by of'], ans: 0 }
     ]
   },
   3: {
-    title: 'Comparatifs et some / any / a lot of',
+    title: 'Les prix et les comparatifs',
     rules: [
-      ['Adjectif court', 'adjectif + -er + than : cheaper than, bigger than. Long : more expensive than.'],
-      ['Irrégulier', 'good → better, bad → worse.'],
-      ['some / any / a lot of', '« some » : phrases positives. « any » : négatives et questions. « a lot of » : partout.'],
-      ['How much / How many', '« How much » + indénombrable (milk, money). « How many » + dénombrable (shoes).']
+      ['Adjectif court', 'adjectif + -er + than : cheaper than, bigger than.'],
+      ['Adjectif long', 'more + adjectif + than : more expensive than.'],
+      ['Les prix', 'How much is…? / How much are…? It costs four euros. It\'s free.']
     ],
-    examples: [['This jacket is cheaper than that one.', 'Cette veste est moins chère que celle-là.'], ['This phone is more expensive than my old one.', 'Ce téléphone est plus cher que mon ancien.'], ['We don\'t have any small sizes.', 'Nous n\'avons pas de petites tailles.'], ['How many T-shirts do you want ?', 'Combien de T-shirts veux-tu ?']],
-    verbs: [['cheap → cheaper','bon marché'],['big → bigger','grand'],['expensive → more expensive','cher'],['good → better','bon'],['a size','une taille'],['a receipt','un reçu']],
+    examples: [['A sandwich is cheaper than a burger.', 'Un sandwich est moins cher qu\'un burger.'], ['How much are the postcards?', 'Combien coûtent les cartes postales ?']],
+    verbs: [['cheap → cheaper','bon marché'],['expensive → more expensive','cher'],['It costs…','ça coûte…'],['It\'s free.','c\'est gratuit.']],
     verbsLabel: 'Comparer',
     check: [
       { q: 'This bag is ___ than that one.', opts: ['cheaper', 'more cheap', 'cheapest', 'the cheaper'], ans: 0 },
-      { q: 'These shoes are ___ than the black ones.', opts: ['more expensive', 'expensiver', 'most expensive', 'more expensively'], ans: 0 },
-      { q: 'I need ___ water, please.', opts: ['some', 'a', 'many', 'few'], ans: 0 },
-      { q: 'We haven\'t got ___ red jackets.', opts: ['any', 'some', 'a', 'much of'], ans: 0 },
-      { q: 'How ___ is the milk?', opts: ['much', 'many', 'long', 'often'], ans: 0 }
+      { q: 'The hotel is ___ than the hostel.', opts: ['more expensive', 'expensiver', 'most expensive', 'more expensively'], ans: 0 },
+      { q: 'A coffee ___ two euros.', opts: ['costs', 'cost', 'is cost', 'costing'], ans: 0 }
     ]
   },
   4: {
-    title: 'Proposer, accepter, refuser + be going to',
+    title: 'Proposer un programme et refuser',
     rules: [
-      ['Proposer', '« Shall we + base ? » « Let\'s + base. » « Do you want to + base ? »'],
-      ['Accepter', 'Sounds great ! / Good idea ! / I\'d love to.'],
-      ['Refuser poliment', '« I\'m afraid I can\'t. » + une raison. What about … instead ?'],
-      ['be going to', 'am / is / are + going to + base : un projet prévu. I\'m going to see my cousin.']
+      ['Proposer', '« Shall we + base ? » « Let\'s + base. » « Why don\'t we + base ? »'],
+      ['L\'heure', 'at ten o\'clock, at half past two, in the morning, in the afternoon.'],
+      ['Refuser', '« I\'m afraid we can\'t, because… » + une raison.']
     ],
-    examples: [['Shall we go to the cinema ?', 'Et si on allait au cinéma ?'], ['Let\'s meet at six.', 'Retrouvons-nous à six heures.'], ['I\'m afraid I can\'t. I\'m going to work.', 'Désolé.e, je ne peux pas. Je vais travailler.'], ['We are going to visit the castle.', 'Nous allons visiter le château.']],
-    verbs: [['Shall we…?','et si on… ?'],['Let\'s…','allons… / faisons…'],['I\'d love to.','avec plaisir.'],['I\'m afraid I can\'t.','désolé.e, je ne peux pas.'],['What about…?','et si c\'était… ?'],['I\'m going to…','je vais…']],
+    examples: [['Shall we visit the museum at ten?', 'Et si on visitait le musée à dix heures ?'], ['Let\'s have lunch in the café.', 'Déjeunons au café.']],
+    verbs: [['Shall we…?','et si on… ?'],['Let\'s…','faisons… / allons…'],['Why don\'t we…?','et si on… ?'],['I\'m afraid we can\'t.','désolé.e, on ne peut pas.']],
     verbsLabel: 'Expressions utiles',
     check: [
       { q: 'Shall we ___ to the beach?', opts: ['go', 'going', 'to go', 'goes'], ans: 0 },
-      { q: 'Let\'s ___ a film tonight.', opts: ['watch', 'watching', 'to watch', 'watches'], ans: 0 },
-      { q: 'Do you want ___ with us?', opts: ['to come', 'come', 'coming', 'comes'], ans: 0 },
-      { q: 'She ___ to see her grandmother tomorrow.', opts: ['is going', 'goes', 'are going', 'going'], ans: 0 },
-      { q: 'You can\'t come. You say: "I\'m ___ I can\'t."', opts: ['afraid', 'scared of', 'fear', 'afraiding'], ans: 0 }
+      { q: 'Why don\'t we ___ a taxi?', opts: ['take', 'taking', 'to take', 'takes'], ans: 0 },
+      { q: 'Let\'s ___ at the station at nine.', opts: ['meet', 'meeting', 'to meet', 'meets'], ans: 0 }
     ]
   },
   5: {
-    title: 'Prétérit et passé continu : was walking when…',
-    rules: [
-      ['Le problème', '« I\'ve lost my bag. » dit le problème. Pour raconter : I lost it this morning.'],
-      ['Prétérit', 'action courte et finie : lost, left, missed, stole. (Irréguliers à connaître !)'],
-      ['Passé continu', 'was / were + -ing : ce qui était en cours. I was walking.'],
-      ['when / while', 'I was walking when a man took my bag. (when + action courte)']
-    ],
-    examples: [['I lost my wallet this morning.', 'J\'ai perdu mon portefeuille ce matin.'], ['I was waiting for the bus when it started to rain.', 'J\'attendais le bus quand il s\'est mis à pleuvoir.'], ['Someone stole my phone while I was dancing.', 'On m\'a volé mon téléphone pendant que je dansais.'], ['What were you doing ?', 'Que faisais-tu ?']],
-    verbs: [['lose → lost','perdre'],['leave → left','laisser, partir'],['steal → stole','voler'],['miss → missed','rater'],['take → took','prendre'],['forget → forgot','oublier']],
-    verbsLabel: 'Verbes du problème',
-    check: [
-      { q: 'I ___ my phone on the bus yesterday.', opts: ['left', 'leaved', 'have leave', 'was left'], ans: 0 },
-      { q: 'Someone ___ my bag in the metro.', opts: ['stole', 'stealed', 'stolen', 'steals'], ans: 0 },
-      { q: 'I ___ walking when I saw the accident.', opts: ['was', 'were', 'am', 'did'], ans: 0 },
-      { q: 'We were waiting ___ the train arrived.', opts: ['when', 'because', 'so', 'or'], ans: 0 },
-      { q: 'What ___ you doing at 8 o\'clock?', opts: ['were', 'was', 'did', 'have'], ans: 0 }
-    ]
-  },
-  6: {
     title: 'should, superlatifs et connecteurs',
     rules: [
       ['Conseiller', '« should / shouldn\'t » + verbe de base : You should visit the market.'],
-      ['Superlatif court', 'the + adjectif + -est : the biggest, the oldest, the best.'],
-      ['Superlatif long', 'the most + adjectif : the most interesting place.'],
+      ['Superlatif', 'the + adjectif + -est : the oldest. Long : the most interesting.'],
       ['Connecteurs', 'First of all, … Also, … Finally, … but / because.']
     ],
-    examples: [['You should try the local food.', 'Tu devrais goûter la cuisine locale.'], ['It\'s the oldest building in town.', 'C\'est le plus vieux bâtiment de la ville.'], ['It\'s the most beautiful park.', 'C\'est le plus beau parc.'], ['First of all, visit the old town. Finally, relax in the park.', 'Pour commencer, visite la vieille ville. Enfin, détends-toi dans le parc.']],
-    verbs: [['big → the biggest','grand'],['old → the oldest','vieux'],['good → the best','bon'],['interesting → the most interesting','intéressant'],['famous for','célèbre pour'],['a hidden gem','un trésor caché']],
+    examples: [['You should try the local food.', 'Tu devrais goûter la cuisine locale.'], ['It\'s the most beautiful park.', 'C\'est le plus beau parc.']],
+    verbs: [['big → the biggest','grand'],['old → the oldest','vieux'],['good → the best','bon'],['a hidden gem','un trésor caché']],
     verbsLabel: 'Pour recommander',
     check: [
-      { q: 'You ___ visit the castle. It\'s amazing.', opts: ['should', 'should to', 'shoulds', 'are should'], ans: 0 },
       { q: 'It\'s ___ building in the city.', opts: ['the oldest', 'the most old', 'the older', 'oldest'], ans: 0 },
-      { q: 'This is ___ interesting museum I know.', opts: ['the most', 'the more', 'most', 'the very'], ans: 0 },
-      { q: 'You should go there ___ it\'s free.', opts: ['because', 'but', 'so that', 'although'], ans: 0 },
-      { q: '___, you shouldn\'t miss the river.', opts: ['Finally', 'Because', 'Although', 'So'], ans: 0 }
+      { q: 'You ___ miss the market: it\'s great!', opts: ['shouldn\'t', 'should', 'are', 'do'], ans: 0 },
+      { q: 'The market is ___ place to eat.', opts: ['the best', 'the most good', 'the goodest', 'the better'], ans: 0 }
     ]
   }
 };

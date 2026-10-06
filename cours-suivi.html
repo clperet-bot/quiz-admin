@@ -19,6 +19,7 @@
 <script src="stage-data.js"></script>
 <script src="year-data.js"></script>
 <script src="music-data.js"></script>
+<script src="grammar-data.js"></script>
 <script src="city-data.js"></script>
 <style>
   :root{
@@ -80,6 +81,7 @@
   .flag{display:inline-block;font-size:12.5px;font-weight:600;border-radius:999px;padding:2px 9px;margin-left:6px;}
   .flag.warn{background:var(--amber-bg);color:var(--amber);} .flag.live{background:var(--green-bg);color:var(--green);}
   .detail td{background:#FBFAFF;padding:12px 18px 16px;}
+  .pickline{font-size:12.5px;color:var(--ink-soft);font-weight:500;margin-top:3px;max-width:340px;white-space:normal;} .chips.wrapc{flex-wrap:wrap;}
   .dstep{margin:0 0 12px;} .dstep h4{margin:0 0 6px;font-size:14.5px;color:var(--violet-deep);}
   .qline{display:grid;grid-template-columns:70px 1fr;gap:4px 10px;padding:8px 0;border-top:1px dashed var(--line);font-size:14px;}
   .qline .id{font-weight:700;color:var(--ink-soft);}
@@ -127,7 +129,7 @@
     </div>
 
     <div class="toolbar">
-      <select id="f-course" title="Cours"><option value="electricians-guide">⚡ Electrician's Guide</option><option value="oral-bakery-sign">🎤 Préparer mon oral</option><option value="art-to-ad">🎨 From Art to Ad</option><option value="behind-the-screen">🎬 Behind the Screen</option><option value="journal-lycee">📰 Journal du lycée (français)</option><option value="travel-survival">✈️ Travel Survival Guide</option><option value="internship-report">💼 Internship Report (1ère)</option><option value="year-in-pictures">📸 My Year in Pictures</option><option value="music-and-me">🎧 Music &amp; Me</option><option value="survive-the-city">🚇 Survive the City</option></select>
+      <select id="f-course" title="Cours"><option value="electricians-guide">⚡ Electrician's Guide</option><option value="oral-bakery-sign">🎤 Préparer mon oral</option><option value="art-to-ad">🎨 From Art to Ad</option><option value="behind-the-screen">🎬 Behind the Screen</option><option value="journal-lycee">📰 Journal du lycée (français)</option><option value="travel-survival">✈️ Travel Survival Guide</option><option value="internship-report">💼 Internship Report (1ère)</option><option value="year-in-pictures">📸 My Year in Pictures</option><option value="music-and-me">🎧 Music &amp; Me</option><option value="survive-the-city">🚇 Survive the City</option><option value="grammar-boost">💪 Grammar Boost</option></select>
       <select id="f-class"><option value="">Toutes les classes</option></select>
       <button class="btn small ghost" id="refresh" type="button">Actualiser</button>
       <label><input type="checkbox" id="auto" checked> Actualiser tout seul (10 s)</label>
@@ -162,10 +164,11 @@ const COURSES = {
   'internship-report':  { data: window.STAGE_COURSE, page:'cours-stage.html', icon:'💼', label:'Internship Report (anglais 1ère)', target:/^(1|premi)/, mandatory:true },
   'year-in-pictures':   { data: window.YEAR_COURSE, page:'cours-year.html', icon:'📸', label:'My Year in Pictures (anglais)', mandatory:true },
   'music-and-me':       { data: window.MUSIC_COURSE, page:'cours-music.html', icon:'🎧', label:'Music & Me (anglais)', mandatory:true },
-  'survive-the-city':   { data: window.CITY_COURSE, page:'cours-city.html', icon:'🚇', label:'Survive the City (anglais)', mandatory:true }
+  'survive-the-city':   { data: window.CITY_COURSE, page:'cours-city.html', icon:'🚇', label:'Survive the City (anglais)', mandatory:true },
+  'grammar-boost':      { data: window.GRAMMAR_COURSE, page:'cours-grammar.html', icon:'💪', label:'Grammar Boost (anglais)' }
 };
 const QP = (new URLSearchParams(location.search).get('course') || '').toLowerCase();
-const CK = ({oral:'oral-bakery-sign','oral-bakery-sign':'oral-bakery-sign', art:'art-to-ad','art-to-ad':'art-to-ad', artad:'art-to-ad', film:'behind-the-screen','behind-the-screen':'behind-the-screen', journal:'journal-lycee','journal-lycee':'journal-lycee', travel:'travel-survival','travel-survival':'travel-survival', stage:'internship-report', year:'year-in-pictures','year-in-pictures':'year-in-pictures', music:'music-and-me','music-and-me':'music-and-me', city:'survive-the-city','survive-the-city':'survive-the-city','internship-report':'internship-report'})[QP] || 'electricians-guide';
+const CK = ({oral:'oral-bakery-sign','oral-bakery-sign':'oral-bakery-sign', art:'art-to-ad','art-to-ad':'art-to-ad', artad:'art-to-ad', film:'behind-the-screen','behind-the-screen':'behind-the-screen', journal:'journal-lycee','journal-lycee':'journal-lycee', travel:'travel-survival','travel-survival':'travel-survival', stage:'internship-report', year:'year-in-pictures','year-in-pictures':'year-in-pictures', music:'music-and-me','music-and-me':'music-and-me', city:'survive-the-city','survive-the-city':'survive-the-city', grammar:'grammar-boost','grammar-boost':'grammar-boost','internship-report':'internship-report'})[QP] || 'electricians-guide';
 const C = COURSES[CK].data;
 document.getElementById('course-title').innerHTML = COURSES[CK].icon + ' ' + COURSES[CK].label + ' <small>Suivi en direct — qui a répondu quoi</small>';
 document.title = 'Suivi · ' + COURSES[CK].label;
@@ -205,7 +208,7 @@ document.getElementById('auto').addEventListener('change', schedule);
 document.getElementById('refresh').addEventListener('click', load);
 document.getElementById('f-class').addEventListener('change', render);
 document.getElementById('f-course').value = CK;
-document.getElementById('f-course').addEventListener('change', e => { location.search = '?course=' + ({'oral-bakery-sign':'oral','art-to-ad':'art','behind-the-screen':'film','journal-lycee':'journal','travel-survival':'travel','internship-report':'stage','year-in-pictures':'year','music-and-me':'music','survive-the-city':'city'}[e.target.value] || 'elec'); });
+document.getElementById('f-course').addEventListener('change', e => { location.search = '?course=' + ({'oral-bakery-sign':'oral','art-to-ad':'art','behind-the-screen':'film','journal-lycee':'journal','travel-survival':'travel','internship-report':'stage','year-in-pictures':'year','music-and-me':'music','survive-the-city':'city','grammar-boost':'grammar'}[e.target.value] || 'elec'); });
 
 async function load(){
   const { data, error } = await supa.from('course_answers').select('*').eq('course', C.id).order('updated_at', { ascending:false }).limit(5000);
@@ -258,7 +261,15 @@ function render(){
       students.map((s, i) => {
         const key = s.classe + '|' + normName(s.name);
         const done = Object.fromEntries(s.rows.map(r => [r.qid, r]));
+        const pickRow = done['pick'], pickKeys = (pickRow && pickRow.extra && pickRow.extra.keys) || [];
         const chips = C.steps.map(st => {
+          if(CK === 'grammar-boost'){ // 12 points : on n'affiche que les points choisis ou commencés (icône + A/B/C)
+            const ld = ['A','B','C'].map(L => { const r = done[st.levels[L].qs[0].id]; const fin = !!r && isDone(r); return {L, started:!!r, ok:fin && r.is_correct !== false, fail:fin && r.is_correct === false}; });
+            const chosen = pickKeys.includes(st.key);
+            if(!chosen && !ld.some(x => x.started)) return '';
+            const txt = ld.map(x => x.L + (x.ok ? '✓' : x.fail ? '↻' : '·')).join(' ');
+            return `<div class="sc ${ld.every(x => x.ok) ? 'done' : ld.some(x => x.started) ? 'prog' : ''}" title="${esc(st.title)} : ${ld.map(x => 'round ' + x.L + ' ' + (x.ok ? 'réussi' : x.fail ? 'raté (à refaire)' : x.started ? 'en cours' : 'pas fait')).join(' · ')}">${st.chip}<small>${txt}</small></div>`;
+          }
           const sk = done[st.n + '-skip'];
           if(sk && sk.answer && sk.answer !== 'Annulé') return `<div class="sc done" title="Étape ${st.n} — déjà faite (déclaré par l'élève)">${st.n}<small>déjà fait</small></div>`;
           if(!st.levels){
@@ -287,9 +298,10 @@ function render(){
           return `<div class="sc ${full ? 'done' : 'prog'}" title="Étape ${st.n} · niveau ${best.L} : ${best.d}/${best.t}">${st.n}<small>${best.L} ${best.d}/${best.t}</small></div>`;
         }).join('');
         const nReveal = s.rows.filter(r => r.revealed).length;
+        const pickLine = (CK === 'grammar-boost' && pickRow) ? `<div class="pickline">🎯 Difficultés déclarées : ${esc(pickRow.answer)}</div>` : '';
         const isLive = Date.now() - new Date(s.last).getTime() < 5*60*1000;
         const open = OPEN.has(key);
-        return `<tr class="stu${open ? ' open' : ''}" data-key="${esc(key)}"><td><span class="chev">▸</span><b>${esc(s.name)}</b>${nReveal >= 3 ? `<span class="flag warn">bloqué.e ? ${nReveal} corrections</span>` : ''}${isLive ? '<span class="flag live">en ligne</span>' : ''}</td><td>${esc(s.classe)}</td><td><div class="chips">${chips}</div></td><td>${ago(s.last)}</td></tr>` +
+        return `<tr class="stu${open ? ' open' : ''}" data-key="${esc(key)}"><td><span class="chev">▸</span><b>${esc(s.name)}</b>${pickLine}${nReveal >= 3 ? `<span class="flag warn">bloqué.e ? ${nReveal} corrections</span>` : ''}${isLive ? '<span class="flag live">en ligne</span>' : ''}</td><td>${esc(s.classe)}</td><td><div class="chips${CK === 'grammar-boost' ? ' wrapc' : ''}">${chips}</div></td><td>${ago(s.last)}</td></tr>` +
           (open ? `<tr class="detail"><td colspan="4">${detail(s)}</td></tr>` : '');
       }).join('') + '</table>';
     box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async (e) => {
@@ -423,13 +435,15 @@ function extraHtml(r){
 function detail(s){
   const byQ = Object.fromEntries(s.rows.map(r => [r.qid, r]));
   const del = `<div style="margin:0 0 10px"><button class="btn small ghost" data-del="${esc(s.classe)}|${esc(normName(s.name))}|${esc(s.name)}" type="button">Supprimer les réponses de cet élève</button></div>`;
-  return del + C.steps.map(st => {
+  const pk = byQ['pick'];
+  const pickBlock = (CK === 'grammar-boost' && pk) ? `<div class="dstep"><h4>Question 1 — ${esc(C.pick.prompt)}</h4><div class="qline"><div class="id">pick</div><div><div class="p">Difficultés déclarées par l'élève</div><div class="a" style="margin-top:3px">${esc(pk.answer)}</div><div class="a"><span style="color:var(--ink-soft);font-size:13px">${(pk.extra && pk.extra.keys ? pk.extra.keys.length : '?')} point(s) · mis à jour ${ago(pk.updated_at)}</span></div></div></div></div>` : '';
+  return del + pickBlock + C.steps.map(st => {
     const known = C.allQuestions.filter(q => q.step === st.n && byQ[q.id]);
     const knownIds = new Set(C.allQuestions.map(q => q.id));
     const dyn = s.rows.filter(r => !knownIds.has(r.qid) && String(r.qid).charAt(0) === String(st.n)).sort((a,b) => String(a.qid).localeCompare(String(b.qid), 'fr', {numeric:true})).map(r => ({id:r.qid, prompt:r.prompt || r.qid}));
     const qs = known.concat(dyn);
     if(!qs.length) return '';
-    return `<div class="dstep"><h4>Étape ${st.n} — ${esc(st.title)}</h4>` + qs.map(q => {
+    return `<div class="dstep"><h4>${CK === 'grammar-boost' ? 'Point' : 'Étape'} ${st.n} — ${esc(st.title)}</h4>` + qs.map(q => {
       const r = byQ[q.id];
       const mark = r.is_correct === true ? '<span class="mark ok">✓ juste</span>' : r.is_correct === false ? '<span class="mark ko">✗ faux</span>' : '<span class="mark na">enregistré</span>';
       const first = r.first_correct === true ? 'juste du 1er coup' : r.first_correct === false ? '1er essai faux' : '';
