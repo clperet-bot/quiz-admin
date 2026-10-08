@@ -78,6 +78,7 @@
   .chips{display:flex;gap:6px;flex-wrap:nowrap;}
   .sc{min-width:46px;text-align:center;border-radius:10px;padding:3px 6px;font-size:13px;font-weight:600;background:#F0EEF7;color:#8a8aa0;line-height:1.3;}
   .sc small{display:block;font-weight:500;font-size:12px;}
+  .sc .pv{font-style:normal;font-size:10px;font-weight:700;background:#7a4bd6;color:#fff;border-radius:6px;padding:0 3px;margin-left:1px;vertical-align:1px;}
   .sc.prog{background:var(--blue-light);color:#1F5BB8;} .sc.done{background:var(--green-bg);color:var(--green);}
   .flag{display:inline-block;font-size:12.5px;font-weight:600;border-radius:999px;padding:2px 9px;margin-left:6px;}
   .flag.warn{background:var(--amber-bg);color:var(--amber);} .flag.live{background:var(--green-bg);color:var(--green);}
@@ -266,18 +267,20 @@ function render(){
         const pickRow = done['pick'], pickKeys = (pickRow && pickRow.extra && pickRow.extra.keys) || [];
         const chips = C.steps.map(st => {
           if(CK === 'francais-boost'){ // étapes déduites des difficultés choisies (tuiles) : on montre les étapes concernées ou commencées (icône + A/B/C)
-            const ld = ['A','B','C'].map(L => { const r = done[st.levels[L].qs[0].id]; const fin = !!r && isDone(r); return {L, started:!!r, ok:fin && r.is_correct !== false, fail:fin && r.is_correct === false}; });
+            const ld = ['A','B','C'].map(L => { const vs = st.levels[L].qs.map(q => ({v:q.variant || 1, r:done[q.id]})).filter(x => x.r); const okv = vs.filter(x => isDone(x.r) && x.r.is_correct !== false).map(x => x.v); const ok = okv.length > 0; const fail = !ok && vs.some(x => isDone(x.r) && x.r.is_correct === false); return {L, started:vs.length > 0, ok, fail, okv, tried:vs.map(x => x.v)}; }); // P2/P3 = parcours (variante d'exercices) réussi
             const chosen = !!pickRow && (st.always || st.tiles.some(t => pickKeys.includes(t)));
             if(!chosen && !ld.some(x => x.started)) return '';
-            const txt = ld.map(x => x.L + (x.ok ? '✓' : x.fail ? '↻' : '·')).join(' ');
-            return `<div class="sc ${ld.every(x => x.ok) ? 'done' : ld.some(x => x.started) ? 'prog' : ''}" title="Étape ${st.n} — ${esc(st.title)} : ${ld.map(x => 'round ' + x.L + ' ' + (x.ok ? 'réussi' : x.fail ? 'raté (à refaire)' : x.started ? 'en cours' : 'pas fait')).join(' · ')}">${st.chip}<small>${txt}</small></div>`;
+            const txt = ld.map(x => x.L + (x.ok ? '✓' : x.fail ? '↻' : '·') + (x.ok && !(x.okv.length === 1 && x.okv[0] === 1) ? `<i class="pv">P${x.okv.join('+')}</i>` : '')).join(' ');
+            const vt = ld.filter(x => x.tried.some(v => v > 1)).map(x => 'round ' + x.L + ' : parcours ' + x.tried.join(', ')).join(' · ');
+            return `<div class="sc ${ld.every(x => x.ok) ? 'done' : ld.some(x => x.started) ? 'prog' : ''}" title="Étape ${st.n} — ${esc(st.title)} : ${ld.map(x => 'round ' + x.L + ' ' + (x.ok ? 'réussi' : x.fail ? 'raté (à refaire)' : x.started ? 'en cours' : 'pas fait')).join(' · ')}${vt ? ' — ' + vt : ''}">${st.chip}<small>${txt}</small></div>`;
           }
-          if(CK === 'grammar-boost'){ // 12 points : on n'affiche que les points choisis ou commencés (icône + A/B/C)
-            const ld = ['A','B','C'].map(L => { const r = done[st.levels[L].qs[0].id]; const fin = !!r && isDone(r); return {L, started:!!r, ok:fin && r.is_correct !== false, fail:fin && r.is_correct === false}; });
+          if(CK === 'grammar-boost'){ // 12 points : on n'affiche que les points choisis ou commencés (icône + A/B/C) ; P2/P3 = parcours (variante d'exercices) réussi
+            const ld = ['A','B','C'].map(L => { const vs = st.levels[L].qs.map(q => ({v:q.variant || 1, r:done[q.id]})).filter(x => x.r); const okv = vs.filter(x => isDone(x.r) && x.r.is_correct !== false).map(x => x.v); const ok = okv.length > 0; const fail = !ok && vs.some(x => isDone(x.r) && x.r.is_correct === false); return {L, started:vs.length > 0, ok, fail, okv, nv:vs.length, tried:vs.map(x => x.v)}; });
             const chosen = pickKeys.includes(st.key);
             if(!chosen && !ld.some(x => x.started)) return '';
-            const txt = ld.map(x => x.L + (x.ok ? '✓' : x.fail ? '↻' : '·')).join(' ');
-            return `<div class="sc ${ld.every(x => x.ok) ? 'done' : ld.some(x => x.started) ? 'prog' : ''}" title="${esc(st.title)} : ${ld.map(x => 'round ' + x.L + ' ' + (x.ok ? 'réussi' : x.fail ? 'raté (à refaire)' : x.started ? 'en cours' : 'pas fait')).join(' · ')}">${st.chip}<small>${txt}</small></div>`;
+            const txt = ld.map(x => x.L + (x.ok ? '✓' : x.fail ? '↻' : '·') + (x.ok && !(x.okv.length === 1 && x.okv[0] === 1) ? `<i class="pv">P${x.okv.join('+')}</i>` : '')).join(' ');
+            const vt = ld.filter(x => x.tried.some(v => v > 1)).map(x => 'round ' + x.L + ' : parcours ' + x.tried.join(', ')).join(' · ');
+            return `<div class="sc ${ld.every(x => x.ok) ? 'done' : ld.some(x => x.started) ? 'prog' : ''}" title="${esc(st.title)} : ${ld.map(x => 'round ' + x.L + ' ' + (x.ok ? 'réussi' : x.fail ? 'raté (à refaire)' : x.started ? 'en cours' : 'pas fait')).join(' · ')}${vt ? ' — ' + vt : ''}">${st.chip}<small>${txt}</small></div>`;
           }
           const sk = done[st.n + '-skip'];
           if(sk && sk.answer && sk.answer !== 'Annulé') return `<div class="sc done" title="Étape ${st.n} — déjà faite (déclaré par l'élève)">${st.n}<small>déjà fait</small></div>`;

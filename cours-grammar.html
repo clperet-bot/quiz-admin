@@ -160,6 +160,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--lime);bo
 .finish{background:var(--ch2);border:3px solid var(--lime);border-radius:6px;box-shadow:8px 8px 0 var(--wh);text-align:center;overflow:hidden;margin-top:22px;} .finish .in{padding:22px 20px 24px;} .finish h2{font-size:clamp(34px,9vw,52px);color:var(--lime);line-height:1;margin-bottom:8px;} .finish p{margin:0 0 14px;font-size:17px;}
 .finish .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
 .nextwrap{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.vtabs{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 12px;} .vtabs .vl{font-size:12.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--grey);margin-right:2px;}
+.vt{background:transparent;color:var(--wh);border:2px solid var(--line);border-radius:6px;padding:4px 12px;min-height:36px;font-weight:800;font-size:14px;cursor:pointer;} .vt.active{background:var(--lime);color:#111;border-color:var(--lime);} .vt.okd:not(.active){border-color:var(--lime);color:var(--lime);}
 @media (max-width:480px){ .wrap{padding-top:20px;} .poster .top{padding:16px 16px 12px;} .poster .body{padding:4px 16px 20px;} .badge-n{width:62px;font-size:34px;} .tab{font-size:18px;} .lvl-head .tag{margin-left:0;} .box .bb{padding:12px 12px 14px;} .dumbbell{font-size:38px;right:12px;} }
 @media (prefers-reduced-motion:reduce){ *{transition:none !important;} }
 </style></head>
@@ -210,7 +212,21 @@ function shuffled(arr, seed){
 }
 const P = k => POINTS.find(p => p.key === k);
 const stepNo = k => POINTS.findIndex(p => p.key === k) + 1;
-const qid = (k, L) => k + '-' + L + '-1';
+const qid = (k, L, v) => k + '-' + L + '-' + (v || 1);
+// Parcours (variantes d'exercices) : V1 = exercices d'origine, puis V2, V3… (qid '<clé>-<round>-<n>')
+const nVar = (k, L) => P(k).V[L].length;
+const varList = (k, L) => Array.from({length:nVar(k, L)}, (_, i) => i + 1);
+let VARS = {}; // parcours en cours par point/round : { 'pron-A': 2 }
+const varsKey = () => 'grammar-var-' + (ID ? ID.norm : '');
+function loadVars(){ VARS = {}; if(TEST_MODE) return; try{ VARS = JSON.parse(localStorage.getItem(varsKey()) || '{}') || {}; }catch(e){ VARS = {}; } }
+function saveVars(){ if(TEST_MODE) return; try{ localStorage.setItem(varsKey(), JSON.stringify(VARS)); }catch(e){} }
+function curVar(k, L){
+  const n = nVar(k, L), v = VARS[k + '-' + L];
+  if(v >= 1 && v <= n) return v;
+  let best = 1; varList(k, L).forEach(i => { if(STATE[qid(k, L, i)]) best = i; }); // sans copie locale : le dernier parcours commencé
+  return best;
+}
+function setVar(k, L, v){ VARS[k + '-' + L] = v; saveVars(); }
 
 /* ============ identité, état ============ */
 let ID = null; const STATE = {}; const PENDING = []; let PICKED = [];
@@ -219,7 +235,7 @@ function saveId(){ try{ localStorage.setItem('grammar-id', JSON.stringify(ID)); 
 const pickKey = () => 'grammar-pick-' + (ID ? ID.norm : '');
 async function saveAnswer(q, answer, correct, revealed, feedback, extra){
   if(TEST_MODE) return;
-  const ex = Object.assign({}, extra || {});
+  const ex = Object.assign({}, extra || {}); if(q.variant) ex.variant = q.variant;
   const payload = { p_course:C.id, p_classe:ID.classe, p_student:ID.name, p_norm:ID.norm, p_step:q.step, p_level:q.level || '—',
     p_qid:q.id, p_prompt:clip(q.prompt, 300), p_answer:clip(answer, 6000), p_correct:correct, p_revealed:!!revealed, p_feedback:clip(feedback, 1500), p_extra:Object.keys(ex).length ? ex : null };
   try{ const { error } = await supa.rpc('save_course_answer_v2', payload); if(error) throw error; }
@@ -233,7 +249,7 @@ setInterval(async () => {
 }, 8000);
 async function loadProgress(){
   Object.keys(STATE).forEach(k => delete STATE[k]);
-  PICKED = [];
+  PICKED = []; loadVars();
   if(!TEST_MODE){
     try{
       const { data } = await supa.rpc('get_course_progress_v2', { p_course:C.id, p_classe:ID.classe, p_norm:ID.norm });
@@ -248,7 +264,7 @@ async function loadProgress(){
   if(p && p.extra && Array.isArray(p.extra.keys)) keys = p.extra.keys;
   else if(p && p.answer) keys = POINTS.filter(x => String(p.answer).includes(x.title)).map(x => x.key);
   if(!keys.length && !TEST_MODE){ try{ keys = JSON.parse(localStorage.getItem(pickKey()) || '[]'); }catch(e){} }
-  POINTS.forEach(x => { if(!keys.includes(x.key) && ['A','B','C'].some(L => STATE[qid(x.key, L)])) keys.push(x.key); });
+  POINTS.forEach(x => { if(!keys.includes(x.key) && ['A','B','C'].some(L => varList(x.key, L).some(v => STATE[qid(x.key, L, v)]))) keys.push(x.key); });
   PICKED = keys.filter(k => P(k));
 }
 const S = id => STATE[id] || (STATE[id] = {tries:0});
@@ -362,12 +378,17 @@ function aiCard(o){
 }
 
 /* ============ progression ============ */
-const levelDone = (k, L) => { const st = STATE[qid(k, L)]; return !!(st && st.done && st.correct !== false); };
-const levelFailed = (k, L) => { const st = STATE[qid(k, L)]; return !!(st && st.done && st.correct === false); };
-// Refaire un round : on repart de zéro (la nouvelle tentative remplace l'ancienne dans le suivi)
-function resetLevel(k, L){ delete STATE[qid(k, L)]; }
+// Un round est validé dès qu'UN parcours a été réussi ; refaire un autre parcours ne dévalide jamais le travail déjà validé
+const vPass = (k, L, v) => { const st = STATE[qid(k, L, v)]; return !!(st && st.done && st.correct !== false); };
+const vFail = (k, L, v) => { const st = STATE[qid(k, L, v)]; return !!(st && st.done && st.correct === false); };
+const levelDone = (k, L) => varList(k, L).some(v => vPass(k, L, v));
+const levelFailed = (k, L) => !levelDone(k, L) && varList(k, L).some(v => vFail(k, L, v));
+// Refaire un parcours : on repart de zéro (la nouvelle tentative remplace l'ancienne dans le suivi)
+function resetLevel(k, L, v){ delete STATE[qid(k, L, v || curVar(k, L))]; }
+// Parcours suivant pas encore réussi (on revient au début quand tous sont faits)
+function nextVariant(k, L){ const n = nVar(k, L), c = curVar(k, L); for(let i = 1; i < n; i++){ const t = ((c - 1 + i) % n) + 1; if(!vPass(k, L, t)) return t; } return (c % n) + 1; }
 const pointDone = k => ['A','B','C'].every(L => levelDone(k, L));
-const started = k => ['A','B','C'].some(L => STATE[qid(k, L)]);
+const started = k => ['A','B','C'].some(L => varList(k, L).some(v => STATE[qid(k, L, v)]));
 function isTeacher(){ if(TEST_MODE) return true; if(!ID) return false; const t = String(ID.norm || ID.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').split(/[^a-z]+/).filter(Boolean); return t.includes('clemence') && (t.includes('peret') || t.includes('perret')); }
 // Les 3 rounds sont obligatoires, dans l'ordre A → B → C (la prof et ?test=1 peuvent tout ouvrir)
 const levelOpen = (k, L) => isTeacher() || L === 'A' || (L === 'B' && levelDone(k, 'A')) || (L === 'C' && levelDone(k, 'B'));
@@ -484,7 +505,7 @@ function updateChrome(){
   const {k, n, banner, nav} = chrome; if(!k) return;
   const done = pointDone(k), last = n >= PICKED.length;
   banner.replaceChildren(done ? h('div', {class:'done-banner'}, h('span', {class:'an'}, '✓ Done !'), last ? 'Tu as terminé ton programme : bravo !' : 'Point terminé. Le suivant est débloqué.') :
-    h('div', {class:'lvlpick', style:'text-align:center'}, ['A','B','C'].some(L => levelFailed(k, L)) ? h('b', {style:'color:var(--red);display:block'}, '🔁 Un round est à refaire : relis la correction, puis clique sur « Refaire ce round ».') : null, h('b', null, '👆 Pour valider ce point : Round A, puis B, puis C.'), last ? '' : ' Le point suivant se débloque ensuite.'));
+    h('div', {class:'lvlpick', style:'text-align:center'}, ['A','B','C'].some(L => levelFailed(k, L)) ? h('b', {style:'color:var(--red);display:block'}, '🔁 Un round est à refaire : relis la correction, puis clique sur « Refaire ce round » ou essaie de nouveaux exercices.') : null, h('b', null, '👆 Pour valider ce point : Round A, puis B, puis C.'), last ? '' : ' Le point suivant se débloque ensuite.'));
   const prev = n > 1 ? h('button', {class:'btn ghost', type:'button', onclick:() => renderStep(PICKED[n - 2])}, '← Point ' + (n - 1)) : h('span');
   let nxt;
   if(!last){
@@ -525,37 +546,41 @@ function viewStep(k, body){
   const host = h('div'); body.append(host);
   const draw = () => {
     if(!levelOpen(k, curLevel)) curLevel = ['A','B','C'].find(L => !levelDone(k, L) && levelOpen(k, L)) || 'A';
-    const q = {id:qid(k, curLevel), step:n0, level:curLevel, prompt:C.steps[n0 - 1].levels[curLevel].qs[0].prompt};
+    const cv = curVar(k, curLevel), nv = nVar(k, curLevel), V = p.V[curLevel][cv - 1], vseed = cv === 1 ? seed : hashStr(k + '#' + cv);
+    const q = {id:qid(k, curLevel, cv), step:n0, level:curLevel, variant:cv, prompt:C.steps[n0 - 1].levels[curLevel].qs[cv - 1].prompt};
     let card, reps, tag;
     if(curLevel === 'A'){
-      reps = p.A.length; tag = 'QCM';
-      const items = p.A.map((it, i) => ({q:it.q, opts:shuffled(it.opts, seed + i * 17), exp:it.opts[it.ans]}));
+      reps = V.length; tag = 'QCM';
+      const items = V.map((it, i) => ({q:it.q, opts:shuffled(it.opts, vseed + i * 17), exp:it.opts[it.ans]}));
       card = detCard(q, 'Choisis la bonne réponse', '', selects => h('div', null, items.map((it, i) => { const s = mkChoice(it.opts); selects.push(s);
         const parts = it.q.split('___'); return h('div', {class:'sentline'}, h('div', {class:'qtxt'}, h('span', {class:'rep'}, String(i + 1)), parts.length > 1 ? [parts[0], h('span', {class:'blank'}), parts[1]] : it.q), s); })),
         items.map(i => i.exp), vals => vals.map((v, i) => (i + 1) + '. ' + fill(items[i].q, v)).join('\n'), () => draw());
     } else if(curLevel === 'B'){
-      reps = p.B.lines.length; tag = 'La liste';
-      const list = shuffled(p.B.list, seed + 5), dup = p.B.ans.length !== new Set(p.B.ans).size;
+      reps = V.lines.length; tag = 'La liste';
+      const list = shuffled(V.list, vseed + 5), dup = V.ans.length !== new Set(V.ans).size;
       card = detCard(q, 'Complète avec la liste', '', selects => h('div', null,
         h('div', {class:'frames'}, h('b', null, 'La liste'), h('div', {class:'wlist'}, list.map(w => h('span', null, w))), dup ? h('div', {class:'note'}, 'Un mot peut servir plusieurs fois.') : null),
-        p.B.lines.map((line, i) => { const s = mkSelect(list); selects.push(s); const parts = line[0].split('___'); return h('div', {class:'sentline'}, h('span', {class:'rep'}, String(i + 1)), parts[0], s, parts[1] || ''); })),
-        p.B.ans, vals => vals.map((v, i) => (i + 1) + '. ' + p.B.lines[i][0].replace('___', v)).join('\n'), () => draw());
+        V.lines.map((line, i) => { const s = mkSelect(list); selects.push(s); const parts = line[0].split('___'); return h('div', {class:'sentline'}, h('span', {class:'rep'}, String(i + 1)), parts[0], s, parts[1] || ''); })),
+        V.ans, vals => vals.map((v, i) => (i + 1) + '. ' + V.lines[i][0].replace('___', v)).join('\n'), () => draw());
     } else {
       reps = '3-4'; tag = 'Mes phrases';
-      const ta = taNode(6, p.C.ph);
-      card = aiCard({ q, title:p.C.title.replace(/^Round C · /, ''), instruct:'', node:h('div', null, h('p', {class:'qtxt', style:'font-weight:500'}, rich(p.C.instruct)), ta), getText:() => ta.value.trim(), setDisabled:v => ta.disabled = v, rubric:p.C.rubric, minWords:p.C.minWords, onDone:() => draw() });
+      const ta = taNode(6, V.ph);
+      card = aiCard({ q, title:V.title.replace(/^Round C · /, ''), instruct:'', node:h('div', null, h('p', {class:'qtxt', style:'font-weight:500'}, rich(V.instruct)), ta), getText:() => ta.value.trim(), setDisabled:v => ta.disabled = v, rubric:V.rubric, minWords:V.minWords, onDone:() => draw() });
     }
-    const failed = levelFailed(k, curLevel), nextLvl = ['A','B','C'].find(L => !levelDone(k, L) && levelOpen(k, L));
+    const failed = vFail(k, curLevel, cv), passed = vPass(k, curLevel, cv), nextLvl = ['A','B','C'].find(L => !levelDone(k, L) && levelOpen(k, L));
     const idx = PICKED.indexOf(k), lastPt = idx >= PICKED.length - 1;
     const nextPointBtn = lastPt ? h('button', {class:'btn white', type:'button', onclick:() => renderHome()}, 'Terminer 🏆') : h('button', {class:'btn white', type:'button', onclick:() => renderStep(PICKED[idx + 1])}, 'Point suivant →');
-    const choice = failed ? h('div', {class:'lvlnext lvlfail'}, h('b', null, '😕 Round ' + curLevel + ' : pas assez réussi'),
-      h('div', null, 'Pas grave ! Relis la correction ci-dessus, puis refais le round pour le valider.'),
-      h('div', {class:'lvlnext-btns'}, h('button', {class:'btn', type:'button', onclick:() => { resetLevel(k, curLevel); draw(); window.scrollTo(0, 0); }}, '🔁 Refaire ce round'))) :
-      levelDone(k, curLevel) ? h('div', {class:'lvlnext'}, h('b', null, '💪 Round ' + curLevel + ' terminé !'),
+    const goVar = t => { if(vPass(k, curLevel, t) || vFail(k, curLevel, t)) resetLevel(k, curLevel, t); setVar(k, curLevel, t); draw(); window.scrollTo(0, 0); };
+    const newBtn = (cls) => nv > 1 ? h('button', {class:'btn ' + cls, type:'button', onclick:() => goVar(nextVariant(k, curLevel))}, '🆕 Refaire avec de nouveaux exercices') : null;
+    const choice = failed ? h('div', {class:'lvlnext lvlfail'}, h('b', null, '😕 ' + (nv > 1 ? 'Parcours ' + cv + ' : pas assez réussi' : 'Round ' + curLevel + ' : pas assez réussi')),
+      h('div', null, levelDone(k, curLevel) ? 'Pas grave : ce round est déjà validé grâce à un autre parcours. Tu peux retenter pour t\'entraîner.' : 'Pas grave ! Relis la correction ci-dessus, puis refais le round pour le valider.'),
+      h('div', {class:'lvlnext-btns'}, newBtn(''), h('button', {class:'btn' + (nv > 1 ? ' ghost' : ''), type:'button', onclick:() => { resetLevel(k, curLevel, cv); draw(); window.scrollTo(0, 0); }}, '🔁 Refaire ce round' + (nv > 1 ? ' (mêmes exercices)' : '')))) :
+      passed ? h('div', {class:'lvlnext'}, h('b', null, '💪 Round ' + curLevel + ' terminé !'),
         pointDone(k) ? h('div', null, 'Les 3 rounds sont faits : le point est validé.') : h('div', null, 'Il te reste le round ' + ['A','B','C'].filter(L => !levelDone(k, L)).join(' et ') + '.'),
-        h('div', {class:'lvlnext-btns'}, pointDone(k) ? nextPointBtn : (nextLvl ? h('button', {class:'btn', type:'button', onclick:() => { curLevel = nextLvl; draw(); window.scrollTo(0, 0); }}, 'Round ' + nextLvl + ' →') : null))) : null;
+        h('div', {class:'lvlnext-btns'}, pointDone(k) ? nextPointBtn : (nextLvl ? h('button', {class:'btn', type:'button', onclick:() => { curLevel = nextLvl; draw(); window.scrollTo(0, 0); }}, 'Round ' + nextLvl + ' →') : null), newBtn('ghost'))) : null;
+    const vtabs = nv > 1 ? h('div', {class:'vtabs', role:'tablist', 'aria-label':'Parcours'}, h('span', {class:'vl'}, 'Parcours'), varList(k, curLevel).map(v => h('button', {type:'button', class:'vt' + (v === cv ? ' active' : '') + (vPass(k, curLevel, v) ? ' okd' : ''), role:'tab', 'aria-selected':v === cv ? 'true' : 'false', title:'Parcours ' + v + (vPass(k, curLevel, v) ? ' (réussi)' : vFail(k, curLevel, v) ? ' (à refaire)' : ''), onclick:() => { if(v === cv) return; setVar(k, curLevel, v); draw(); }}, String(v) + (vPass(k, curLevel, v) ? ' ✓' : vFail(k, curLevel, v) ? ' ↻' : '')))) : null;
     tabsHost.replaceChildren(levelTabs(k, draw));
-    host.replaceChildren(h('div', {class:'lvl ' + curLevel}, h('div', {class:'lvl-head'}, h('h2', null, 'Round ' + curLevel), h('span', {class:'chip', style:'border-color:#111;color:#111'}, reps + ' reps'), h('span', {class:'tag'}, tag)), h('div', {class:'lvl-body'}, card)), choice);
+    host.replaceChildren(h('div', {class:'lvl ' + curLevel}, h('div', {class:'lvl-head'}, h('h2', null, 'Round ' + curLevel), h('span', {class:'chip', style:'border-color:#111;color:#111'}, reps + ' reps'), h('span', {class:'tag'}, tag), nv > 1 ? h('span', {class:'chip vlab', style:'border-color:#111;color:#111'}, 'Parcours ' + cv + '/' + nv) : null), h('div', {class:'lvl-body'}, vtabs, card)), choice);
     updateChrome();
   };
   draw();
