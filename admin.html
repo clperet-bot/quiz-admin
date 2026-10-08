@@ -173,6 +173,14 @@
   .pr-section{margin-bottom:14px; page-break-inside:avoid;}
   .pr-section-flow{page-break-inside:auto; break-inside:auto;}
   .pr-section-flow .pr-section-title{break-after:avoid; page-break-after:avoid;}
+  .qc-copy{padding:0 2px;}
+  .qc-copy .section{margin-bottom:14px;}
+  .qc-answer{color:#1E3A8A; font-weight:600; border-bottom:1px dotted #93A3C7; padding:0 3px; white-space:pre-wrap; overflow-wrap:anywhere;}
+  .qc-answer-block{display:block; border:1px solid #C7D2EE; border-radius:6px; background:#F3F6FD; padding:8px 10px; font-weight:500; line-height:1.55;}
+  .qc-answer-empty{color:#999; font-weight:400; font-style:italic; border-bottom:none;}
+  .qc-fb{margin:3px 0 9px; font-size:11.5px; line-height:1.45; break-inside:avoid; page-break-inside:avoid;}
+  .qc-fb .pr-mark{margin-right:6px;}
+  .qc-fb-note{display:block; margin-top:2px;}
   .pr-item{break-inside:avoid; page-break-inside:avoid;}
   .pr-section-title{font-weight:700; font-size:10.5px; color:#4B2E83; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;}
   .pr-consigne{font-size:11px; color:#6B6B6B; font-style:italic; margin:0 0 7px;}
@@ -1477,13 +1485,159 @@ function prRenderDetail(detail, quizFile){
     return `<div class="pr-section"><div class="pr-section-title">${title}</div><div class="pr-text-block">${val}</div></div>`;
   }).join('');
 }
+// -------- copie « à l'identique » : la vraie page du quiz, remplie avec les réponses de l'élève --------
+// On recharge la page du quiz (même dossier que l'admin), on en garde l'énoncé (consignes, textes,
+// images, mise en page d'origine), on remplace chaque champ par la réponse de l'élève (en bleu) et on
+// ajoute sous chaque question la note, le commentaire (rose) et la phrase corrigée (vert).
+// Disponible pour les quiz « formulaire » (page avec #form-screen) ; sinon on garde l'affichage en liste.
+const PAPER_CACHE = {};
+function escHtml(t){
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function scopeQuizCss(cssText, scope){
+  let sheet;
+  try{ sheet = new CSSStyleSheet(); sheet.replaceSync(cssText); } catch(e){ return ''; }
+  const scopeSel = sel => sel.split(',').map(x => {
+    x = x.trim();
+    if(/^(:root|html|body)$/i.test(x)) return '.' + scope;
+    return '.' + scope + ' ' + x.replace(/^(html|body)\s+/i, '');
+  }).join(',');
+  const walk = rules => Array.from(rules).map(r => {
+    if(r.type === CSSRule.STYLE_RULE) return scopeSel(r.selectorText) + '{' + r.style.cssText + '}';
+    if(r.type === CSSRule.MEDIA_RULE) return '@media ' + r.conditionText + '{' + walk(r.cssRules) + '}';
+    if(r.type === CSSRule.SUPPORTS_RULE) return '@supports ' + r.conditionText + '{' + walk(r.cssRules) + '}';
+    if(r.type === CSSRule.FONT_FACE_RULE || r.type === CSSRule.KEYFRAMES_RULE) return r.cssText;
+    return '';
+  }).join('\n');
+  return walk(sheet.cssRules);
+}
+async function loadPaperTemplate(file, url){
+  if(file in PAPER_CACHE) return PAPER_CACHE[file];
+  PAPER_CACHE[file] = null;
+  try{
+    const res = await fetch(url, { cache: 'no-store' });
+    if(!res.ok) return null;
+    const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+    const form = doc.querySelector('#form-screen');
+    if(!form) return null;
+    const scope = 'qc-' + file.replace(/[^a-z0-9]/gi, '-');
+    const css = Array.from(doc.querySelectorAll('style')).map(st => st.textContent).join('\n');
+    const style = document.createElement('style');
+    style.textContent = scopeQuizCss(css, scope);
+    document.head.appendChild(style);
+    doc.querySelectorAll('link[rel="stylesheet"]').forEach(l => {
+      const href = l.href;
+      if(href && !Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(x => x.href === href)){
+        const n = document.createElement('link'); n.rel = 'stylesheet'; n.href = href; document.head.appendChild(n);
+      }
+    });
+    form.querySelectorAll('script,button,.scorebar').forEach(e => e.remove());
+    // Précharge les images de l'énoncé pour que la mesure du nombre de pages les compte.
+    const imgs = Array.from(form.querySelectorAll('img[src]')).map(im => im.getAttribute('src'));
+    await Promise.all(imgs.map(src => new Promise(resolve => {
+      const im = new Image(); im.onload = im.onerror = () => resolve(); im.src = new URL(src, url).href;
+    })));
+    form.querySelectorAll('img[src]').forEach(im => im.setAttribute('src', new URL(im.getAttribute('src'), url).href));
+    PAPER_CACHE[file] = { scope, html: form.innerHTML };
+  } catch(e){ /* repli sur l'affichage en liste */ }
+  return PAPER_CACHE[file];
+}
+async function preparePaperCopies(attempts){
+  for(const a of attempts){
+    const q = QUIZZES.find(x => x.id === a.quiz_id);
+    if(q && q.url) await loadPaperTemplate(quizFileFromUrl(q.url), q.url);
+  }
+}
+function paperCandidates(key, i){
+  const m = key.match(/^(?:partie|section)(\d+)([a-z]?)(?:_ai)?$/i);
+  if(!m) return [];
+  const base = m[1] + m[2].toLowerCase();
+  const out = [];
+  ['p', 's'].forEach(l => {
+    if(i === null) out.push(`${l}${base}-text`);
+    else out.push(`${l}${base}-${i + 1}`, `${l}${base}-${i + 1}-word`);
+  });
+  return out;
+}
+function paperFeedbackHtml(item){
+  const markInfo = computeMarkParts(item);
+  const markHtml = markInfo.label ? `<span class="pr-mark${markInfo.ok === false ? ' no' : ''}">${markInfo.label}</span>` : '';
+  const rawComment = item.comment || item.explanation || item.feedback;
+  const { note: noteText, correction } = prSplitCorrection(rawComment ? prCleanComment(rawComment) : rawComment);
+  const note = (noteText && markInfo.ok !== true) ? `<span class="pr-comment qc-fb-note">${noteText}</span>` : '';
+  const corr = correction ? `<span class="pr-correction">${correction}</span>` : '';
+  // Détail du barème quand l'IA a noté sur plusieurs critères (ex : rédaction = contenu / structure / langue).
+  const subs = Object.entries(item).filter(([k, v]) => !REPORT_ITEM_CORE_KEYS.includes(k) && typeof v === 'number');
+  const subsHtml = subs.length ? `<span class="qc-fb-note" style="color:#4B2E83; font-weight:600;">${subs.map(([k, v]) => `${humanizeKey(k)} : ${v}`).join(' · ')}</span>` : '';
+  if(!markHtml && !note && !corr && !subsHtml) return '';
+  return `<div class="qc-fb">${markHtml}${subsHtml}${note}${corr}</div>`;
+}
+function paperAnswerHtml(item, block){
+  const given = item.given !== undefined ? item.given : item.answer;
+  const cls = 'qc-answer' + (block ? ' qc-answer-block' : '');
+  if(given !== undefined && given !== null && String(given).trim() !== '') return `<span class="${cls}">${escHtml(String(given).trim())}</span>`;
+  const missing = item.given === undefined && !('answer' in item);
+  return `<span class="${cls} qc-answer-empty">${missing ? '(réponse non conservée)' : '(pas de réponse)'}</span>`;
+}
+function paperCopyHtml(quizFile, a, detail){
+  const tpl = PAPER_CACHE[quizFile];
+  if(!tpl || !detail || Array.isArray(detail)) return null;
+  const root = document.createElement('div');
+  root.innerHTML = tpl.html;
+  const byId = id => root.querySelector('#' + CSS.escape(id));
+  const unplaced = [];
+  const place = (id, item, isBlock) => {
+    const el = byId(id);
+    if(!el) return false;
+    const container = el.closest('.cbr-row, .sentence-row, .q-row, .translate-row, .verb-line, tr') || el.parentElement;
+    const fb = paperFeedbackHtml(item);
+    if(/-word$/.test(id)){
+      // « The ___ is dangerous because ___ » : la réponse enregistrée est la phrase entière.
+      const line = el.closest('.cbr-line') || el.parentElement;
+      line.innerHTML = paperAnswerHtml(item, false);
+      byId(id.replace(/-word$/, '-why')) && byId(id.replace(/-word$/, '-why')).remove();
+    } else {
+      el.outerHTML = paperAnswerHtml(item, isBlock);
+    }
+    if(fb){
+      if(container.tagName === 'TR') container.insertAdjacentHTML('afterend', `<tr><td colspan="20">${fb}</td></tr>`);
+      else container.insertAdjacentHTML('afterend', fb);
+    }
+    return true;
+  };
+  const entries = sortReportEntries(Object.entries(detail).filter(([k, v]) => !PR_HIDDEN_KEYS.includes(k) && k !== 'feedback_global' && v !== null && v !== undefined && v !== ''));
+  entries.forEach(([key, val]) => {
+    const sheet = sheetSection(quizFile, key);
+    if(Array.isArray(val)){
+      const items = sectionItems(quizFile, key, val);
+      const left = [];
+      items.forEach((item, i) => {
+        if(item === null || typeof item !== 'object') return;
+        const ids = [item.field, ...paperCandidates(key, i)].filter(Boolean);
+        const id = ids.find(x => byId(x));
+        if(!id || !place(id, item, false)) left.push(item);
+      });
+      if(left.length) unplaced.push({ title: sheet ? sheet.title : prLabelForKey(key), items: left });
+    } else if(typeof val === 'object'){
+      const item = Object.assign({}, mergeItemWithSchema(val, sheet && sheet.maxPoints !== undefined ? { points: sheet.maxPoints } : null));
+      const id = paperCandidates(key, null).find(x => byId(x));
+      if(!id || !place(id, item, true)) unplaced.push({ title: sheet ? sheet.title : prLabelForKey(key), items: [item] });
+    }
+  });
+  const unplacedHtml = unplaced.map(u => `<div class="pr-section"><div class="pr-section-title">${u.title}</div>${u.items.map(prRenderItem).join('')}</div>`).join('');
+  const bilan = detail.feedback_global
+    ? `<div class="pr-section"><div class="pr-section-title">Ton bilan</div><div class="pr-text-block" style="color:#C2185B;">${escHtml(prCleanComment(detail.feedback_global))}</div></div>`
+    : '';
+  return `<div class="${tpl.scope} qc-copy">${root.innerHTML}</div>${unplacedHtml}${bilan}`;
+}
+
 function buildPrintReport(a, detail){
   const classe = CLASSES.find(c => c.id === a.class_id);
   const quiz = QUIZZES.find(q => q.id === a.quiz_id);
   const quizFile = quizFileFromUrl(quiz && quiz.url);
   const scoreHtml = a.cancelled ? 'Annulée' : `${a.score}<span class="pr-of">/${a.total}</span>`;
 
-  let body = prRenderDetail(detail, quizFile);
+  let body = paperCopyHtml(quizFile, a, detail) || prRenderDetail(detail, quizFile);
 
   // La copie rédigée (texte brut de l'élève) n'est volontairement PAS imprimée : sur une rédaction
   // longue elle peut à elle seule ajouter 2-3 pages. Elle reste visible sur le compte-rendu à l'écran
@@ -1512,8 +1666,9 @@ function buildPrintReport(a, detail){
     </div>
   `;
 }
-document.getElementById('report-print-btn').addEventListener('click', () => {
+document.getElementById('report-print-btn').addEventListener('click', async () => {
   if(!currentReportAttempt) return;
+  await preparePaperCopies([currentReportAttempt]);
   document.getElementById('print-report-root').innerHTML = buildPrintReport(currentReportAttempt, currentReportDetail);
   window.print();
 });
@@ -1562,9 +1717,10 @@ function buildEvenPagedReport(a, detail){
 // Impression groupée : une correction par élève, chacune démarrant sur une nouvelle page
 // (y compris quand la correction précédente déborde sur plusieurs pages), et toujours complétée
 // à un nombre de pages pair pour ne pas décaler l'impression recto-verso.
-document.getElementById('print-quiz-corrections-btn').addEventListener('click', () => {
+document.getElementById('print-quiz-corrections-btn').addEventListener('click', async () => {
   const attempts = (currentAttempts || []).filter((a, i) => !a.cancelled && selectedPrintIdxs.has(i));
   if(attempts.length === 0){ alert("Aucune copie cochée à imprimer. Coche au moins une copie dans la liste des résultats."); return; }
+  await preparePaperCopies(attempts);
   const html = attempts.map(a => buildEvenPagedReport(a, getReportDetail(a))).join('');
   document.getElementById('print-report-root').innerHTML = html;
   window.print();
