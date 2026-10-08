@@ -55,6 +55,11 @@
   .nav-group-label:first-of-type{margin-top:2px;}
   .nav-item{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:9px; font-size:13.5px; font-weight:600; color:rgba(255,255,255,0.78); cursor:pointer; margin-bottom:4px;}
   .nav-item svg{flex-shrink:0; opacity:0.9;}
+  .sidebar a.nav-item{color:rgba(255,255,255,0.85) !important; text-decoration:none;}
+  .sidebar a.nav-item:hover{color:#fff !important;}
+  .course-toggle{display:none;}
+  .nav-item .sub{display:block; font-size:11px; opacity:.7; font-weight:500;}
+  .nav-item .sub{}
   .nav-item.active{background:rgba(255,255,255,0.18); color:#fff;}
   .nav-item:not(.active):hover{background:rgba(255,255,255,0.08); color:#fff;}
   .sidebar-footer{margin-top:auto; display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.18);}
@@ -269,6 +274,15 @@
       margin-bottom:0; padding:7px 2px; font-size:10px; text-align:center; line-height:1.15;
     }
     .nav-item svg{width:19px; height:19px;}
+    /* les cours interactifs : un seul bouton « Cours » qui ouvre une liste au-dessus de la barre */
+    .course-toggle{display:flex;}
+    .course-group{display:none; position:fixed; left:10px; right:10px; bottom:calc(68px + env(safe-area-inset-bottom, 0px)); z-index:45;
+      background:linear-gradient(180deg, var(--violet-1), var(--violet-2)); border-radius:16px; padding:8px; box-shadow:0 8px 28px rgba(61,43,102,0.4);}
+    .course-group.open{display:block;}
+    .course-group .nav-item{flex-direction:row; justify-content:flex-start; gap:12px; font-size:15px; text-align:left; padding:13px 14px; margin-bottom:2px;}
+    .course-group .nav-item svg{width:20px; height:20px;}
+    .course-group .nav-item .sub{display:inline; margin-left:6px;}
+    .nav-item.open{background:rgba(255,255,255,0.18); color:#fff;}
     .sidebar-footer{
       margin-top:0; border-top:none; padding-top:0;
       flex:0 0 auto; flex-direction:column; align-items:center; justify-content:center;
@@ -395,6 +409,62 @@
     <div class="nav-item" data-view="practice-results">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
       Suivi entraînement
+    </div>
+
+    <p class="nav-group-label">Cours interactifs</p>
+    <div class="nav-item course-toggle" id="course-toggle" data-external="1" role="button" aria-expanded="false">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+      Cours
+    </div>
+    <div class="course-group" id="course-group">
+    <a class="nav-item" href="cours-suivi.html" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Electrician's Guide
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=oral" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+      Préparer mon oral
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=art" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      From Art to Ad <span class="sub">2nde MES</span>
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=film" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+      Behind the Screen
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=journal" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="10" x2="18" y2="10"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+      Journal du lycée <span class="sub">Français 2nde</span>
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=travel" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+      Travel Survival Guide <span class="sub">Anglais</span>
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=stage" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      Internship Report <span class="sub">Anglais 1ère</span>
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=year" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      My Year in Pictures <span class="sub">Anglais</span>
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=music" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      Music &amp; Me <span class="sub">Anglais</span>
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=city" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      Survive the City <span class="sub">Anglais</span>
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=grammar" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      Grammar Boost <span class="sub">Anglais</span>
+    </a>
+    <a class="nav-item" href="cours-suivi.html?course=francais" data-external="1" style="text-decoration:none;color:inherit">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Dis-le bien <span class="sub">Français</span>
+    </a>
     </div>
     <div class="sidebar-footer">
       <div class="sidebar-user">
@@ -622,9 +692,20 @@ async function enterApp(user){
   }
 })();
 
+
+// -------- menu « Cours » (mobile) --------
+(function(){
+  const tg = document.getElementById('course-toggle'), grp = document.getElementById('course-group');
+  if(!tg || !grp) return;
+  const set = open => { grp.classList.toggle('open', open); tg.classList.toggle('open', open); tg.setAttribute('aria-expanded', open ? 'true' : 'false'); };
+  tg.addEventListener('click', e => { e.stopPropagation(); set(!grp.classList.contains('open')); });
+  document.addEventListener('click', e => { if(!grp.contains(e.target)) set(false); });
+})();
+
 // -------- nav --------
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', () => {
+    if(item.dataset.external) return; // lien vers une autre page (ex : suivi du cours interactif)
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     item.classList.add('active');
     showView(item.dataset.view);
