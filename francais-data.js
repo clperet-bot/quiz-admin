@@ -4,7 +4,9 @@
   connaître les formules du monde du travail, corriger les fautes courantes.
   L’élève choisit ses DIFFICULTÉS (tuiles) ; chaque tuile ouvre des LEÇONS courtes réparties dans 4 étapes,
   puis une ÉTAPE FINALE : écrire un mail complet à un employeur, assemblé à partir de ses textes des étapes précédentes.
-  Pour chaque étape : leçons → ROUND A (QCM) → ROUND B (compléter avec la liste) → ROUND C (écriture corrigée par l’IA).
+  Rubriques littéraires (6 tuiles) : leçons ajoutées aux étapes 1 à 3 avec un petit bonus d’écriture, puis étape 6 « Atelier littéraire » (récit court assemblé).
+  Rubriques « Argumenter et analyser » (5 tuiles) : étapes 7 (argumenter), 8 (analyser une image), 9 (culture de l’art) et 10 (atelier argumenté).
+  Pour chaque étape : leçons → ROUND A (QCM) → ROUND B (compléter avec la liste de mots) → ROUND C (écriture corrigée par l’IA).
   Partagé par la page élève (cours-francais.html) et le suivi enseignante (cours-suivi.html).
   Identifiants de réponses : 'pick' (tuiles choisies) puis '<étape>-A-1', '<étape>-B-1', '<étape>-C-1'.
 */
@@ -14,20 +16,57 @@ const MISSION = `Choisis tes **difficultés**, puis avance **étape par étape**
 const MISSION_FR = `Chaque étape = des **leçons courtes**, **3 rounds**, et un **morceau de ton mail**.`;
 
 /* Tuiles : les difficultés que l’élève peut choisir */
+const GROUPS = [ { key:'quotidien', title:'Parler et écrire au quotidien' }, { key:'litteraire', title:'Lire et écrire littéraire' }, { key:'argumenter', title:'Argumenter et analyser' } ];
+const LIT = ['lire','emotion','descr','figures','temps','citer'];
 const TILES = [
- { key:'potes',     icon:'🗣️', title:'Je parle comme avec mes potes', tag:'registres, mots de copain' },
- { key:'sms',       icon:'📱', title:'J\'écris comme dans mes SMS', tag:'abréviations, pas de majuscule' },
- { key:'mots',      icon:'🔁', title:'Je répète toujours les mêmes mots', tag:'truc, chose, ouf, bien, nul…' },
- { key:'ortho',     icon:'✏️', title:'Je fais des fautes d\'orthographe', tag:'a / à, et / est, ses / ces…' },
- { key:'phrases',   icon:'🧩', title:'Mes phrases sont courtes ou mal reliées', tag:'mots de liaison, ponctuation' },
- { key:'employeur', icon:'✉️', title:'Je ne sais pas écrire à un employeur', tag:'mail, politesse' },
- { key:'tel',       icon:'☎️', title:'Je ne sais pas quoi dire au téléphone', tag:'appeler une entreprise' },
- { key:'entretien', icon:'🤝', title:'J\'ai peur de l\'entretien ou du stage', tag:'quoi dire, comment répondre' }
+ { key:'potes', group:'quotidien',     icon:'🗣️', title:'Je parle comme avec mes potes', tag:'registres, mots de copain' },
+ { key:'sms', group:'quotidien',       icon:'📱', title:'J\'écris comme dans mes SMS', tag:'abréviations, pas de majuscule' },
+ { key:'mots', group:'quotidien',      icon:'🔁', title:'Je répète toujours les mêmes mots', tag:'truc, chose, ouf, bien, nul…' },
+ { key:'ortho', group:'quotidien',     icon:'✏️', title:'Je fais des fautes d\'orthographe', tag:'a / à, et / est, ses / ces…' },
+ { key:'phrases', group:'quotidien',   icon:'🧩', title:'Mes phrases sont courtes ou mal reliées', tag:'mots de liaison, ponctuation' },
+ { key:'employeur', group:'quotidien', icon:'✉️', title:'Je ne sais pas écrire à un employeur', tag:'mail, politesse' },
+ { key:'tel', group:'quotidien',       icon:'☎️', title:'Je ne sais pas quoi dire au téléphone', tag:'appeler une entreprise' },
+ { key:'entretien', group:'quotidien', icon:'🤝', title:'J\'ai peur de l\'entretien ou du stage', tag:'quoi dire, comment répondre' },
+ { key:'lire',    group:'litteraire', icon:'📖', title:'Je ne comprends pas bien un texte littéraire', tag:'narrateur, champ lexical' },
+ { key:'emotion', group:'litteraire', icon:'🎭', title:'Je ne sais pas parler d’un personnage ou d’une émotion', tag:'triste, content, peur…' },
+ { key:'descr',   group:'litteraire', icon:'🖌️', title:'Mes descriptions sont plates', tag:'écrire de façon plus littéraire' },
+ { key:'figures', group:'litteraire', icon:'🔍', title:'Je ne repère pas les figures de style', tag:'comparaison, métaphore…' },
+ { key:'temps',   group:'litteraire', icon:'⏳', title:'Je mélange les temps du récit', tag:'imparfait, passé simple' },
+ { key:'citer',   group:'litteraire', icon:'🗨️', title:'Je ne sais pas citer ou commenter un extrait', tag:'guillemets, « l’auteur utilise… »' },
+ { key:'avis',      group:'argumenter', icon:'💬', title:'Je ne sais pas donner mon avis avec des arguments', tag:'« je pense que… car… »' },
+ { key:'exemples',  group:'argumenter', icon:'🧱', title:'Mes arguments n’ont pas d’exemples', tag:'argument, exemple, paragraphe' },
+ { key:'connect',   group:'argumenter', icon:'🔗', title:'Je ne sais pas relier mes idées', tag:'connecteurs : d’abord, en effet, cependant…' },
+ { key:'image',     group:'argumenter', icon:'🖼️', title:'Je ne sais pas décrire et analyser une image', tag:'méthode en 5 étapes' },
+ { key:'art',       group:'argumenter', icon:'🎨', title:'Je n’ai pas de culture artistique de base', tag:'grandes périodes, vocabulaire' }
 ];
+const MAIN = TILES.filter(t => t.group !== 'argumenter').map(t => t.key);   // tuiles qui ouvrent le parcours « mail de stage »
+
+/*
+  IMAGES (exercices « analyser une image » et « culture de l’art »).
+  - Les 4 images utilisées viennent du dossier art-ad/ (peintures du domaine public : Millet †1875, Van Gogh †1890, Millais †1896, Léonard de Vinci).
+    Les publicités du même dossier et l’œuvre de Warhol (†1987) ne sont PAS utilisées : elles sont protégées.
+  - 'facts' = ce qu’on voit vraiment (référence pour l’IA, jamais montrée à l’élève). On ne décrit que ce qui est visible.
+  - EMPLACEMENTS À REMPLIR par l’enseignante : 'affiche' et 'oeuvre'. Tant que src vaut null, le bonus correspondant n’apparaît pas.
+    Pour l’activer : copier l’image dans le dossier du site (ex. images/affiche.jpg) et remplacer  src:null  par  src:'images/affiche.jpg'
+    (et compléter title / alt). Vérifier que l’image est libre de droits (artiste mort depuis plus de 70 ans, ou photo à toi).
+*/
+const IMAGES = {
+  glaneuses:{ src:'art-ad/gleaners-painting.jpg', title:'Jean-François Millet, Les Glaneuses (1857)', alt:'Peinture : trois femmes penchées en avant ramassent des épis dans un champ ; au loin, des meules et des gens au travail',
+    facts:'Peinture à l’huile. Au premier plan, trois femmes penchées en avant, dont deux de dos ou de profil, qui ramassent des épis au sol (vêtements bleu-vert, rose, rouge, coiffes) ; une tient une petite gerbe. À l’arrière-plan, un vaste champ avec de grosses meules, une charrette et de très petits personnages au travail ; une ligne d’horizon basse ; le ciel clair occupe le haut. Couleurs plutôt ternes et naturelles (vert, brun, beige, bleu-vert), lumière douce et claire, ombres sous les femmes.' },
+  tournesols:{ src:'art-ad/sunflowers-painting.jpg', title:'Vincent van Gogh, Tournesols (1888)', alt:'Peinture : un vase de tournesols sur un fond jaune',
+    facts:'Peinture à l’huile. Un vase contenant de nombreux tournesols (certains fanés), posé sur une table, au centre ; fond jaune uni ; couleurs chaudes dominantes (jaune, orange) ; signature « Vincent » sur le vase ; touches de peinture épaisses et visibles ; cadrage serré.' },
+  bubbles:{ src:'art-ad/bubbles-painting.jpg', title:'John Everett Millais, Bubbles (1886)', alt:'Peinture : un jeune garçon assis regarde une bulle qui flotte au-dessus de lui, sur un fond sombre',
+    facts:'Peinture à l’huile. Un jeune garçon aux cheveux blonds bouclés, assis au premier plan, regarde vers le haut. Au-dessus de lui, tout en haut, une bulle. Il porte un vêtement vert avec un col clair à volants et tient un bol. Fond très sombre (brun-noir). La lumière tombe sur son visage et son col. Un pot est visible en bas à gauche.' },
+  joconde:{ src:'art-ad/monalisa-painting.jpg', title:'Léonard de Vinci, La Joconde (début du XVIe siècle)', alt:'Peinture : portrait d’une femme assise, les mains croisées, devant un paysage',
+    facts:'Peinture à l’huile. Portrait d’une femme à mi-corps, assise, le buste de trois quarts et le visage tourné vers nous, les mains croisées au premier plan, un léger sourire. Cheveux longs sombres, voile fin, vêtement sombre aux manches brun-orangé. À l’arrière-plan, un paysage de rochers, de chemins et d’eau. Tons sombres, bruns et verts.' },
+  affiche:{ src:null, title:'Image au choix (affiche, photo, publicité…)', alt:'', todo:'Image à fournir par l’enseignante' },
+  oeuvre:{ src:null, title:'Œuvre contemporaine ou street art au choix', alt:'', todo:'Image à fournir par l’enseignante' }
+};
+
 
 /* petits constructeurs : A = QCM [question, options, index de la bonne réponse] ; B = trou [phrase avec ___, bonne réponse] */
-const A = (q, opts, ans) => ({ q, opts, ans });
-const B = (t, ans) => [t, ans];
+const A = (q, opts, ans, img) => ({ q, opts, ans, img });
+const B = (t, ans, img) => [t, ans, img];
 
 /*
   Chaque ÉTAPE contient des SECTIONS (leçons). Une section est montrée si l’élève a choisi une de ses tuiles.
@@ -94,7 +133,36 @@ const STEPS = [
         A(`Du pain ___ du fromage.`, ['et','est','é','ai'], 0),
         A(`Tu veux du thé ___ du café ?`, ['ou','où','u','au'], 0) ],
     B:{ lines:[ B(`Léo ___ un entretien demain.`, 'a'), B(`Le patron ___ très gentil.`, 'est'), B(`___ travailles-tu ?`, 'où') ], extra:['à','et','ou'] },
-    crit:`Les mots a / à, et / est, ou / où sont bien orthographiés.` }
+    crit:`Les mots a / à, et / est, ou / où sont bien orthographiés.` },
+  { id:'sNarr', tiles:['lire'], title:`Qui raconte ? Le narrateur`, tag:`narrateur · point de vue`,
+    lesson:{
+      rules:[`Dans un récit, quelqu’un **raconte** : c’est le **narrateur**. Il ne faut pas le confondre avec l’**auteur**, la personne qui écrit le livre.`,
+             `**Narrateur à la 1re personne** (**je**) : il est dans l’histoire et on connaît ses pensées. **Narrateur à la 3e personne** (**il / elle**) : il raconte de l’extérieur.`,
+             `Le **point de vue**, c’est ce que le narrateur nous montre : ce qu’il voit, ce qu’il pense. Pour le trouver, repère les **pronoms** (je / il) et les **pensées**.`],
+      table:{ head:[`Phrase`,`Qui raconte ?`], rows:[[`J’ai ouvert la porte et mon cœur s’est mis à battre.`,`un « je » dans l’histoire : on connaît ses sensations`],[`Léa ouvrit la porte. La pièce était vide.`,`un narrateur extérieur : « il / elle »`]] },
+      examples:[[`Je tremblais devant la classe.`,`1re personne`],[`Il tremblait devant la classe.`,`3e personne`]],
+      mini:[`Dans « Je pris mon sac et je partis. », le narrateur est…`, [`dans l’histoire (1re personne)`,`hors de l’histoire (3e personne)`,`l’auteur du livre`], 0, `On lit « je » : le narrateur raconte sa propre histoire, c’est la 1re personne.`] },
+    A:[ A(`Dans « Nina referma son cahier et soupira. », qui raconte ?`, [`Un narrateur extérieur (il / elle)`,`Nina elle-même (je)`,`Le lecteur`,`L’auteur en train de parler de lui`], 0),
+        A(`Quelle phrase est racontée à la 1re personne ?`, [`Je regardais la mer, inquiet.`,`Il regardait la mer, inquiet.`,`Les marins regardaient la mer.`,`Elle regardait la mer.`], 0),
+        A(`Le narrateur et l’auteur sont…`, [`deux choses différentes`,`toujours la même personne`,`deux mots pour le héros`,`la même chose que le lecteur`], 0) ],
+    B:{ lines:[ B(`Dans « Je marchais seul dans la rue », le narrateur parle à la ___ personne.`, `première`),
+                B(`Dans « Elle ouvrit la lettre », le narrateur raconte de l’___.`, `extérieur`),
+                B(`Celui qui écrit le livre s’appelle l’___.`, `auteur`) ], extra:[`troisième`,`narrateur`] } },
+  { id:'sChamp', tiles:['lire'], title:`Le champ lexical`, tag:`les mots d’un même thème`,
+    lesson:{
+      rules:[`Un **champ lexical**, c’est un **groupe de mots qui parlent du même thème**. Exemple pour la **peur** : trembler, sursauter, sombre, un cri.`,
+             `Repérer le champ lexical aide à comprendre le **sujet** et l’**ambiance** d’un texte.`,
+             `Pour **écrire** : choisis un thème et utilise 3 ou 4 mots de ce thème pour qu’on **sente** le lieu.`],
+      table:{ head:[`Thème`,`Mots du champ lexical`], rows:[[`La peur`,`trembler · sursauter · sombre · un cri · fuir`],[`L’atelier`,`une machine · un outil · le bruit · la poussière · l’établi`],[`La mer`,`une vague · le sel · une mouette · le vent · l’horizon`]] },
+      ba:[ [`Il y avait un lieu avec des trucs partout.`, `L’atelier sentait l’huile ; les machines ronronnaient et la poussière flottait.`] ],
+      mini:[`Quel mot n’appartient pas au champ lexical de la mer ?`, [`une mouette`,`le clavier`,`une vague`], 1, `Un clavier n’a aucun lien avec la mer : les deux autres mots font partie du même thème.`] },
+    A:[ A(`Quel groupe de mots forme un champ lexical (le froid) ?`, [`neige · gelé · frissonner · glacial`,`neige · cahier · rapide · vendre`,`froid · chaud · lundi · dire`,`glace · sac · beau · courir`], 0),
+        A(`Quel mot n’appartient pas au champ lexical de la cuisine ?`, [`tournevis`,`casserole`,`four`,`recette`], 0),
+        A(`À quoi sert de repérer un champ lexical dans un texte ?`, [`À comprendre le thème et l’ambiance`,`À compter les phrases`,`À trouver l’auteur`,`À corriger les fautes`], 0) ],
+    B:{ lines:[ B(`Trembler, sursauter, crier : ces mots forment le champ lexical de la ___.`, `peur`),
+                B(`Une mouette, le sel, une ___ : le champ lexical de la mer.`, `vague`),
+                B(`L’établi, un outil, une ___ : le champ lexical de l’atelier.`, `machine`) ], extra:[`neige`] },
+    lit:{ label:`Le lieu de ma scène`, instruct:`Décris en **1 ou 2 phrases** un lieu du lycée ou de ton stage (atelier, cantine, couloir…). Utilise au moins **3 mots du même champ lexical**, à l’**imparfait**.`, ph:`L’atelier sentait …`, rubric:`Décrit un lieu en 1 à 2 phrases, avec au moins trois mots du même champ lexical, et des verbes de description à l’imparfait.` } }
   ] },
 
 /* ================= ÉTAPE 2 — À qui je parle ? ================= */
@@ -138,11 +206,41 @@ const STEPS = [
         A(`Il a rangé ___ bureau.`, ['son','sont','sons','sond'], 0),
         A(`Elle ___ présente au patron.`, ['ce','se','ceux','s'], 1) ],
     B:{ lines:[ B(`___ commence à 8 h le lundi.`, 'on'), B(`Mes collègues ___ très gentils.`, 'sont'), B(`___ métier me plaît beaucoup.`, 'ce') ], extra:['ont','se','son'] },
-    crit:`Les mots on / ont, son / sont, ce / se sont bien orthographiés.` }
+    crit:`Les mots on / ont, son / sont, ce / se sont bien orthographiés.` },
+  { id:'sTemps', tiles:['temps'], title:`Les temps du récit`, tag:`imparfait · passé simple`,
+    lesson:{
+      rules:[`Dans un récit au passé, on emploie **deux temps** : l’**imparfait** pour le **décor** (ce qui dure, ce qu’on décrit) et le **passé simple** pour les **actions** (ce qui arrive, ce qui change).`,
+             `À l’oral et dans les écrits de tous les jours, on remplace souvent le passé simple par le **passé composé** : « La porte claqua » devient « La porte a claqué ».`,
+             `Le mot **soudain** annonce souvent une action : « Soudain, la porte claqua. »`],
+      table:{ head:[`Temps`,`Il sert à…`,`Exemple`], rows:[[`Imparfait`,`le décor, ce qui dure`,`Il pleuvait. La rue était vide.`],[`Passé simple`,`l’action qui arrive`,`Soudain, un chien aboya.`],[`Passé composé`,`l’action, à l’oral ou dans un mail`,`Hier, j’ai ouvert la porte.`]] },
+      ba:[ [`La rue était calme. Soudain, un chien aboyait.`, `La rue était calme. Soudain, un chien aboya.`] ],
+      mini:[`Dans « Il faisait nuit. Soudain, un cri retentit. », quel verbe est au passé simple ?`, [`faisait`,`retentit`,`Soudain`], 1, `« Retentit » est une action qui arrive : c’est le passé simple. « Faisait » décrit le décor : c’est l’imparfait.`] },
+    A:[ A(`La rue ___ calme quand un chien aboya.`, [`était`,`fut`,`a été`,`serait`], 0),
+        A(`Soudain, la porte ___.`, [`claquait`,`claqua`,`claquerait`,`claquer`], 1),
+        A(`Dans un récit, l’imparfait sert surtout à…`, [`décrire le décor`,`raconter une action soudaine`,`parler du futur`,`donner un ordre`], 0) ],
+    B:{ lines:[ B(`Il ___ fort ce soir-là ; la rue était déserte.`, `pleuvait`),
+                B(`Soudain, un homme ___ au coin de la rue.`, `arriva`),
+                B(`La salle ___ de grandes fenêtres.`, `avait`) ], extra:[`regarda`] },
+    lit:{ label:`Décor et action`, instruct:`Écris **2 phrases** : une qui décrit le **décor** (imparfait), une qui raconte une **action soudaine** (passé simple, 3e personne).`, ph:`La cantine était …`, rubric:`2 phrases : la première décrit un décor avec des verbes à l’imparfait, la seconde raconte une action à la 3e personne au passé simple (ou au passé composé, mais sans mélange incorrect des temps).` } },
+  { id:'sCite', tiles:['citer'], title:`Citer un extrait et le commenter`, tag:`guillemets · l’auteur utilise…`,
+    lesson:{
+      rules:[`**Citer**, c’est recopier **exactement** un petit morceau du texte, entre **guillemets** : « … ».`,
+             `On cite pour **prouver** ce qu’on dit. Méthode en 3 temps : 1) **j’affirme** ; 2) **je cite** ; 3) **j’explique**.`,
+             `Phrases utiles : **L’auteur utilise** … **pour montrer que** … ; **Cela donne l’impression que** … ; **On comprend que** …`],
+      table:{ head:[`Étape`,`Exemple`], rows:[[`1. J’affirme`,`Le personnage a peur.`],[`2. Je cite`,`« Ses mains tremblaient. »`],[`3. J’explique`,`L’auteur utilise le verbe « tremblaient » pour montrer que la peur est très forte.`]] },
+      ba:[ [`Il a peur, c’est écrit.`, `Le personnage a peur : « Ses mains tremblaient. » L’auteur montre sa peur par son corps.`] ],
+      mini:[`Comment bien citer un extrait ?`, [`Entre guillemets, recopié exactement`,`Sans guillemets, avec mes mots`,`En le résumant`,`En changeant des mots`], 0, `Une citation est toujours recopiée à l’identique, entre guillemets.`] },
+    A:[ A(`Quel signe montre une citation ?`, [`Les guillemets « »`,`Les parenthèses`,`Le tiret`,`Les points de suspension`], 0),
+        A(`Quelle phrase commente bien la citation « Le silence pesait sur la classe. » ?`, [`L’auteur utilise le verbe « pesait » pour montrer que le silence est lourd, gênant.`,`C’est bien écrit.`,`Il y a un silence.`,`Je n’aime pas ce texte.`], 0),
+        A(`Quelle est la bonne méthode ?`, [`J’affirme, je cite, j’explique`,`Je cite, je recopie, je recommence`,`J’explique sans citer`,`Je résume tout le texte`], 0) ],
+    B:{ lines:[ B(`Une citation se met entre ___.`, `guillemets`),
+                B(`L’auteur ___ une comparaison.`, `utilise`),
+                B(`L’auteur emploie ce mot pour ___ que le héros est triste.`, `montrer`) ], extra:[`cite`] },
+    lit:{ label:`Mon commentaire`, instruct:`Lis cette phrase : « Le vent hurlait dans les couloirs vides. » Écris **1 ou 2 phrases** pour la commenter : **cite** un mot entre guillemets et **explique** ce qu’il montre.`, ph:`L’auteur utilise …`, rubric:`1 à 2 phrases de commentaire sur la phrase donnée : l’élève cite exactement un mot ou un groupe de mots entre guillemets ET explique ce qu’il montre ou fait ressentir (par exemple « l’auteur utilise… pour montrer que… »). Un simple « c’est bien » ne suffit pas.` } }
   ] },
 
 /* ================= ÉTAPE 3 — Mes mots ================= */
-{ key:'mots', icon:'🧰', title:'Mes mots', tag:'dire précisément',
+{ key:'mots', group:'quotidien', icon:'🧰', title:'Mes mots', tag:'dire précisément',
   mission:`Ta mission : remplacer les **mots vagues** par des **mots précis**, relier tes phrases, et écrire **pourquoi** ce métier t’intéresse.`,
   C:{ title:'Ma motivation', piece:'Ma motivation',
       instruct:`Explique en **2 ou 3 phrases** **pourquoi** ce métier t’intéresse et **ce que tu sais faire** (une qualité ou une compétence). Utilise au moins **deux mots de liaison** (car, mais, donc, puis, aussi) et des **mots précis**. Ces phrases seront la **fin du corps de ton mail**.`,
@@ -233,7 +331,54 @@ const STEPS = [
         A(`Il ___ trompé de bus.`, [`c’est`,`s’est`,'ces','ses'], 1),
         A(`Les stagiaires rangent ___ outils.`, ['leur','leurs','leures','leurt'], 1) ],
     B:{ lines:[ B(`___ important d’arriver à l’heure.`, `c’est`), B(`Elle ___ présentée au patron.`, `s’est`), B(`Mes collègues sont gentils : je ___ dis bonjour.`, 'leur') ], extra:['ces'] },
-    crit:`Les mots ses / ces, c’est / s’est et leur / leurs sont bien orthographiés.` }
+    crit:`Les mots ses / ces, c’est / s’est et leur / leurs sont bien orthographiés.` },
+  { id:'sEmo', tiles:['emotion'], title:`Dire les émotions avec précision`, tag:`triste · content · peur → mots précis`,
+    lesson:{
+      rules:[`**triste**, **content**, **peur**, **énervé** sont des mots **trop larges**. Il existe un mot plus **précis** qui dit **l’intensité** de l’émotion.`,
+             `Deux façons de dire une émotion : la **nommer** (il était **soulagé**) ou la **montrer** par le **corps** (il **soupira**, **ses mains tremblaient**).`,
+             `Pour trouver le bon mot, demande-toi : l’émotion est-elle **faible ou forte** ?`],
+      table:{ head:[`Mot large`,`Plus précis (du plus faible au plus fort)`], rows:[[`triste`,`déçu · abattu · désespéré`],[`content`,`ravi · soulagé · enthousiaste`],[`peur`,`inquiet · effrayé · terrifié`],[`énervé`,`agacé · furieux · exaspéré`],[`gêné`,`intimidé · mal à l’aise · honteux`]] },
+      ba:[ [`Elle était triste.`, `Elle était abattue : elle fixait le sol sans un mot.`],
+           [`J’avais peur.`, `J’étais terrifié : mon cœur cognait dans ma poitrine.`],
+           [`Il était content d’avoir fini.`, `Il était soulagé : il laissa échapper un long soupir.`] ],
+      mini:[`Quel mot est le plus fort pour « avoir peur » ?`, [`inquiet`,`terrifié`,`gêné`], 1, `« Inquiet » est faible, « terrifié » est très fort.`] },
+    A:[ A(`Quel mot remplace « triste » pour quelqu’un de très découragé ?`, [`abattu`,`agacé`,`ravi`,`soulagé`], 0),
+        A(`Quel mot est le plus précis pour une colère très forte ?`, [`furieux`,`agacé`,`déçu`,`inquiet`], 0),
+        A(`Quelle phrase montre l’émotion avec le corps ?`, [`Ses mains tremblaient.`,`Il était triste.`,`Il avait peur.`,`Elle était contente.`], 0) ],
+    B:{ lines:[ B(`Il a réussi son examen après des semaines de stress : il est ___.`, `soulagé`),
+                B(`Il a entendu un cri dans le noir : il est ___.`, `terrifié`),
+                B(`Il espérait un cadeau mais n’a rien reçu : il est ___.`, `déçu`) ], extra:[`ravi`] },
+    lit:{ label:`Une émotion précise`, instruct:`Écris **1 ou 2 phrases** : un personnage ressent une émotion. Dis-la avec un **mot précis** (évite « triste », « content », « peur », « bien », « nul ») et **montre-la** avec son corps ou ses gestes.`, ph:`Le stagiaire était …`, rubric:`1 à 2 phrases : une émotion est exprimée avec un mot précis (pas triste, content, peur, bien, nul, énervé) ET montrée par une réaction du corps ou un geste.` } },
+  { id:'sDescr', tiles:['descr'], title:`Enrichir une description`, tag:`les 5 sens · adjectifs précis`,
+    lesson:{
+      rules:[`Une description **plate** : « C’était un beau lieu. » Une description **riche** fait **voir, entendre, sentir**.`,
+             `Utilise les **5 sens** : **vue** (couleurs, formes), **ouïe** (bruits), **odorat**, **toucher**, **goût**.`,
+             `Remplace **beau / grand / bien** par un **adjectif précis** : lumineux, immense, spacieux, délabré, accueillant.`,
+             `Tu peux ajouter une **comparaison** : « froid **comme** de la glace ».`],
+      table:{ head:[`Sens`,`Exemple`], rows:[[`Vue`,`un hangar sombre, aux murs écaillés`],[`Ouïe`,`le grincement d’une porte`],[`Odorat`,`une odeur d’huile chaude`],[`Toucher`,`un métal glacé sous les doigts`]] },
+      ba:[ [`C’était un beau jardin.`, `Le jardin sentait le lilas ; des abeilles bourdonnaient entre les rosiers fleuris.`],
+           [`L’atelier était grand.`, `L’atelier était immense et sonore : le bruit des machines résonnait sous le haut plafond.`] ],
+      mini:[`Quelle phrase parle de l’odorat ?`, [`Une odeur de café chaud flottait.`,`La porte grinçait.`,`Les murs étaient blancs.`], 0, `« Une odeur » fait appel à l’odorat. « Grinçait » : l’ouïe. « Blancs » : la vue.`] },
+    A:[ A(`Quelle description est la plus riche ?`, [`La cuisine sentait le pain chaud et la radio grésillait.`,`La cuisine était bien.`,`C’était une cuisine.`,`La cuisine était belle.`], 0),
+        A(`Quel adjectif est plus précis que « grand » pour un hangar vide ?`, [`immense`,`bien`,`beau`,`gros`], 0),
+        A(`Quel sens est utilisé dans « un grincement de porte » ?`, [`l’ouïe`,`la vue`,`le goût`,`le toucher`], 0) ],
+    B:{ lines:[ B(`Une ___ d’huile chaude flottait dans l’atelier.`, `odeur`),
+                B(`La porte ___ quand elle s’ouvrait.`, `grinçait`),
+                B(`La salle était ___ : le soleil entrait par toutes les fenêtres.`, `lumineuse`) ], extra:[`froid`] },
+    lit:{ label:`Ma description`, instruct:`Décris en **2 phrases** une personne ou un objet de ton choix avec **deux sens différents** (vue, ouïe, odorat, toucher…) et au moins **un adjectif précis** (pas « beau », « grand », « bien »).`, ph:`Dans l’atelier, …`, rubric:`2 phrases de description qui font appel à au moins deux sens différents et contiennent au moins un adjectif précis (pas beau, grand, bien, nul, sympa).` } },
+  { id:'sFig', tiles:['figures'], title:`Les figures de style de base`, tag:`comparaison · métaphore · personnification · hyperbole`,
+    lesson:{
+      rules:[`Une **figure de style** est une façon d’écrire **imagée** pour **faire ressentir** quelque chose. On en retient seulement **quatre**.`,
+             `**Comparaison** : on rapproche deux choses avec **comme, tel, pareil à**. **Métaphore** : même idée, **sans** mot de comparaison. **Personnification** : une chose agit comme une **personne**. **Hyperbole** : on **exagère**.`],
+      table:{ head:[`Figure`,`Comment la reconnaître`,`Exemple`], rows:[[`Comparaison`,`un mot de comparaison : comme…`,`Il est rapide comme l’éclair.`],[`Métaphore`,`pas de « comme »`,`Cet atelier est une fourmilière.`],[`Personnification`,`une chose agit comme une personne`,`La machine toussait.`],[`Hyperbole`,`une exagération`,`J’ai attendu une éternité.`]] },
+      mini:[`Dans « Le vent murmurait à ma fenêtre. », quelle figure ?`, [`personnification`,`comparaison`,`hyperbole`], 0, `Le vent ne peut pas murmurer : on lui donne une action humaine, c’est une personnification.`] },
+    A:[ A(`« Elle chante comme un rossignol. » Quelle figure ?`, [`comparaison`,`métaphore`,`hyperbole`,`personnification`], 0),
+        A(`« Je meurs de faim ! » Quelle figure ?`, [`hyperbole`,`comparaison`,`métaphore`,`personnification`], 0),
+        A(`« La machine toussait. » Quelle figure ?`, [`personnification`,`comparaison`,`hyperbole`,`métaphore`], 0) ],
+    B:{ lines:[ B(`« Ce bureau est un champ de bataille. » C’est une ___.`, `métaphore`),
+                B(`« Le vent chuchotait dans les arbres. » C’est une ___.`, `personnification`),
+                B(`« Il est fort comme un lion. » C’est une ___.`, `comparaison`) ], extra:[`hyperbole`] },
+    lit:{ label:`Ma figure de style`, instruct:`Écris **une phrase** avec une **figure de style** (comparaison, métaphore, personnification ou hyperbole). Sur une **deuxième ligne**, écris le **nom** de la figure que tu as choisie.`, ph:`La cantine était …`, rubric:`Une phrase contient une vraie figure de style (comparaison, métaphore, personnification ou hyperbole) et la deuxième ligne nomme correctement la figure utilisée.` } }
   ] },
 
 /* ================= ÉTAPE 4 — Au travail ================= */
@@ -327,10 +472,10 @@ const STEPS = [
   ] },
 
 /* ================= ÉTAPE 5 — Mon mail de stage (finale) ================= */
-{ key:'mail', icon:'✉️', title:'Mon mail de stage', tag:'tout assembler', final:true,
+{ key:'mail', icon:'✉️', title:'Mon mail de stage', tag:'tout assembler', final:true, kind:'mail',
   mission:`Ta mission : **assembler** tes textes, les **réécrire** et envoyer ton **mail complet** à un employeur.`,
   secs:[
-  { id:'smail', tiles:[], title:'Mon mail complet', tag:'modèle et check-list',
+  { id:'smail', tiles:MAIN, title:'Mon mail complet', tag:'modèle et check-list',
     lesson:{
       rules:[`Ton mail final **assemble** tout ce que tu as écrit : ta **présentation**, ta **demande**, ta **motivation**, et le **début** et la **fin** du mail.`,
              `**Ta mission en 3 temps** : 1) tu **relis** chaque morceau ; 2) tu **relies** les morceaux et tu **corriges** les fautes ; 3) tu vérifies avec la **check-list**.`],
@@ -354,6 +499,279 @@ const STEPS = [
       ph:`Objet : …`, minWords:45,
       rubric:`ÉTAPE FINALE : mail complet de l’élève à un employeur pour demander un stage (relecture finale : structure, registre, orthographe). ok = true si TOUTES ces conditions sont remplies : (1) un objet clair ; (2) une formule d’appel avec Madame ou Monsieur ; (3) une présentation de l’élève ; (4) une demande de stage polie (vouvoiement, je souhaiterais / je voudrais / pourriez-vous) ; (5) une raison ou une motivation ; (6) une formule de politesse et une signature ; (7) un registre courant ou soutenu, sans argot (truc, chose, mec, genre, ouf, kiffer, bosser, y’a, c’est trop, bien, nul…) ni abréviation de SMS ; (8) des phrases complètes avec majuscule et point ; (9) au plus TROIS fautes d’orthographe restantes parmi : a/à, et/est, ce/se, ses/ces/c’est/s’est, on/ont, son/sont, ou/où, leur/leurs, accord sujet-verbe, é/er/ez, accord des noms et adjectifs. Si au moins une condition de (1) à (8) n’est pas remplie ou s’il y a plus de trois fautes, ok = false. Dans le feedback, signale au plus TROIS erreurs précises à corriger (orthographe ou registre), avec la règle en une phrase.` }
 }
+/* ================= ÉTAPE 6 — Atelier littéraire (seulement si une tuile littéraire est choisie) ================= */
+,{ key:'atelier', icon:'🎭', title:'Atelier littéraire', tag:'écrire une petite scène', final:true, litOnly:true, kind:'story',
+  mission:`Ta mission : **assembler** tes phrases littéraires et écrire un **court récit** de 6 à 8 lignes pour le **recueil de la classe**.`,
+  secs:[
+  { id:'sat', tiles:LIT, title:`Mon récit en 5 ingrédients`, tag:`modèle et check-list`,
+    lesson:{
+      rules:[`Ton récit **assemble** tes petites phrases : le **lieu**, la **description**, l’**action**, l’**émotion** et la **figure de style**.`,
+             `**Trois temps** : 1) tu **relis** chaque phrase ; 2) tu les **relies** (puis, soudain, alors…) et tu **complètes** ce qui manque ; 3) tu vérifies avec la **check-list**.`],
+      modelTitle:`Un récit modèle`,
+      mail:`Ce matin-là, l’atelier sentait l’huile chaude et le métal. Les machines ronronnaient, et la lumière blanche des néons éclairait l’établi. Soudain, une perceuse s’arrêta net. Karim, terrifié, resta immobile ; son cœur cognait dans sa poitrine comme un marteau. Puis le chef éclata de rire et lui tendit un tournevis. Karim soupira, soulagé : la journée pouvait commencer.`,
+      checklist:[`**Décor** à l’imparfait`, `**Description** avec au moins deux sens`, `**Action** au passé simple (ou au passé composé, mais sans mélanger)`, `**Émotion** précise, nommée ou montrée`, `**Une figure de style**`, `**6 à 8 lignes**, puis **je me relis** : orthographe, accords, ponctuation`],
+      mini:[`Quel temps utilises-tu pour décrire le décor ?`, [`l’imparfait`,`le passé simple`,`le futur`], 0, `Le décor (ce qui dure) se décrit à l’imparfait ; les actions soudaines se racontent au passé simple.`] },
+    A:[ A(`Quelle phrase mélange mal les temps ?`, [`Il ouvre la porte et il découvrait une salle vide.`,`Il ouvrit la porte et découvrit une salle vide.`,`Il ouvrait la porte lentement.`,`La salle était vide.`], 0),
+        A(`Quel mot est le plus précis pour une peur très forte ?`, [`terrifié`,`embêté`,`mal`,`bien`], 0),
+        A(`Quelle phrase contient une comparaison ?`, [`Son cœur cognait comme un marteau.`,`Son cœur cognait fort.`,`Son cœur était un marteau.`,`Son cœur criait.`], 0),
+        A(`Quelle phrase est une description riche ?`, [`La cantine sentait la soupe et résonnait de rires.`,`La cantine était bien.`,`C’était une cantine.`,`Il y avait une cantine.`], 0) ],
+    B:{ lines:[ B(`La cantine ___ la soupe chaude.`, `sentait`),
+                B(`Soudain, le proviseur ___ dans le couloir.`, `arriva`),
+                B(`Il entendit un bruit étrange : il était ___.`, `terrifié`),
+                B(`Son cœur battait ___ un tambour.`, `comme`),
+                B(`Le stage était fini : il était ___.`, `soulagé`) ], extra:[] },
+    crit:`` }
+  ],
+  C:{ title:`Mon récit`, piece:`Mon récit`,
+      instruct:`**Scénario** : pour le **recueil de la classe**, tu écris un **court récit de 6 à 8 lignes** : une scène au **lycée ou en stage**. Voici tes phrases, assemblées à partir de tes étapes. **Relis-les, relie-les, complète ce qui manque** et remplace les **[crochets]**.`,
+      ph:`Ce matin-là, …`, minWords:45,
+      rubric:`ATELIER LITTÉRAIRE : court récit de 6 à 8 lignes (une scène au lycée ou en stage). ok = true si TOUTES ces conditions sont remplies : (1) le texte raconte une scène cohérente de 6 à 8 lignes environ ; (2) un décor ou une description avec des détails concrets (au moins deux sens ou un champ lexical net) ; (3) une émotion exprimée avec un mot précis (pas triste, content, peur, bien, nul) ou montrée par le corps ; (4) au moins une figure de style (comparaison, métaphore, personnification ou hyperbole) ; (5) les temps du récit corrects : imparfait pour le décor, passé simple (3e personne) pour les actions, ou passé composé employé de façon cohérente, sans mélange incorrect ; (6) des phrases complètes avec majuscule et point, sans argot ni SMS ; (7) au plus TROIS fautes d’orthographe restantes (accords, a/à, et/est, ses/ces, leur/leurs, é/er/ez, terminaisons des verbes). Si une condition de (1) à (6) n’est pas remplie ou s’il y a plus de trois fautes, ok = false. Dans le feedback, signale au plus TROIS erreurs précises (temps du récit, mot trop vague, orthographe), avec la règle en une phrase, et dis quelle figure de style tu as repérée.` }
+}
+
+/* ================= ÉTAPE 7 — Argumenter (tuiles « Argumenter et analyser ») ================= */
+,{ key:'argu', icon:'🗣️', title:'Argumenter', tag:'avis · arguments · exemples', 
+  mission:`Ta mission : donner ton **avis** avec des **arguments** et des **exemples**, et relier tes idées avec des **connecteurs**.`,
+  C:{ title:`Mon paragraphe argumenté`, piece:`Mon paragraphe`, sys:'argu',
+      instruct:`**Sujet** : faut-il autoriser le portable au lycée ? Choisis ton avis (pour ou contre) et écris **un paragraphe de 5 à 6 lignes** : tu **affirmes** une idée, tu **expliques**, tu donnes **un exemple**, puis tu **reviens à ton avis**. Utilise au moins **deux connecteurs**.`,
+      ph:`Je pense que …`, minWords:35,
+      rubric:`ÉTAPE ARGUMENTER : paragraphe argumenté de 5 à 6 lignes sur « faut-il autoriser le portable au lycée ? » (pour ou contre : ne juge JAMAIS l’opinion, seulement la qualité de l’argumentation). ok = true si : (1) l’avis (thèse) est clair ; (2) une idée est affirmée puis expliquée (pourquoi) ; (3) un exemple concret et précis est donné ; (4) une phrase de lien revient à l’avis ; (5) au moins deux connecteurs logiques bien employés (d’abord, en effet, par exemple, de plus, mais, donc, voilà pourquoi…) ; (6) pas d’argot ni de jugement vide (« c’est nul », « c’est trop bien », « moi je trouve que c’est pas bien ») ; (7) des phrases complètes.` },
+  secs:[
+  { id:'sTrio', tiles:['avis','exemples'], title:`Mon avis, mon argument, mon exemple`, tag:`je pense que… car… par exemple…`,
+    lesson:{
+      rules:[`Donner son **avis**, ce n’est pas dire « c’est nul » ou « c’est bien ». Il faut **expliquer pourquoi**.`,
+             `Le trio qui marche : **Je pense que** (la **thèse**, mon avis) · **car** (l’**argument**, la raison) · **par exemple** (l’**exemple**, un fait précis).`,
+             `Un **argument** est une **raison** qui explique l’avis. Un **exemple** est une **situation précise** qui le prouve.`,
+             `Évite « moi je trouve que c’est nul ». Dis plutôt : « **Je pense que** le portable en classe est gênant, **car** il distrait. »`],
+      table:{ head:[`Élément`,`À quoi ça sert ?`,`Exemple`], rows:[[`Thèse`,`mon avis`,`Je pense que le portable devrait être autorisé à la pause.`],
+        [`Argument`,`la raison de mon avis`,`Car il permet de prévenir sa famille.`],
+        [`Exemple`,`la situation précise qui le prouve`,`Par exemple, on peut avertir un parent si le bus a du retard.`]] },
+      ba:[ [`Le portable en classe, c’est nul.`, `Je pense que le portable en classe est gênant, car il distrait. Par exemple, on regarde ses messages au lieu d’écouter.`],
+           [`Les écrans, moi je trouve que c’est pas bien.`, `Je pense que les écrans fatiguent, car on regarde une lumière vive. Par exemple, on a mal aux yeux après deux heures de jeu.`] ],
+      mini:[`Quelle phrase est un EXEMPLE ?`, [`Par exemple, hier, mon bus a eu vingt minutes de retard.`,`Je pense que les bus sont lents.`,`Car les bus sont utiles.`], 0, `Un exemple est une situation précise, avec un fait (hier, mon bus…). Les deux autres phrases donnent un avis ou une raison.`] },
+    A:[ A(`Dans « Je pense que le sport est utile, car il garde en forme. », quelle partie est l’argument ?`, [`car il garde en forme`,`Je pense que le sport est utile`,`le sport`,`Je pense`], 0),
+        A(`Quelle phrase est une thèse (un avis) ?`, [`Je pense que voter à 16 ans est une bonne idée.`,`Par exemple, mon cousin a 16 ans.`,`Car on est assez mûr.`,`Le vote a lieu en mars.`], 0),
+        A(`Quelle phrase donne un VRAI argument ?`, [`Les écrans fatiguent les yeux, car on regarde une lumière vive.`,`Les écrans, c’est nul.`,`Les écrans, moi je trouve que c’est pas bien.`,`Les écrans, c’est comme ça.`], 0) ],
+    B:{ lines:[ B(`___ l’uniforme est utile : tout le monde est habillé pareil.`, `Je pense que`),
+                B(`Le sommeil est important, ___ il aide à se concentrer.`, `car`),
+                B(`Les écrans fatiguent. ___, on a mal aux yeux après un long jeu.`, `Par exemple`) ], extra:[`donc`] },
+    crit:`L’avis est clair (je pense que…), appuyé par une raison (car, en effet) et par un exemple précis (par exemple).` },
+  { id:'sParag', tiles:['avis','exemples'], title:`Le paragraphe argumentatif`, tag:`affirmer · expliquer · exemple · lien`,
+    lesson:{
+      rules:[`Un **paragraphe argumentatif** défend **une seule idée** en 4 temps : 1) **j’affirme** ; 2) **j’explique** ; 3) **je donne un exemple** ; 4) **je reviens à mon avis**.`,
+             `On passe à la ligne à chaque **nouvel argument**.`,
+             `Phrases utiles : **D’abord**, … · **En effet**, … · **Par exemple**, … · **Voilà pourquoi** …`],
+      table:{ head:[`Temps`,`Je fais…`,`Exemple (sujet : le portable)`], rows:[[`1. J’affirme`,`je dis mon idée`,`Le portable distrait les élèves.`],
+        [`2. J’explique`,`je dis pourquoi`,`En effet, un message arrive et on ne suit plus le cours.`],
+        [`3. Exemple`,`une situation précise`,`Par exemple, un élève qui lit un message peut rater la consigne.`],
+        [`4. Lien`,`je reviens à mon avis`,`Voilà pourquoi le portable doit rester dans le sac.`]] },
+      ba:[ [`Le portable c’est nul parce que ça distrait et voilà.`, `D’abord, le portable distrait les élèves. En effet, un message arrive et on ne suit plus le cours. Par exemple, un élève qui lit un message peut rater la consigne. Voilà pourquoi le portable doit rester dans le sac.`] ],
+      mini:[`Dans un paragraphe argumentatif, que fait la dernière phrase ?`, [`Elle revient à l’avis de départ.`,`Elle donne un nouvel exemple.`,`Elle change de sujet.`], 0, `La dernière phrase fait le lien : elle reprend l’avis pour montrer que l’idée le défend.`] },
+    A:[ A(`Quel est le bon ordre ?`, [`affirmation, explication, exemple, lien avec l’avis`,`exemple, lien, affirmation, explication`,`explication, affirmation, lien, exemple`,`lien, exemple, explication, affirmation`], 0),
+        A(`Quelle phrase peut servir de LIEN avec l’avis ?`, [`Voilà pourquoi le portable doit rester dans le sac.`,`Par exemple, Léa a un portable.`,`Le portable est un objet.`,`En effet, il sonne.`], 0),
+        A(`Combien d’idées défend un paragraphe argumentatif ?`, [`une seule`,`trois ou quatre`,`aucune`,`toutes celles qu’on trouve`], 0) ],
+    B:{ lines:[ B(`___, les écrans fatiguent les yeux.`, `D’abord`),
+                B(`Les écrans fatiguent. ___, la lumière est vive et on cligne moins des yeux.`, `En effet`),
+                B(`Les écrans fatiguent. ___ il faut faire des pauses.`, `Voilà pourquoi`) ], extra:[`Par exemple`] },
+    crit:`Le paragraphe suit l’ordre affirmation, explication, exemple, lien avec l’avis.` },
+  { id:'sConnec', tiles:['connect'], title:`Les connecteurs logiques`, tag:`relier mes idées`,
+    lesson:{
+      rules:[`Les **connecteurs logiques** relient les idées et montrent **le chemin de ta pensée**. Sans eux, un texte ressemble à une liste.`,
+             `Choisis le connecteur selon ce que tu veux faire : **ajouter**, **expliquer**, **illustrer**, **opposer**, **conclure**.`],
+      table:{ head:[`Je veux…`,`Je peux écrire…`], rows:[[`ajouter`,`d’abord · ensuite · de plus · enfin`],
+        [`expliquer`,`en effet · car · parce que`],
+        [`illustrer`,`par exemple · ainsi`],
+        [`opposer`,`mais · cependant · pourtant`],
+        [`conclure`,`donc · c’est pourquoi · en conclusion`]] },
+      ba:[ [`Le sport est bon. Il fait du bien. Il y a des clubs.`, `Le sport est bon pour la santé. En effet, il fait du bien au corps. De plus, il existe des clubs près de chez soi. En conclusion, il faut en faire.`] ],
+      mini:[`Quel connecteur sert à opposer ?`, [`cependant`,`de plus`,`en effet`], 0, `« Cependant » oppose deux idées. « De plus » ajoute, « en effet » explique.`] },
+    A:[ A(`Les écrans sont pratiques, ___ ils fatiguent les yeux.`, [`mais`,`donc`,`car`,`de plus`], 0),
+        A(`Il faut dormir ; ___, on se concentre mieux le lendemain.`, [`en effet`,`cependant`,`pourtant`,`mais`], 0),
+        A(`Pour terminer un texte argumenté, on écrit :`, [`En conclusion,`,`D’abord,`,`Par exemple,`,`Cependant,`], 0) ],
+    B:{ lines:[ B(`Le vélo est écologique. ___, il est bon pour la santé.`, `de plus`),
+                B(`Le vélo est pratique ; ___, il est dangereux sous la pluie.`, `cependant`),
+                B(`___, le vélo est un bon moyen de transport.`, `en conclusion`) ], extra:[`par exemple`] },
+    crit:`Au moins trois connecteurs logiques différents sont bien employés.` },
+  { id:'sNuance', tiles:['avis','connect'], title:`Nuancer et réfuter`, tag:`certes… mais…`,
+    lesson:{
+      rules:[`**Nuancer**, c’est reconnaître qu’une idée a du vrai **avant** de donner son avis : **Certes**… **mais**…`,
+             `**Réfuter**, c’est montrer qu’un argument contraire est faible : « Certains disent que… **Pourtant**… »`,
+             `La **concession** (certes… mais…) rend ton texte **plus fort** : tu montres que tu as réfléchi.`],
+      table:{ head:[`Je fais…`,`Je peux écrire…`], rows:[[`concéder`,`Certes, … · Il est vrai que … · Bien sûr, …`],
+        [`opposer`,`mais · cependant · pourtant`],
+        [`réfuter`,`Certains disent que… Pourtant, …`]] },
+      ba:[ [`Les écrans, c’est mal.`, `Certes, les écrans sont pratiques, mais ils fatiguent les yeux.`],
+           [`Ceux qui disent que le portable aide ont tort.`, `Certains disent que le portable aide à travailler. Pourtant, il sert surtout à se distraire.`] ],
+      mini:[`Que fait « Certes… mais… » ?`, [`Il reconnaît un point, puis donne son avis.`,`Il répète la même idée.`,`Il insulte l’autre idée.`], 0, `On reconnaît d’abord ce qui est vrai (certes), puis on donne son avis (mais).`] },
+    A:[ A(`___, le portable est utile, mais il distrait.`, [`Certes`,`Donc`,`Car`,`Enfin`], 0),
+        A(`Quelle phrase nuance bien ?`, [`Certes, l’uniforme est pratique, mais il limite la liberté.`,`L’uniforme est nul.`,`L’uniforme est pratique et pratique.`,`Tout le monde a tort.`], 0),
+        A(`Certains disent que dormir est une perte de temps. ___, dormir aide à retenir.`, [`Pourtant`,`En effet`,`De plus`,`Ainsi`], 0) ],
+    B:{ lines:[ B(`___, les réseaux sociaux permettent de rester en contact.`, `Certes`),
+                B(`Certes, le métro est rapide, ___ il est souvent bondé.`, `mais`),
+                B(`On dit que lire est ennuyeux. ___, un bon roman nous fait voyager.`, `Pourtant`) ], extra:[`Donc`] },
+    crit:`Une concession (certes… mais…) ou une réfutation (certains disent… pourtant…) est présente.` }
+  ] }
+
+/* ================= ÉTAPE 8 — Analyser une image ================= */
+,{ key:'image', icon:'🖼️', title:'Analyser une image', tag:'décrire · composer · interpréter',
+  mission:`Ta mission : **observer** une image avec une **méthode**, puis écrire une courte **analyse**.`,
+  C:{ title:`Mon analyse d’image`, piece:`Mon analyse`, sys:'image', img:'glaneuses',
+      instruct:`Observe la **peinture** ci-dessus. Écris **6 à 8 lignes** : 1) **décris** ce que tu vois (**premier plan**, **arrière-plan**) ; 2) parle des **couleurs** et de la **lumière** ; 3) **interprète** : ce que l’image montre ou fait ressentir ; 4) **conclus** avec ton avis.`,
+      ph:`Cette peinture représente …`, minWords:45,
+      rubric:`ÉTAPE ANALYSER UNE IMAGE : analyse d’une peinture en 6 à 8 lignes. ok = true si le texte : (1) présente la nature du document (une peinture) et le sujet ; (2) décrit ce qu’on voit en situant au moins deux éléments avec le vocabulaire de l’espace (premier plan, arrière-plan, à gauche, au centre, en haut…) ; (3) parle des couleurs ou de la lumière ; (4) propose une interprétation justifiée par un détail visible (évoque, suggère, symbolise, met en valeur, donne l’impression…) ; (5) conclut par un message ou un avis personnel ; (6) ne décrit rien qui contredise les FAITS VISIBLES.`,
+      slotBonus:{ slot:'affiche', label:`Une image de ma prof`, instruct:`Observe l’**image** ci-dessus (donnée par ta prof). Écris **3 phrases** : ce que tu vois (avec **au moins deux mots** du vocabulaire de l’espace), puis ce qu’elle veut **montrer**.`, ph:`Sur cette image, …`,
+        rubric:`3 phrases : l’élève décrit ce qu’il voit en employant au moins deux mots du vocabulaire de l’espace (premier plan, arrière-plan, à gauche, au centre, en haut…) puis propose ce que l’image veut montrer ou faire ressentir. Tu ne vois pas l’image : ne juge pas l’exactitude des détails, seulement la méthode et le vocabulaire.` } },
+  secs:[
+  { id:'sImgDecrire', tiles:['image'], title:`Analyser une image : je décris et je situe`, tag:`étapes 1 et 2`,
+    lesson:{
+      rules:[`Pour analyser une image, on suit une **méthode en 5 étapes** : 1) **je regarde et je décris** ; 2) **la composition** ; 3) **les couleurs et la lumière** ; 4) **j’interprète** ; 5) **je conclus**.`,
+             `**Étape 1 — Je décris** : la **nature** du document (peinture, photo, affiche, publicité), le **sujet**, les **personnages**, le **lieu**, l’**époque**. Je décris **seulement ce que je vois**.`,
+             `**Étape 2 — La composition** : où sont les éléments ? **Au premier plan**, **à l’arrière-plan**, **au centre**, **à gauche**, **à droite**, **en haut**, **en bas**. Le **cadrage** est-il large ou serré ?`],
+      table:{ head:[`Je veux dire…`,`Je peux écrire…`], rows:[[`où ?`,`au premier plan · à l’arrière-plan · au centre · à gauche · à droite · en haut · en bas`],
+        [`quel cadrage ?`,`un plan large (on voit tout) · un gros plan (on voit un détail)`],
+        [`quel angle ? (photo, affiche)`,`en plongée (vu d’en haut) · en contre-plongée (vu d’en bas)`],
+        [`quelles lignes ?`,`une ligne horizontale · une diagonale · une composition symétrique`]] },
+      ba:[ [`Il y a un garçon et une bulle.`, `Au premier plan, un jeune garçon est assis. En haut de l’image, une bulle flotte au-dessus de lui.`] ],
+      mini:[`Dans une image, où se trouve ce qui est le plus proche de nous ?`, [`au premier plan`,`à l’arrière-plan`,`en haut du cadre`], 0, `Le premier plan est la partie la plus proche du spectateur ; l’arrière-plan est le fond.`] },
+    A:[ A(`Dans cette image, où se trouve la bulle ?`, [`en haut`,`en bas`,`à gauche, au premier plan`,`à droite, sur le sol`], 0, 'bubbles'),
+        A(`Quelle phrase décrit le mieux le fond de l’image ?`, [`Le fond est sombre, presque noir.`,`Le fond est un paysage ensoleillé.`,`Le fond est jaune vif.`,`Le fond est une mer bleue.`], 0, 'bubbles'),
+        A(`Un « gros plan », c’est…`, [`un cadrage serré qui montre un détail`,`une vue qui montre tout le paysage`,`une photo prise de très loin`,`un tableau très grand`], 0) ],
+    B:{ lines:[ B(`Le garçon est assis au ___ : c’est lui qu’on voit en premier.`, `premier plan`, 'bubbles'),
+                B(`Une photo prise d’en bas, qui rend le personnage impressionnant, est en ___.`, `contre-plongée`),
+                B(`La bulle est ___ de l’image, au-dessus du garçon.`, `en haut`, 'bubbles') ], extra:[`plongée`,`arrière-plan`] },
+    crit:`Le texte situe au moins deux éléments avec le vocabulaire de l’espace (au premier plan, à l’arrière-plan, en haut, au centre…).` },
+  { id:'sImgInterp', tiles:['image'], title:`Analyser une image : couleurs, interprétation, conclusion`, tag:`étapes 3, 4 et 5`,
+    lesson:{
+      rules:[`**Étape 3 — Couleurs et lumière** : couleurs **chaudes** (jaune, orange, rouge) ou **froides** (bleu, vert) ? Contraste fort entre clair et sombre ? Ambiance : joyeuse, calme, inquiétante ?`,
+             `**Étape 4 — J’interprète** : ce que l’image **veut dire**. Un détail **évoque**, **suggère**, **symbolise** ou **met en valeur** quelque chose. Je **justifie** avec ce que je vois.`,
+             `**Étape 5 — Je conclus** : en une phrase, le **message** de l’image, puis **mon avis**.`],
+      table:{ head:[`Je veux…`,`Je peux écrire…`], rows:[[`parler des couleurs`,`Les couleurs chaudes donnent une impression de chaleur, de joie.`],
+        [`interpréter`,`Ce détail évoque / suggère / symbolise …`],
+        [`justifier`,`On le voit car … · Cela met en valeur …`],
+        [`conclure`,`Cette image montre que … · Je trouve cette image … car …`]] },
+      ba:[ [`C’est joli et y’a du jaune.`, `Les couleurs chaudes, jaune et orange, donnent une impression de chaleur et de gaieté.`] ],
+      mini:[`Le jaune et l’orange sont des couleurs…`, [`chaudes`,`froides`,`neutres`], 0, `Le jaune, l’orange et le rouge sont des couleurs chaudes. Le bleu et le vert sont froids.`] },
+    A:[ A(`Quelles couleurs dominent cette image ?`, [`jaune et orange (chaudes)`,`bleu et vert (froides)`,`noir et gris`,`rouge et rose`], 0, 'tournesols'),
+        A(`Quelle phrase interprète correctement l’ambiance de cette image ?`, [`Les couleurs chaudes donnent une impression de chaleur et d’énergie.`,`Les couleurs froides donnent une impression de tristesse.`,`Il n’y a pas de couleurs.`,`L’image est en noir et blanc.`], 0, 'tournesols'),
+        A(`Dans cette image, la lumière tombe surtout sur…`, [`le visage de l’enfant`,`le sol`,`le fond`,`le pot`], 0, 'bubbles') ],
+    B:{ lines:[ B(`Le jaune et l’orange sont des couleurs ___.`, `chaudes`, 'tournesols'),
+                B(`La lumière sur son visage ___ l’enfant.`, `met en valeur`, 'bubbles'),
+                B(`Le fond ___ fait ressortir le garçon.`, `sombre`, 'bubbles') ], extra:[`froides`,`symbolise`] },
+    crit:`Le texte parle des couleurs ou de la lumière ET propose une interprétation justifiée (évoque, suggère, symbolise, met en valeur).` },
+  { id:'sImgTexte', tiles:['image'], title:`Comparer une image et un texte`, tag:`points communs · différences`,
+    lesson:{
+      rules:[`Au bac, une image peut être **associée à un texte**. On compare avec **3 questions** : **Quels points communs ?** **Quelles différences ?** **Qu’est-ce que l’image apporte en plus ?**`,
+             `Méthode : 1) je **lis** le texte et je **regarde** l’image ; 2) je note **un point commun** ; 3) je note **une différence** (le texte raconte dans le temps, l’image montre tout d’un coup) ; 4) je **conclus**.`,
+             `Phrases utiles : **Comme le texte, l’image montre** … · **Contrairement au texte**, l’image … · **L’image ajoute** …`],
+      table:{ head:[`Question`,`Exemple (texte : « L’enfant, assis, suivait des yeux la bulle qui montait. »)`], rows:[[`Point commun`,`Comme le texte, l’image montre un enfant assis qui regarde une bulle.`],
+        [`Différence`,`Le texte raconte un mouvement (« montait ») ; l’image fige la scène.`],
+        [`Ce que l’image ajoute`,`L’image ajoute les couleurs, le fond sombre et la lumière sur le visage.`]] },
+      mini:[`Quelle phrase indique ce que l’image ajoute au texte ?`, [`L’image ajoute le fond sombre et la lumière que le texte ne dit pas.`,`Le texte et l’image sont pareils.`,`Je n’aime pas ce texte.`], 0, `On dit précisément ce qu’on voit dans l’image et que le texte ne dit pas.`] },
+    A:[ A(`Texte : « L’enfant, assis, suivait des yeux la bulle qui montait. » Quel est un POINT COMMUN avec l’image ?`, [`Dans les deux, un enfant regarde une bulle.`,`Dans les deux, il pleut.`,`Dans les deux, l’enfant court.`,`Dans les deux, on voit la mer.`], 0, 'bubbles'),
+        A(`Que montre l’image sans que le texte le dise ?`, [`la couleur sombre du fond et la lumière sur le visage`,`que l’enfant est assis`,`qu’il regarde une bulle`,`que la bulle monte`], 0, 'bubbles'),
+        A(`Quelle formule sert à marquer une différence ?`, [`Contrairement au texte, l’image …`,`Comme le texte, l’image …`,`En effet, …`,`Par exemple, …`], 0) ],
+    B:{ lines:[ B(`___ au texte, l’image montre les couleurs.`, `Contrairement`),
+                B(`___ le texte, l’image montre un enfant qui regarde en l’air.`, `Comme`),
+                B(`L’image ___ des détails que le texte ne donne pas.`, `ajoute`) ], extra:[] },
+    crit:`` }
+  ] }
+
+/* ================= ÉTAPE 9 — Culture de l’art ================= */
+,{ key:'art', icon:'🎨', title:'Culture de l’art', tag:'périodes · vocabulaire · fiche d’œuvre',
+  mission:`Ta mission : repérer les **grandes périodes** de l’art, apprendre quelques **mots** et **présenter une œuvre**.`,
+  C:{ title:`Ma fiche d’œuvre`, piece:`Ma fiche d’œuvre`, sys:'art', img:'joconde',
+      fiche:`**Titre** : La Joconde · **Artiste** : Léonard de Vinci · **Date** : début du XVIe siècle · **Lieu** : musée du Louvre, à Paris`,
+      instruct:`Voici la **fiche d’identité** de l’œuvre ci-dessus. Écris **3 ou 4 phrases** pour la présenter : l’**artiste** et la **date**, le **type d’œuvre**, ce qu’elle **représente**, un **détail** que tu remarques. Commence par : « Cette œuvre de … ».`,
+      ph:`Cette œuvre de … date de …`, minWords:25,
+      rubric:`ÉTAPE CULTURE DE L’ART : présentation d’une œuvre (La Joconde, Léonard de Vinci, début du XVIe siècle, musée du Louvre) en 3 à 4 phrases. ok = true si : (1) l’artiste est nommé exactement ; (2) la date ou la période est donnée (début du XVIe siècle ou Renaissance) ; (3) le type d'œuvre est nommé (une peinture, un portrait) ; (4) au moins un détail visible exact est décrit (voir FAITS VISIBLES) ; (5) une formule de présentation est employée (Cette œuvre de… date de…, Elle représente…, Je remarque…) ; (6) les phrases sont complètes.`,
+      slotBonus:{ slot:'oeuvre', label:`Une œuvre choisie par ma prof`, instruct:`Observe l’**œuvre** ci-dessus (choisie par ta prof). Écris **2 phrases** : « Cette œuvre représente … » puis le **mouvement ou la période** à laquelle elle te fait penser, et pourquoi.`, ph:`Cette œuvre représente …`,
+        rubric:`2 phrases : l’élève décrit ce que représente l'œuvre puis nomme un mouvement ou une période (même approximatif) en donnant une raison. Tu ne vois pas l’image : ne juge pas l’exactitude des détails, seulement la formule de présentation et la justification.` } },
+  secs:[
+  { id:'sArtP1', tiles:['art'], title:`Les grandes périodes (1/2) : de l’Antiquité au XVIIe siècle`, tag:`une idée clé par période`,
+    lesson:{
+      rules:[`L’**histoire de l’art** se découpe en **périodes** (ou **mouvements**). Chacune a une **idée clé** et des **artistes** célèbres.`,
+             `Retiens **une idée clé par période**, pas les dates exactes. Sur la **frise** : Antiquité, puis Moyen Âge, puis Renaissance, puis XVIIe siècle.`],
+      table:{ head:[`Période`,`Idée clé`,`Noms à connaître`], rows:[[`Antiquité (Grèce, Rome)`,`On cherche la beauté idéale : corps bien proportionnés, temples, statues de marbre.`,`Phidias (sculpteur grec) · le Parthénon à Athènes`],
+        [`Moyen Âge`,`L’art est surtout religieux : cathédrales, vitraux, sculptures. Les artistes sont souvent inconnus.`,`Notre-Dame de Paris · les vitraux de la Sainte-Chapelle`],
+        [`Renaissance (XVe-XVIe siècles)`,`Retour aux modèles antiques, perspective, portraits et paysages réalistes ; l’être humain est au centre.`,`Léonard de Vinci · Michel-Ange · Raphaël`],
+        [`Classicisme et baroque (XVIIe siècle)`,`Classicisme : ordre, équilibre, raison. Baroque : mouvement, émotions fortes, contrastes de lumière.`,`Poussin (classicisme) · Caravage (baroque) · le château de Versailles`]] },
+      mini:[`Quelle période remet l’être humain au centre et utilise la perspective ?`, [`la Renaissance`,`le Moyen Âge`,`l’art contemporain`], 0, `C’est la Renaissance : on redécouvre les modèles de l’Antiquité et on invente la perspective.`] },
+    A:[ A(`Quelle période est surtout marquée par les cathédrales et les vitraux ?`, [`Le Moyen Âge`,`La Renaissance`,`Le pop art`,`L’impressionnisme`], 0),
+        A(`Qui est un artiste de la Renaissance ?`, [`Léonard de Vinci`,`Claude Monet`,`Andy Warhol`,`Banksy`], 0),
+        A(`Quel est le bon ordre, du plus ancien au plus récent ?`, [`Antiquité, Moyen Âge, Renaissance`,`Moyen Âge, Antiquité, Renaissance`,`Renaissance, Moyen Âge, Antiquité`,`Antiquité, Renaissance, Moyen Âge`], 0) ],
+    B:{ lines:[ B(`Le Parthénon et les statues de marbre idéales : l’___ grecque et romaine.`, `Antiquité`),
+                B(`Les vitraux et les cathédrales : le ___.`, `Moyen Âge`),
+                B(`Léonard de Vinci et Michel-Ange : la ___.`, `Renaissance`) ], extra:[`baroque`] },
+    crit:`` },
+  { id:'sArtP2', tiles:['art'], title:`Les grandes périodes (2/2) : du XIXe siècle à aujourd’hui`, tag:`une idée clé par mouvement`,
+    lesson:{
+      rules:[`Pour les périodes récentes, retiens aussi **une idée clé** et **un ou deux noms**.`,
+             `Sur la **frise**, ces mouvements viennent **après** la Renaissance : romantisme et réalisme, impressionnisme, XXe siècle, art contemporain.`],
+      table:{ head:[`Mouvement`,`Idée clé`,`Noms à connaître`], rows:[[`Romantisme et réalisme (XIXe siècle)`,`Romantisme : émotions, nature, liberté. Réalisme : montrer la vie ordinaire et le travail.`,`Delacroix (romantisme) · Courbet et Millet (réalisme)`],
+        [`Impressionnisme (fin du XIXe siècle)`,`On peint la lumière et l’instant, dehors, avec des touches visibles.`,`Claude Monet · Auguste Renoir`],
+        [`XXe siècle : cubisme, surréalisme, pop art`,`Cubisme : formes géométriques. Surréalisme : rêve et imagination. Pop art : culture populaire et publicité.`,`Picasso (cubisme) · Dalí et Magritte (surréalisme) · Andy Warhol (pop art)`],
+        [`Art contemporain et street art`,`Tous les moyens sont possibles : installations, vidéo, graffiti. L’art sort des musées et va dans la rue.`,`Banksy · Keith Haring`]] },
+      mini:[`Quel mouvement peint la lumière et l’instant, dehors ?`, [`l’impressionnisme`,`le cubisme`,`le Moyen Âge`], 0, `C’est l’impressionnisme : Monet peint la lumière qui change, directement dehors.`] },
+    A:[ A(`Quel mouvement montre la vie ordinaire et le travail, comme Millet ?`, [`Le réalisme`,`Le baroque`,`Le pop art`,`Le surréalisme`], 0),
+        A(`Picasso est associé…`, [`au cubisme`,`à l’Antiquité`,`au Moyen Âge`,`au romantisme`], 0),
+        A(`Quel est le bon ordre, du plus ancien au plus récent ?`, [`Renaissance, impressionnisme, pop art`,`Pop art, Renaissance, impressionnisme`,`Impressionnisme, Renaissance, pop art`,`Renaissance, pop art, impressionnisme`], 0) ],
+    B:{ lines:[ B(`Monet peint la lumière dehors, avec des touches visibles : c’est l’___.`, `impressionnisme`),
+                B(`Dalí et Magritte peignent des rêves : c’est le ___.`, `surréalisme`),
+                B(`Andy Warhol utilise la publicité et la culture populaire : c’est le ___.`, `pop art`) ], extra:[`réalisme`] },
+    crit:`` },
+  { id:'sArtVoc', tiles:['art'], title:`Le vocabulaire de l’art et comment présenter une œuvre`, tag:`fiche d’identité · « cette œuvre de… »`,
+    lesson:{
+      rules:[`Pour présenter une œuvre, on donne sa **fiche d’identité** : **titre**, **artiste**, **date**, **type d’œuvre** (peinture, sculpture…), **sujet**, **lieu** où on peut la voir.`,
+             `Phrases modèles : **Cette œuvre de** [artiste] **date de** [date]. **Elle représente** … **Je remarque** … **Elle me fait penser à** …`,
+             `Il ne faut pas tout savoir par cœur : il faut **les bons mots**.`],
+      table:{ head:[`Mot`,`Sens`], rows:[[`une toile`,`une peinture sur un tissu tendu`],
+        [`une fresque`,`une peinture faite directement sur un mur`],
+        [`une sculpture`,`une œuvre en volume (pierre, bronze…)`],
+        [`un portrait`,`une personne représentée`],
+        [`un autoportrait`,`un artiste qui se représente lui-même`],
+        [`un paysage`,`la nature ou un lieu`],
+        [`une nature morte`,`des objets ou des fruits posés, sans personnage`],
+        [`une esquisse`,`un dessin rapide avant l’œuvre`],
+        [`la perspective`,`la façon de donner de la profondeur`]] },
+      examples:[[`Cette œuvre de Léonard de Vinci date du début du XVIe siècle.`,`phrase de présentation`],[`Elle représente une femme assise, les mains croisées.`,`ce qu’on voit`],[`Je remarque le paysage à l’arrière-plan.`,`un détail`]],
+      mini:[`Comment appelle-t-on un tableau où l’artiste se peint lui-même ?`, [`un autoportrait`,`un paysage`,`une fresque`], 0, `Un autoportrait : « auto » veut dire « soi-même ».`] },
+    A:[ A(`Cette œuvre est plutôt…`, [`une nature morte`,`un paysage`,`une fresque`,`une esquisse`], 0, 'tournesols'),
+        A(`Une peinture faite directement sur un mur s’appelle…`, [`une fresque`,`une toile`,`un portrait`,`une esquisse`], 0),
+        A(`Cette œuvre représente une seule personne, jusqu’aux mains. Quel type d’œuvre est-ce ?`, [`un portrait`,`un paysage`,`une nature morte`,`une sculpture`], 0, 'joconde') ],
+    B:{ lines:[ B(`Un dessin rapide avant de peindre : une ___.`, `esquisse`),
+                B(`Un artiste qui se peint lui-même : un ___.`, `autoportrait`),
+                B(`Une œuvre en volume, en pierre ou en bronze : une ___.`, `sculpture`) ], extra:[`paysage`] },
+    crit:`Le texte emploie au moins un mot du vocabulaire de l’art (toile, portrait, paysage, nature morte, sculpture, esquisse…) et une formule de présentation (cette œuvre de…, elle représente…).` }
+  ] }
+
+/* ================= ÉTAPE 10 — Atelier argumenté (seulement si une tuile d’argumentation est choisie) ================= */
+,{ key:'atelierarg', icon:'📰', title:'Atelier argumenté', tag:'un texte pour le journal du lycée', final:true, kind:'arg',
+  mission:`Ta mission : **assembler** ton paragraphe et écrire un **texte argumenté** de 8 à 10 lignes pour le **journal du lycée**.`,
+  secs:[
+  { id:'sarg', tiles:['avis','exemples','connect'], title:`Mon texte argumenté en 5 morceaux`, tag:`modèle et check-list`,
+    lesson:{
+      rules:[`Ton texte **assemble** : une **thèse**, un **premier argument** (ton paragraphe de l’étape 7), un **deuxième argument**, une **concession** (certes… mais…) et une **conclusion**.`,
+             `**Trois temps** : 1) tu **relis** ton paragraphe ; 2) tu **complètes** les morceaux qui manquent ; 3) tu **relies** le tout avec des **connecteurs** et tu vérifies la **check-list**.`],
+      modelTitle:`Un texte argumenté modèle`,
+      mail:`Faut-il autoriser le portable au lycée ? Je pense que non, car le portable gêne le travail.\n\nD’abord, il distrait les élèves. En effet, un message arrive et on ne suit plus le cours. Par exemple, un élève qui lit une notification peut rater la consigne.\n\nDe plus, il prend la place des conversations : à la pause, chacun regarde son écran.\n\nCertes, le portable est pratique pour prévenir sa famille, mais on peut le faire à la pause.\n\nEn conclusion, le portable est utile ailleurs, pas en classe.`,
+      checklist:[`**Thèse** claire dès le début`, `**Deux arguments**, chacun avec une explication ou un **exemple**`, `**Une concession** : certes… mais…`, `**Des connecteurs** : d’abord, en effet, de plus, cependant, en conclusion`, `**Une conclusion** qui revient à l’avis`, `**8 à 10 lignes**, puis **je me relis** : orthographe, accords, ponctuation`],
+      mini:[`Que fais-tu avec « Certes, … mais … » ?`, [`Je reconnais un point, puis je donne mon avis.`,`Je change de sujet.`,`Je répète mon idée.`], 0, `La concession montre que tu as réfléchi à l’autre point de vue.`] },
+    A:[ A(`Quelle phrase est une conclusion ?`, [`En conclusion, le portable est utile ailleurs, pas en classe.`,`D’abord, il distrait.`,`Par exemple, Léa a un téléphone.`,`Certes, il est pratique.`], 0),
+        A(`Quelle phrase est une concession ?`, [`Certes, le portable est pratique, mais il distrait.`,`Le portable, c’est nul.`,`Voilà pourquoi il faut l’interdire.`,`Par exemple, un élève lit un message.`], 0),
+        A(`Quel texte défend le mieux un avis ?`, [`Je pense que les écrans fatiguent, car la lumière est vive. Par exemple, on a mal aux yeux après un long jeu.`,`Les écrans, c’est nul.`,`Moi je trouve que c’est pas bien.`,`Les écrans, voilà.`], 0),
+        A(`Quel connecteur ajoute un deuxième argument ?`, [`De plus,`,`Cependant,`,`En conclusion,`,`Certes,`], 0) ],
+    B:{ lines:[ B(`___ le vélo est utile en ville, car il évite les embouteillages.`, `Je pense que`),
+                B(`Le vélo est écologique, ___ il ne pollue pas.`, `car`),
+                B(`___, il est bon pour la santé.`, `De plus`),
+                B(`___, le vélo est parfois dangereux, mais on peut rouler sur des pistes.`, `Certes`),
+                B(`___, le vélo est un bon moyen de transport pour la ville.`, `En conclusion`) ], extra:[] },
+    crit:`` }
+  ],
+  C:{ title:`Mon texte argumenté`, piece:`Mon texte argumenté`,
+      instruct:`**Scénario** : pour le **journal du lycée**, tu écris un **texte argumenté de 8 à 10 lignes** : « Faut-il autoriser le portable au lycée ? » Voici ton paragraphe de l’étape 7, avec le plan. **Complète** les morceaux qui manquent, **relie** les idées, **corrige** les fautes et remplace les **[crochets]**.`,
+      ph:`Je pense que …`, minWords:60,
+      rubric:`ATELIER ARGUMENTÉ : texte argumenté de 8 à 10 lignes pour le journal du lycée, sur « faut-il autoriser le portable au lycée ? » (pour ou contre : ne juge JAMAIS l’opinion, seulement la qualité de l’argumentation). ok = true si TOUTES ces conditions sont remplies : (1) une thèse claire ; (2) au moins deux arguments, chacun expliqué ou illustré par un exemple concret ; (3) une concession ou une réfutation (certes… mais…, certains disent… pourtant…) ; (4) une conclusion qui revient à l’avis ; (5) au moins quatre connecteurs logiques différents bien employés ; (6) un registre courant, sans argot ni jugement vide (« c’est nul », « c’est trop bien ») ; (7) des phrases complètes avec majuscule et point ; (8) au plus TROIS fautes d’orthographe restantes. Si une condition de (1) à (7) n’est pas remplie ou s’il y a plus de trois fautes, ok = false. Dans le feedback, signale au plus TROIS erreurs précises (structure, connecteur, orthographe) avec la règle en une phrase.` }
+}
+
 ];
 
 /* Descriptions utilisées par le suivi (une entrée par étape ; n = rang de l’étape) */
@@ -363,16 +781,16 @@ const course = {
   subtitle:'Parler et écrire comme il faut : un parcours de français sur mesure',
   studentPage:'cours-francais.html',
   pick:{ id:'pick', prompt:'Quelles sont tes difficultés ?' },
-  steps: STEPS.map((s, i) => ({ n:i + 1, key:s.key, chip:s.icon, title:s.title, skill:'Langue', lu:'', goal:s.title, always:!!s.final,
+  steps: STEPS.map((s, i) => ({ n:i + 1, key:s.key, chip:s.icon, title:s.title, skill:'Langue', lu:'', goal:s.title, always:false,
     tiles:Array.from(new Set(s.secs.flatMap(x => x.tiles))),
     levels:{
       A:{ title:'Round A', tag:'QCM', qs:[{id:s.key + '-A-1', prompt:s.title + ' — Round A (QCM)'}] },
-      B:{ title:'Round B', tag:'je complète avec la liste', qs:[{id:s.key + '-B-1', prompt:s.title + ' — Round B (compléter)'}] },
+      B:{ title:'Round B', tag:'je complète avec la liste de mots', qs:[{id:s.key + '-B-1', prompt:s.title + ' — Round B (compléter)'}] },
       C:{ title:'Round C', tag:s.C.piece, qs:[{id:s.key + '-C-1', prompt:s.title + ' — Round C (' + s.C.title + ' : ' + s.C.instruct.replace(/\*\*/g, '') + ')'}] } } }))
 };
 course.allQuestions = [{ id:'pick', step:0, level:'—', index:0, prompt:'Quelles sont tes difficultés ?' }];
 course.steps.forEach(s => ['A','B','C'].forEach(L => s.levels[L].qs.forEach((q, k) => { q.step = s.n; q.level = L; q.index = k; course.allQuestions.push(q); })));
 
 window.FRANCAIS_COURSE = course;
-window.FRANCAIS_DATA = { MISSION, MISSION_FR, TILES, STEPS };
+window.FRANCAIS_DATA = { MISSION, MISSION_FR, TILES, GROUPS, LIT, MAIN, IMAGES, STEPS };
 })();

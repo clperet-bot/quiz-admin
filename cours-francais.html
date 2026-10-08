@@ -73,6 +73,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--coral);b
 .botrow{display:flex;gap:10px;align-items:flex-end;margin:0 0 18px;}
 .avatar{flex:none;width:46px;height:46px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:23px;}
 .bot{background:#fff;border:2px solid var(--navy);border-radius:20px 20px 20px 5px;padding:10px 16px;font-size:17px;max-width:560px;}
+.grp{font-size:22px;margin:22px 0 10px;display:flex;align-items:center;gap:10px;} .grp:after{content:"";flex:1;border-top:3px dashed var(--coral);} .grp:first-of-type{margin-top:6px;}
 .tiles{display:grid;grid-template-columns:1fr;gap:12px;}
 @media (min-width:640px){ .tiles{grid-template-columns:1fr 1fr;} }
 .tile{position:relative;display:flex;gap:12px;align-items:center;text-align:left;width:100%;min-height:84px;background:#fff;color:var(--navy);border:3px solid var(--navy);border-radius:24px 24px 6px 24px;padding:12px 16px 12px 12px;cursor:pointer;transition:transform .08s;font-size:17px;}
@@ -82,7 +83,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--coral);b
 .tile .ck{position:absolute;right:10px;top:-13px;width:30px;height:30px;background:var(--yellow);color:var(--navy);font-weight:800;font-size:17px;display:none;align-items:center;justify-content:center;border-radius:50%;border:3px solid var(--navy);}
 .tile.sel{background:var(--navy);color:#fff;box-shadow:0 5px 0 var(--coral);} .tile.sel .tg{color:#C9D3EE;} .tile.sel .ic{background:var(--navy2);} .tile.sel .ck{display:flex;}
 .tile.lock{cursor:default;} .tile .st{display:inline-block;margin-top:4px;font-size:14px;font-weight:800;background:var(--yellow);color:var(--navy);padding:0 10px;border-radius:999px;}
-.pickbar{position:sticky;bottom:0;z-index:15;margin:18px -16px -80px;padding:14px 16px 18px;background:linear-gradient(rgba(251,243,228,0),var(--cream) 30%);display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between;}
+.pickbar{position:sticky;bottom:0;z-index:15;margin:22px -16px -80px;padding:12px 16px 16px;background:var(--cream);border-top:3px solid var(--navy);box-shadow:0 -8px 14px rgba(251,243,228,.95);display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between;}
+.lit-fld{margin:12px 0 10px;padding:10px 12px 12px;background:var(--yellow);border-radius:16px;} .lit-fld>label{display:block;font-weight:800;font-size:16.5px;margin:0 0 4px;} .lit-fld p{margin:0 0 8px;font-size:16.5px;} .lit-fld textarea{background:#fff;} .lit-fld .hl{background:#fff;}
 .pickbar .cnt{font-weight:800;font-size:16px;} .pickbar .cnt b{color:var(--coral-d);font-size:24px;font-family:'Fredoka',sans-serif;}
 .pickbar .soft{flex-basis:100%;color:var(--muted);font-size:15px;}
 
@@ -139,6 +141,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--coral);b
 .letter{margin:14px 0 4px;background:#fff;border:2px solid var(--navy);border-radius:6px;padding:18px 18px 16px;font-family:'Lora',Georgia,serif;font-size:17px;line-height:1.6;white-space:pre-line;position:relative;box-shadow:5px 5px 0 var(--sand);}
 .letter:before{content:"✉";position:absolute;right:12px;top:-15px;background:var(--coral);color:#fff;width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:19px;transform:rotate(5deg);}
 .check{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:7px;} .check li{display:flex;gap:10px;align-items:flex-start;font-size:17px;} .check li:before{content:"✓";flex:none;width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px;margin-top:1px;}
+.fig{margin:0 0 12px;text-align:center;} .fig img{max-width:100%;max-height:340px;border:3px solid var(--navy);border-radius:8px;background:#fff;box-shadow:4px 4px 0 var(--sand);} .fig figcaption{font-size:16px;font-weight:700;margin-top:6px;color:var(--navy);}
+.fig.slot .ph{border:3px dashed var(--coral);border-radius:12px;padding:18px;font-size:16px;font-weight:700;color:var(--coral-d);background:#fff;}
+.fiche{margin:0 0 12px;background:#fff;border:2px solid var(--navy);border-radius:10px;padding:10px 14px;font-size:17px;line-height:1.6;box-shadow:4px 4px 0 var(--sand);} .fiche>b.fh{display:block;font-family:'Fredoka',sans-serif;color:var(--coral-d);}
 .mini{margin:16px 0 0;background:var(--yellow);border-radius:16px;padding:12px 14px 14px;} .mini>b{display:block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:18px;margin-bottom:6px;}
 .mini .qtxt{margin:0 0 8px;}
 
@@ -303,7 +308,7 @@ async function savePick(){
 }
 
 /* ============ programme personnalisé (étapes et leçons déduites des tuiles) ============ */
-const progKeys = () => STEPS.filter(s => s.final || s.secs.some(x => x.tiles.some(t => PICKED.includes(t))) || stepStarted(s.key)).map(s => s.key);
+const progKeys = () => STEPS.filter(s => s.secs.some(x => x.tiles.some(t => PICKED.includes(t))) || stepStarted(s.key)).map(s => s.key);
 function secsFor(k){ const st = stepOf(k); if(st.final) return st.secs; const r = st.secs.filter(x => x.tiles.some(t => PICKED.includes(t))); return r.length ? r : st.secs; }
 const tileSteps = t => STEPS.filter(s => s.secs.some(x => x.tiles.includes(t))).map(s => s.key);
 
@@ -323,6 +328,7 @@ Réponds UNIQUEMENT en JSON valide, sans balises markdown : {"ok":true,"feedback
 const SYSTEM_STEP = `Tu es un professeur de français bienveillant pour des élèves de seconde bac pro, souvent en difficulté à l'écrit. L'élève écrit un court texte : un morceau d'un mail pour chercher un stage (programme « Dis-le bien »). Il parle souvent « comme les jeunes » et doit apprendre à adapter son langage.
 
 RÈGLES
+- Si le texte contient des blocs « [Bonus littéraire : …] », ce sont de courtes phrases d'écriture littéraire : évalue chaque bloc avec son critère ; ok = true seulement si le morceau de mail ET tous les blocs sont réussis. Signale (une seule fois, la plus importante) une faute d'orthographe, un temps mal choisi ou un mot trop vague.
 - ok dépend UNIQUEMENT des CRITÈRES. Les petites fautes d'orthographe qui ne sont pas dans les CRITÈRES ne changent pas ok.
 - Mais dans "feedback", si tu vois une faute d'orthographe, de ponctuation ou un mot familier, signale-la gentiment (UNE seule, la plus importante) avec la règle en une phrase.
 - ok = false si le texte est vide, hors sujet, écrit en langage SMS, s'il reste des crochets, ou si les CRITÈRES ne sont pas respectés.
@@ -337,6 +343,51 @@ RÈGLES
 - "corrected" : le mail complet corrigé (orthographe, accords, ponctuation, registre), avec les mêmes idées que l'élève, sans rallonge. Si ok = false et TENTATIVE = 1, mets "".
 - "feedback" : 60 mots maximum. Si ok = true : félicite en une phrase et signale les éventuelles fautes restantes (maximum trois), avec la règle. Si ok = false et TENTATIVE = 1 : dis ce qui manque et donne au plus trois indices précis (structure, registre ou orthographe) sans réécrire les phrases. Si ok = false et TENTATIVE >= 2 : explique les erreurs principales ; "corrected" donne une version correcte.
 ${COMMON}`;
+
+const SYSTEM_STORY = `Tu es un professeur de français bienveillant pour des élèves de seconde bac pro. L'élève envoie un COURT RÉCIT de 6 à 8 lignes pour le recueil de la classe (programme « Dis-le bien », atelier littéraire). Tu vérifies selon les CRITÈRES : description, émotion précise, figure de style, temps du récit ET orthographe.
+
+RÈGLES
+- Applique les CRITÈRES à la lettre. Un récit au passé doit employer l'imparfait pour le décor et le passé simple (ou le passé composé, de façon cohérente) pour les actions.
+- ok = false si le texte est vide, s'il reste des crochets [ ], s'il n'est pas un récit, ou si les CRITÈRES ne sont pas respectés.
+- "corrected" : le récit complet corrigé (temps, orthographe, accords, ponctuation), avec les mêmes idées, sans rallonge. Si ok = false et TENTATIVE = 1, mets "".
+- "feedback" : 60 mots maximum. Si ok = true : félicite en une phrase, nomme la figure de style repérée et signale les éventuelles fautes restantes (maximum trois). Si ok = false et TENTATIVE = 1 : dis ce qui manque et donne au plus trois indices précis sans réécrire les phrases. Si ok = false et TENTATIVE >= 2 : explique les erreurs principales ; "corrected" donne une version correcte.
+${COMMON}`;
+
+const SYSTEM_ARG = `Tu es un professeur de français bienveillant pour des élèves de bac pro, souvent en difficulté à l'écrit. L'élève écrit un court PARAGRAPHE ARGUMENTÉ (programme « Dis-le bien », rubrique Argumenter). Tu juges la QUALITÉ DE L'ARGUMENTATION selon les CRITÈRES, jamais l'opinion elle-même (pour ou contre, tout est accepté).
+
+RÈGLES
+- ok dépend UNIQUEMENT des CRITÈRES. Les petites fautes d'orthographe qui ne sont pas dans les CRITÈRES ne changent pas ok, mais signale-en UNE (la plus importante) avec la règle en une phrase.
+- ok = false si le texte est vide, hors sujet, en langage SMS, ou si les CRITÈRES ne sont pas respectés.
+- "corrected" : le texte de l'élève avec les corrections (orthographe, accords, ponctuation, mots familiers), sans nouvelle idée ni rallonge. Si ok = false et TENTATIVE = 1, mets "".
+- "feedback" : 45 mots maximum. Si ok = true : félicite et donne la correction principale. Si ok = false et TENTATIVE = 1 : donne un INDICE précis sur le critère manquant (thèse, explication, exemple, connecteur, phrase de lien) sans écrire la phrase à sa place. Si ok = false et TENTATIVE >= 2 : explique en une phrase ce qui manquait.
+${COMMON}`;
+const SYSTEM_ARGFIN = `Tu es un professeur de français bienveillant pour des élèves de bac pro. L'élève envoie son TEXTE ARGUMENTÉ FINAL de 8 à 10 lignes pour le journal du lycée (programme « Dis-le bien », atelier argumenté). Tu juges la qualité de l'argumentation, l'organisation, les connecteurs ET l'orthographe selon les CRITÈRES, jamais l'opinion elle-même.
+
+RÈGLES
+- Applique les CRITÈRES à la lettre. Les mots familiers et l'argot sont des erreurs de registre.
+- ok = false si le texte est vide, s'il reste des crochets [ ], s'il n'est pas un texte argumenté, ou si les CRITÈRES ne sont pas respectés.
+- "corrected" : le texte complet corrigé (orthographe, accords, ponctuation, registre), mêmes idées, sans rallonge. Si ok = false et TENTATIVE = 1, mets "".
+- "feedback" : 60 mots maximum. Si ok = true : félicite en une phrase et signale les éventuelles fautes restantes (maximum trois) avec la règle. Si ok = false et TENTATIVE = 1 : dis ce qui manque et donne au plus trois indices précis sans réécrire. Si ok = false et TENTATIVE >= 2 : explique en une ou deux phrases ce qu'il fallait faire.
+${COMMON}`;
+const SYSTEM_IMAGE = `Tu es un professeur de français bienveillant pour des élèves de bac pro, souvent en difficulté à l'écrit. L'élève écrit une courte ANALYSE D'IMAGE (programme « Dis-le bien », rubrique Analyser une image). Tu NE VOIS PAS l'image : les CRITÈRES contiennent une DESCRIPTION de ce qu'elle montre. Utilise-la pour vérifier que l'élève décrit ce qui est visible et n'invente rien ; si un détail n'y figure pas, ne le déclare pas faux sans certitude.
+
+RÈGLES
+- ok dépend UNIQUEMENT des CRITÈRES (description avec vocabulaire de l'espace, interprétation justifiée, etc.). Les petites fautes d'orthographe ne changent pas ok, mais signale-en UNE avec la règle en une phrase.
+- Si le texte contient des blocs « [Bonus … : …] », évalue chaque bloc avec son critère ; ok = true seulement si le texte principal ET tous les blocs sont réussis.
+- ok = false si le texte est vide, hors sujet, en langage SMS, ou si les CRITÈRES ne sont pas respectés.
+- "corrected" : texte de l'élève corrigé (orthographe, accords, ponctuation), sans nouvelle idée. Si ok = false et TENTATIVE = 1, mets "".
+- "feedback" : 45 mots maximum. Si ok = true : félicite et donne la correction principale. Si ok = false et TENTATIVE = 1 : INDICE précis (quelle étape de la méthode manque ?) sans écrire la phrase. Si ok = false et TENTATIVE >= 2 : explique en une phrase ce qui manquait.
+${COMMON}`;
+const SYSTEM_ART = `Tu es un professeur de français bienveillant pour des élèves de bac pro, souvent en difficulté à l'écrit. L'élève présente une ŒUVRE D'ART à partir de sa fiche d'identité (programme « Dis-le bien », rubrique Culture de l'art). Tu NE VOIS PAS l'image : les CRITÈRES contiennent une DESCRIPTION de ce qu'elle montre ; n'ajoute aucun fait que tu ne connais pas avec certitude.
+
+RÈGLES
+- ok dépend UNIQUEMENT des CRITÈRES (formule de présentation, artiste et date repris de la fiche, type d'œuvre, sujet, détail observé). Les petites fautes d'orthographe ne changent pas ok, mais signale-en UNE avec la règle en une phrase.
+- Si le texte contient des blocs « [Bonus … : …] », évalue chaque bloc avec son critère ; ok = true seulement si le texte principal ET tous les blocs sont réussis.
+- ok = false si le texte est vide, hors sujet, en langage SMS, ou si les CRITÈRES ne sont pas respectés.
+- "corrected" : texte de l'élève corrigé (orthographe, accords, ponctuation), sans nouvelle idée. Si ok = false et TENTATIVE = 1, mets "".
+- "feedback" : 45 mots maximum. Si ok = true : félicite et donne la correction principale. Si ok = false et TENTATIVE = 1 : INDICE précis sur l'élément manquant de la fiche sans écrire la phrase. Si ok = false et TENTATIVE >= 2 : explique en une phrase ce qui manquait.
+${COMMON}`;
+const SYS = { argu:SYSTEM_ARG, image:SYSTEM_IMAGE, art:SYSTEM_ART };
 
 /* ============ moteur d'exercices ============ */
 function mkSelect(opts){ return h('select', {class:'gap'}, h('option', {value:''}, '…'), opts.map(o => h('option', {value:o}, o))); }
@@ -487,9 +538,9 @@ function renderPick(){
     return el;
   });
   const refresh = () => {
-    cnt.replaceChildren(h('b', null, String(order.length)), ' choisie' + (order.length > 1 ? 's' : '') + ' · 1 à 3 conseillées');
-    go.disabled = !order.length; soft.classList.toggle('hidden', order.length <= 3);
-    soft.textContent = 'Ça fait beaucoup : tu peux commencer avec 3 difficultés et en ajouter plus tard.';
+    cnt.replaceChildren(h('b', null, String(order.length)), ' choisie' + (order.length > 1 ? 's' : '') + ' · 1 à 4 conseillées');
+    go.disabled = !order.length; soft.classList.toggle('hidden', order.length <= 4);
+    soft.textContent = 'Ça fait beaucoup : tu peux commencer avec 4 difficultés et en ajouter plus tard.';
   };
   go.addEventListener('click', async () => {
     if(!order.length) return;
@@ -500,7 +551,7 @@ function renderPick(){
     h('div', {class:'askhead'}, h('span', {class:'badge'}, 'Question 1')),
     h('h1', {class:'ask'}, 'Quelles sont tes ', h('em', null, 'difficultés'), ' ?'),
     h('div', {class:'botrow'}, h('div', {class:'avatar', 'aria-hidden':'true'}, '💬'), h('div', {class:'bot'}, 'Salut ! Touche les phrases qui te ressemblent. Tu peux en choisir plusieurs et changer plus tard.')),
-    h('div', {class:'tiles'}, tiles),
+    ...D.GROUPS.flatMap(g => [h('h3', {class:'grp'}, g.title), h('div', {class:'tiles'}, TILES.map((t, i) => t.group === g.key ? tiles[i] : null))]),
     h('div', {class:'pickbar'}, cnt, go, soft),
     first ? null : h('div', {style:'margin-top:14px'}, h('button', {class:'btn ghost', type:'button', onclick:() => renderHome()}, '← Retour au parcours')));
   window.scrollTo(0, 0);
@@ -511,13 +562,14 @@ function stepPill(k){
   return h('span', {class:'chip' + (stepDone(k) ? ' ok' : '')}, stepDone(k) ? '✓ Fait' : stepStarted(k) ? 'En cours' : 'À faire');
 }
 function mailProgress(){
-  const pieces = STEPS.filter(s => !s.final);
-  const inProg = progKeys();
+  const pieces = STEPS.filter(s => ['comment','aqui','mots','travail'].includes(s.key));
+  const inProg = progKeys(); if(!inProg.includes('mail')) return null;
   return h('div', {class:'mailprog'}, h('h4', null, '✉️ Ton mail se construit'),
     h('p', null, 'Chaque étape écrit un morceau. À la fin, tu les assembles en un mail complet.'),
     h('div', {class:'stamps'}, pieces.map(s => { const ok = levelDone(s.key, 'C'), todo = inProg.includes(s.key);
       return h('span', {class:'stampc' + (ok ? ' ok' : todo ? ' todo' : '')}, (ok ? '✓ ' : todo ? '✎ ' : '· ') + s.C.piece); }),
-      h('span', {class:'stampc' + (levelDone('mail', 'C') ? ' ok' : ' todo')}, (levelDone('mail', 'C') ? '✓ ' : '✉ ') + 'Mon mail complet')));
+      h('span', {class:'stampc' + (levelDone('mail', 'C') ? ' ok' : ' todo')}, (levelDone('mail', 'C') ? '✓ ' : '✉ ') + 'Mon mail complet'),
+      inProg.includes('atelier') ? h('span', {class:'stampc' + (levelDone('atelier', 'C') ? ' ok' : ' todo')}, (levelDone('atelier', 'C') ? '✓ ' : '🎭 ') + 'Mon récit') : null));
 }
 function renderHome(){
   stopTimer(); setTop(true); curKey = null;
@@ -541,7 +593,12 @@ function renderHome(){
       h('button', {class:'btn ' + (allDone() ? '' : 'ghost'), type:'button', onclick:() => renderPick()}, '＋ Ajouter / changer mes difficultés')));
   window.scrollTo(0, 0);
 }
-function finishCard(){ return h('div', {class:'finish'}, h('div', {class:'in'}, h('h2', null, '✉️ Mail envoyé !'), h('p', null, 'Bravo : tu as terminé ton parcours et écrit un vrai mail pour un employeur. Ta prof a reçu ton travail.'), h('div', {class:'btns'}, h('button', {class:'btn', type:'button', onclick:() => renderPick()}, 'Choisir d\'autres difficultés')))); }
+function finishCard(){
+  const P = progKeys(), parts = [P.includes('mail') ? 'écrit un vrai mail pour un employeur' : '', P.includes('atelier') ? 'un court récit' : '', P.includes('atelierarg') ? 'un texte argumenté' : ''].filter(Boolean);
+  const icon = (P.includes('mail') ? '✉️' : '') + (P.includes('atelier') ? '🎭' : '') + (P.includes('atelierarg') ? '📰' : '');
+  const title = parts.length === 1 && P.includes('mail') ? '✉️ Mail envoyé !' : (icon || '🎉') + ' Parcours terminé !';
+  return h('div', {class:'finish'}, h('div', {class:'in'}, h('h2', null, title), h('p', null, 'Bravo : tu as terminé ton parcours' + (parts.length ? ' et ' + (parts[0].startsWith('écrit') ? '' : 'écrit ') + parts.join(', puis ').replace(/^écrit /, 'écrit ') : '') + '. Ta prof a reçu ton travail.'), h('div', {class:'btns'}, h('button', {class:'btn', type:'button', onclick:() => renderPick()}, 'Choisir d\'autres difficultés'))));
+}
 
 /* ---- une étape : leçons + rounds ---- */
 let chrome = {};
@@ -585,7 +642,7 @@ function lessonCard(sec){
       L.table ? h('div', {class:'tblwrap'}, h('table', {class:'tbl'}, h('tr', null, L.table.head.map(x => h('th', null, x))), L.table.rows.map(r => h('tr', {class:regCls(r[0])}, r.map(c => h('td', null, rich(c))))))) : null,
       L.ba ? h('div', null, h('h4', {class:'h4s'}, 'Avant → après : comment faire ?'), h('div', {class:'ba'}, L.ba.map(([a, b]) => h('div', {class:'bapair'}, h('div', {class:'bub bef'}, h('span', {class:'lab'}, 'Avant'), a), h('div', {class:'arr', 'aria-hidden':'true'}, '→'), h('div', {class:'bub aft'}, h('span', {class:'lab'}, 'Après'), b))))) : null,
       L.examples ? h('div', {class:'ex'}, L.examples.map(([t, n]) => h('div', {class:'row'}, h('span', {class:'tx'}, t), h('span', {class:'note'}, n)))) : null,
-      L.mail ? h('div', null, h('h4', {class:'h4s'}, 'Un mail modèle'), h('div', {class:'letter'}, rich(L.mail))) : null,
+      L.mail ? h('div', null, h('h4', {class:'h4s'}, L.modelTitle || 'Un mail modèle'), h('div', {class:'letter'}, rich(L.mail))) : null,
       L.checklist ? h('div', null, h('h4', {class:'h4s'}, 'Ma check-list avant d\'envoyer'), h('ul', {class:'check'}, L.checklist.map(c => h('li', null, rich(c))))) : null,
       miniEx(sec)));
 }
@@ -600,11 +657,31 @@ function levelTabs(k, redraw){
       (open ? '' : '🔒 ') + 'Round ' + L, h('small', null, ok ? '✓ fait' : levelFailed(k, L) ? '🔁 à refaire' : open ? tg[L] : 'verrouillé')); }));
 }
 
+function figure(key, showTitle){
+  const im = key && D.IMAGES && D.IMAGES[key]; if(!im) return null;
+  if(!im.src) return h('figure', {class:'fig slot'}, h('div', {class:'ph'}, '🖼️ ' + im.todo));
+  return h('figure', {class:'fig'}, h('img', {src:im.src, alt:im.alt || im.title, loading:'lazy'}), showTitle ? h('figcaption', null, im.title) : null);
+}
+const imgFacts = key => { const im = key && D.IMAGES && D.IMAGES[key]; return im && im.facts ? im.facts : ''; };
+
 /* ---- round C : texte à écrire (un morceau du mail, ou le mail complet assemblé) ---- */
 function pieceText(k){
   const st = STATE[qid(k, 'C')]; if(!st || !st.answer) return '';
   // si le texte n'a pas été réussi après 2 essais, on part de la version à retenir
-  return (st.correct === false && st.extra && st.extra.corrected) ? st.extra.corrected : st.answer;
+  const t = (st.correct === false && st.extra && st.extra.corrected) ? st.extra.corrected : st.answer;
+  return String(t).split(/\n\n\[Bonus /)[0];
+}
+// morceau d'écriture littéraire d'une leçon (id de section) : écrit dans le round C de son étape
+function litPart(k, secId){
+  const sec = stepOf(k).secs.find(x => x.id === secId), st = STATE[qid(k, 'C')];
+  if(!sec || !sec.lit || !st || !st.answer) return '';
+  const m = String(st.answer).split('[Bonus littéraire : ' + sec.lit.label + ']\n')[1];
+  return m ? m.split(/\n\n\[Bonus /)[0].trim() : '';
+}
+function assembleStory(){
+  const ph = t => '[À écrire : ' + t + ']';
+  return [ litPart('comment', 'sChamp') || ph('le lieu de ta scène'), litPart('mots', 'sDescr') || ph('une description avec deux sens'), litPart('aqui', 'sTemps') || ph('le décor et une action soudaine'),
+    litPart('mots', 'sEmo') || ph('une émotion précise'), (litPart('mots', 'sFig').split('\n')[0]) || ph('une phrase avec une figure de style') ].join('\n');
 }
 function splitFrame(txt){ const m = String(txt || '').match(/DÉBUT DU MAIL :\n([\s\S]*?)\n\nFIN DU MAIL :\n([\s\S]*)/); return m ? {debut:m[1].trim(), fin:m[2].trim()} : {debut:'', fin:''}; }
 function assembleMail(){
@@ -617,15 +694,22 @@ function assembleMail(){
     fr.fin || '[À écrire : la formule de politesse]\n\n[À écrire : ta signature]' ];
   return blocks.join('\n\n');
 }
+function assembleArg(){
+  return [ '[À écrire : ta thèse, c\'est-à-dire ton avis]', pieceText('argu') || '[À écrire : ton premier argument, avec une explication et un exemple]',
+    '[À écrire : ton deuxième argument]', '[À écrire : une concession : Certes… mais…]', '[À écrire : ta conclusion]' ].join('\n\n');
+}
 function roundC(k, q, st0, redraw){
-  const s = stepOf(k), c = s.C, extraCrit = secsFor(k).map(x => x.crit).filter(Boolean);
-  const rubric = c.rubric + (extraCrit.length ? ' CRITÈRES SUPPLÉMENTAIRES (leçons choisies par l\'élève, à vérifier aussi) : ' + extraCrit.join(' ') : '');
+  const s = stepOf(k), c = s.C, extraCrit = secsFor(k).filter(x => !x.lit).map(x => x.crit).filter(Boolean);
+  const rubric = c.rubric + (c.img ? ' DESCRIPTION DE L\'IMAGE (tu ne la vois pas ; sers-toi de cette description pour vérifier que l\'élève décrit ce qui est visible et n\'invente rien) : ' + imgFacts(c.img) : '') + (extraCrit.length ? ' CRITÈRES SUPPLÉMENTAIRES (leçons choisies par l\'élève, à vérifier aussi) : ' + extraCrit.join(' ') : '');
   const mk = (ph, rows, id) => { const ta = taNode(rows, ph, getDraft(id)); ta.addEventListener('input', () => setDraft(id, ta.value)); return ta; };
-  const common = { q, title:c.title, instruct:'', rubric, minWords:c.minWords, system:SYSTEM_STEP, onDone:() => redraw() };
+  const common = { q, title:c.title, instruct:'', rubric, minWords:c.minWords, system:SYS[c.sys] || SYSTEM_STEP, onDone:() => redraw() };
   if(s.final){
-    const prefill = assembleMail(); const ta = taNode(22, c.ph, getDraft(q.id) || prefill); ta.addEventListener('input', () => setDraft(q.id, ta.value === prefill ? '' : ta.value));
-    const plan = h('div', {class:'plan5'}, h('b', null, 'Le plan de ton mail : '), 'objet · formule d\'appel · présentation · demande · motivation · formule de politesse · signature.');
-    return aiCard(Object.assign(common, { system:SYSTEM_FINAL, node:h('div', null, h('p', {class:'qtxt', style:'font-weight:500'}, rich(c.instruct)), plan, ta), getText:() => ta.value.trim(), setDisabled:v => ta.disabled = v,
+    const kind = s.kind || 'mail', prefill = kind === 'story' ? assembleStory() : kind === 'arg' ? assembleArg() : assembleMail();
+    const ta = taNode(kind === 'mail' ? 22 : 14, c.ph, getDraft(q.id) || prefill); ta.addEventListener('input', () => setDraft(q.id, ta.value === prefill ? '' : ta.value));
+    const plans = { story:['Le plan de ton récit : ', 'lieu · description · action · émotion · figure de style.'], arg:['Le plan de ton texte : ', 'thèse · argument 1 · argument 2 · concession (certes… mais…) · conclusion.'],
+      mail:['Le plan de ton mail : ', 'objet · formule d\'appel · présentation · demande · motivation · formule de politesse · signature.'] };
+    const plan = h('div', {class:'plan5'}, h('b', null, plans[kind][0]), plans[kind][1]);
+    return aiCard(Object.assign(common, { system:{story:SYSTEM_STORY, arg:SYSTEM_ARGFIN, mail:SYSTEM_FINAL}[kind], node:h('div', null, h('p', {class:'qtxt', style:'font-weight:500'}, rich(c.instruct)), plan, ta), getText:() => ta.value.trim(), setDisabled:v => ta.disabled = v,
       guard:text => /\[[^\]\n]*\]/.test(text) ? 'Il reste des [crochets] : remplace-les par ton texte.' : (norm(text) === norm(prefill) ? 'Ton texte est identique à celui des étapes précédentes. Relis-le, relie les morceaux et corrige les fautes avant de vérifier.' : null) }));
   }
   if(c.two){
@@ -635,7 +719,21 @@ function roundC(k, q, st0, redraw){
       getText:() => (t1.value.trim() && t2.value.trim()) ? 'DÉBUT DU MAIL :\n' + t1.value.trim() + '\n\nFIN DU MAIL :\n' + t2.value.trim() : '', setDisabled:v => { t1.disabled = v; t2.disabled = v; } }));
   }
   const ta = mk(c.ph, 6, q.id);
-  return aiCard(Object.assign(common, { node:h('div', null, h('p', {class:'qtxt', style:'font-weight:500'}, rich(c.instruct)), ta), getText:() => ta.value.trim(), setDisabled:v => ta.disabled = v }));
+  const fig = figure(c.img, true), fiche = c.fiche ? h('div', {class:'fiche'}, h('b', {class:'fh'}, '🪪 Fiche d\'identité'), rich(c.fiche)) : null;
+  const head = [h('p', {class:'qtxt', style:'font-weight:500'}, rich(c.instruct))];
+  const bonus = secsFor(k).filter(x => x.lit).map(x => ({id:x.id, tag:'littéraire', icon:'🎭', label:x.lit.label, instruct:x.lit.instruct, ph:x.lit.ph, rubric:x.lit.rubric, img:null}));
+  if(c.slotBonus && D.IMAGES[c.slotBonus.slot] && D.IMAGES[c.slotBonus.slot].src) bonus.push({id:'slot-' + c.slotBonus.slot, tag:'image', icon:'🖼️', label:c.slotBonus.label, instruct:c.slotBonus.instruct, ph:c.slotBonus.ph, rubric:c.slotBonus.rubric + ' DESCRIPTION DE L\'IMAGE : non fournie (tu ne la vois pas).', img:c.slotBonus.slot});
+  const top = [fig, fiche].filter(Boolean);
+  if(bonus.length){
+    const bt = bonus.map(x => ({x, ta:mk(x.ph, 3, q.id + '-lit-' + x.id)}));
+    const brub = ' BLOCS BONUS (à la suite du texte principal, chacun commence par son titre entre crochets) : ' + bonus.map(x => '[Bonus ' + x.tag + ' : ' + x.label + '] → ' + x.rubric).join(' ') + ' ok = true seulement si le texte principal ET tous les blocs bonus sont réussis.';
+    return aiCard(Object.assign(common, { rubric:rubric + brub, node:h('div', null, ...top, ...head, ta,
+      ...bt.map(l => h('div', {class:'lit-fld'}, h('label', null, l.x.icon + ' Bonus ' + l.x.tag + ' : ' + l.x.label), figure(l.x.img, true), h('p', null, rich(l.x.instruct)), l.ta))),
+      getText:() => { const m = ta.value.trim(); return m ? m + bt.map(l => '\n\n[Bonus ' + l.x.tag + ' : ' + l.x.label + ']\n' + l.ta.value.trim()).join('') : ''; },
+      guard:() => { if(words(ta.value) < c.minWords) return 'Ton texte est un peu court : ajoute encore une phrase 🙂'; const e = bt.find(l => words(l.ta.value) < 4); return e ? 'N\'oublie pas ton bonus : « ' + e.x.label + ' » (au moins une phrase).' : null; },
+      setDisabled:v => { ta.disabled = v; bt.forEach(l => l.ta.disabled = v); } }));
+  }
+  return aiCard(Object.assign(common, { node:h('div', null, ...top, ...head, ta), getText:() => ta.value.trim(), setDisabled:v => ta.disabled = v }));
 }
 
 function viewStep(k, body){
@@ -649,20 +747,20 @@ function viewStep(k, body){
     let card, reps, tag;
     if(curLevel === 'A'){
       const raw = interleave(secs.map(x => x.A.map((a, i) => Object.assign({sid:x.id, i}, a))), cap);
-      const items = raw.map(a => ({q:a.q, opts:shuffled(a.opts, seed + hashStr(a.sid) + a.i * 17), exp:a.opts[a.ans]}));
+      const items = raw.map(a => ({q:a.q, img:a.img, opts:shuffled(a.opts, seed + hashStr(a.sid) + a.i * 17), exp:a.opts[a.ans]}));
       reps = items.length; tag = 'QCM';
       card = detCard(q, 'Choisis la bonne réponse', '', selects => h('div', null, items.map((it, i) => { const sel = mkChoice(it.opts); selects.push(sel);
-        const parts = it.q.split('___'); return h('div', {class:'sentline'}, h('div', {class:'qtxt'}, h('span', {class:'rep'}, String(i + 1)), parts.length > 1 ? [parts[0], h('span', {class:'blank'}), parts[1]] : it.q), sel); })),
+        const parts = it.q.split('___'); return h('div', {class:'sentline'}, figure(it.img, false), h('div', {class:'qtxt'}, h('span', {class:'rep'}, String(i + 1)), parts.length > 1 ? [parts[0], h('span', {class:'blank'}), parts[1]] : it.q), sel); })),
         items.map(i => i.exp), vals => vals.map((v, i) => (i + 1) + '. ' + fill(items[i].q, v)).join('\n'), () => draw());
     } else if(curLevel === 'B'){
-      const lines = interleave(secs.map(x => x.B.lines.map(l => ({t:l[0], a:l[1], extra:x.B.extra || []}))), cap);
+      const lines = interleave(secs.map(x => x.B.lines.map(l => ({t:l[0], a:l[1], img:l[2], extra:x.B.extra || []}))), cap);
       const seen = new Set(), pool = [];
       lines.forEach(l => [l.a].concat(l.extra).forEach(w => { const key = w.toLowerCase(); if(!seen.has(key)){ seen.add(key); pool.push(w); } }));
       const list = shuffled(pool, seed + 5), ans = lines.map(l => l.a), dup = ans.length !== new Set(ans.map(a => a.toLowerCase())).size;
-      reps = lines.length; tag = 'La liste';
-      card = detCard(q, 'Complète avec la liste', '', selects => h('div', null,
-        h('div', {class:'frames'}, h('b', null, 'La liste'), h('div', {class:'wlist'}, list.map(w => h('span', null, w))), dup ? h('div', {class:'note'}, 'Un mot peut servir plusieurs fois.') : null),
-        lines.map((l, i) => { const sel = mkSelect(list); selects.push(sel); const parts = l.t.split('___'); return h('div', {class:'sentline'}, h('span', {class:'rep'}, String(i + 1)), parts[0], sel, parts[1] || ''); })),
+      reps = lines.length; tag = 'La liste de mots';
+      card = detCard(q, 'Complète avec la liste de mots', '', selects => h('div', null,
+        h('div', {class:'frames'}, h('b', null, 'La liste de mots'), h('div', {class:'wlist'}, list.map(w => h('span', null, w))), dup ? h('div', {class:'note'}, 'Un mot peut servir plusieurs fois.') : null),
+        lines.map((l, i) => { const sel = mkSelect(list); selects.push(sel); const parts = l.t.split('___'); return h('div', {class:'sentline'}, figure(l.img, false), h('span', {class:'rep'}, String(i + 1)), parts[0], sel, parts[1] || ''); })),
         ans, vals => vals.map((v, i) => (i + 1) + '. ' + lines[i].t.replace('___', v)).join('\n'), () => draw());
     } else {
       reps = '1 texte'; tag = s.C.piece;
