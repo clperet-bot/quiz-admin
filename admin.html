@@ -1543,8 +1543,13 @@ function prRenderItem(item){
         ? '<span style="color:#999; font-style:italic;">(réponse non conservée — élève a bien répondu, score basé sur la correction d\'origine)</span>'
         : '<span style="color:#999;">(vide)</span>');
   const expected = item.correct_answer ? ` <span style="color:#8A5A1E; font-weight:600;">(attendu : ${item.correct_answer})</span>` : '';
-  return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}${expected}</span></div>${note}${correctionHtml}</div>`;
+  const subs = Object.entries(item).filter(([k, v]) => !REPORT_ITEM_CORE_KEYS.includes(k) && typeof v === 'number');
+  const subsHtml = subs.length ? `<span style="display:block; margin-top:3px; color:#4B2E83; font-weight:600; font-size:11px;">${subs.map(([k, v]) => `${humanizeKey(k)} : ${v}`).join(' · ')}</span>` : '';
+  return `<div class="pr-item"><div class="pr-item-top">${markHtml}${label ? `<strong style="margin-right:6px;">${label} —</strong>` : ''}<span>${answerHtml}${expected}</span></div>${subsHtml}${note}${correctionHtml}</div>`;
 }
+// Consignes imprimées comme à l'écran, uniquement pour les quiz dont les consignes sont en français
+// (celles en anglais, ex. Danger Zone, restent exclues : les élèves ne les lisent pas).
+const PR_PRINT_CONSIGNE_FILES = ['carte-journaliste-redaction.html', 'homecoming-mystery-graded.html'];
 const PR_HIDDEN_KEYS = ['client_subtotal','ai_subtotal','ai_error','raw_fields','released_for_retry'];
 // La consigne (souvent en anglais, parfois avec des précisions type "pas une traduction de...")
 // n'est volontairement PAS imprimée : les élèves ne la lisent pas et ça alourdit le document.
@@ -1559,13 +1564,15 @@ function prRenderDetail(detail, quizFile){
   return ordered.map(([key, val]) => {
     const sheet = sheetSection(quizFile, key);
     const title = sheet ? sheet.title : prLabelForKey(key);
+    const consigneTxt = PR_PRINT_CONSIGNE_FILES.includes(quizFile) && (QUIZ_SECTION_CONSIGNES[quizFile] || {})[key];
+    const consigne = consigneTxt ? `<p class="pr-consigne">${consigneTxt}</p>` : '';
     if(Array.isArray(val)){
       const items = sectionItems(quizFile, key, val);
-      return `<div class="pr-section${sheet ? ' pr-section-flow' : ''}"><div class="pr-section-title">${title}</div>${sectionBodyHtml(quizFile, key, items, prRenderItem, b => b, 'pr-doc')}</div>`;
+      return `<div class="pr-section${sheet ? ' pr-section-flow' : ''}"><div class="pr-section-title">${title}</div>${consigne}${sectionBodyHtml(quizFile, key, items, prRenderItem, b => b, 'pr-doc')}</div>`;
     }
     if(typeof val === 'object'){
       const item = Object.assign({}, mergeItemWithSchema(val, sheet && sheet.maxPoints !== undefined ? { points: sheet.maxPoints } : null), sheet && sheet.itemLabel ? { question: sheet.itemLabel } : {});
-      return `<div class="pr-section${sheet ? ' pr-section-flow' : ''}"><div class="pr-section-title">${title}</div>${sectionBodyHtml(quizFile, key, [item], prRenderItem, b => b, 'pr-doc')}</div>`;
+      return `<div class="pr-section${sheet ? ' pr-section-flow' : ''}"><div class="pr-section-title">${title}</div>${consigne}${sectionBodyHtml(quizFile, key, [item], prRenderItem, b => b, 'pr-doc')}</div>`;
     }
     return `<div class="pr-section"><div class="pr-section-title">${title}</div><div class="pr-text-block">${val}</div></div>`;
   }).join('');
@@ -1575,6 +1582,9 @@ function prRenderDetail(detail, quizFile){
 // images, mise en page d'origine), on remplace chaque champ par la réponse de l'élève (en bleu) et on
 // ajoute sous chaque question la note, le commentaire (rose) et la phrase corrigée (vert).
 // Disponible pour les quiz « formulaire » (page avec #form-screen) ; sinon on garde l'affichage en liste.
+// L'impression reprend l'affichage du compte rendu à l'écran (+ corrections en couleur). Passer à true pour
+// imprimer à la place la « copie fidèle » (page du quiz remplie avec les réponses de l'élève).
+const PRINT_PAPER_COPY = false;
 const PAPER_CACHE = {};
 function escHtml(t){
   return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1628,6 +1638,7 @@ async function loadPaperTemplate(file, url){
   return PAPER_CACHE[file];
 }
 async function preparePaperCopies(attempts){
+  if(!PRINT_PAPER_COPY) return;
   for(const a of attempts){
     const q = QUIZZES.find(x => x.id === a.quiz_id);
     if(q && q.url) await loadPaperTemplate(quizFileFromUrl(q.url), q.url);
@@ -1722,12 +1733,17 @@ function buildPrintReport(a, detail){
   const quizFile = quizFileFromUrl(quiz && quiz.url);
   const scoreHtml = a.cancelled ? 'Annulée' : `${a.score}<span class="pr-of">/${a.total}</span>`;
 
-  let body = paperCopyHtml(quizFile, a, detail) || prRenderDetail(detail, quizFile);
+  let body = (PRINT_PAPER_COPY && paperCopyHtml(quizFile, a, detail)) || prRenderDetail(detail, quizFile);
 
-  // La copie rédigée (texte brut de l'élève) n'est volontairement PAS imprimée : sur une rédaction
-  // longue elle peut à elle seule ajouter 2-3 pages. Elle reste visible sur le compte-rendu à l'écran
-  // (openReport / reportRenderDetail) pour vérification, mais jamais sur la version imprimée.
+  // La copie rédigée n'est imprimée que si elle est la réponse elle-même (quiz à réponse rédigée) ; quand les
+  // réponses sont déjà détaillées par partie, la répéter en bloc ajouterait des pages pour rien.
   const hasFeedbackInDetail = detail && detail.feedback_global;
+  const isItemized = detail && !Array.isArray(detail) && Object.keys(detail).some(k => /^(partie|section)\d/i.test(k));
+  if(a.writing_text && !isItemized){
+    // Quiz à réponse rédigée (ex : Frankenstein) : la copie de l'élève EST la réponse, comme à l'écran.
+    const wc = QUIZ_WRITING_CONSIGNES[quizFile] ? `<p class="pr-consigne">${QUIZ_WRITING_CONSIGNES[quizFile]}</p>` : '';
+    body += `<div class="pr-section pr-section-flow"><div class="pr-section-title">Réponse rédigée</div>${wc}<div class="pr-text-block">${escHtml(a.writing_text)}</div></div>`;
+  }
   if(a.writing_correction && !hasFeedbackInDetail){
     body += `<div class="pr-section"><div class="pr-section-title">Ton bilan</div><div class="pr-text-block" style="color:#C2185B;">${prCleanComment(a.writing_correction)}</div></div>`;
   }
