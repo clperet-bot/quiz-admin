@@ -1791,12 +1791,18 @@ document.getElementById('report-print-btn').addEventListener('click', async () =
 const PRINT_PAGE_WIDTH_PX = (210 - 14 * 2) * 96 / 25.4;  // largeur utile A4 portrait moins marges
 const PRINT_PAGE_HEIGHT_PX = (297 - 12 * 2) * 96 / 25.4; // hauteur utile A4 portrait moins marges
 function estimatePageCount(innerHtml){
+  const MAX_PAGES = 80;
   const probe = document.createElement('div');
   probe.className = 'pr-page';
   probe.style.position = 'fixed';
   probe.style.top = '0';
-  probe.style.left = '-99999px';
+  probe.style.left = '0';
+  probe.style.zIndex = '-1';
   probe.style.visibility = 'hidden';
+  probe.style.boxSizing = 'border-box';
+  // Largeur explicite = MAX_PAGES colonnes : sans elle, un bloc "fixed" se réduit à son contenu et
+  // le navigateur fabrique des colonnes plus étroites qu'une page, ce qui faussait le décompte.
+  probe.style.width = (PRINT_PAGE_WIDTH_PX * MAX_PAGES) + 'px';
   probe.style.height = PRINT_PAGE_HEIGHT_PX + 'px';
   probe.style.columnWidth = PRINT_PAGE_WIDTH_PX + 'px';
   probe.style.webkitColumnWidth = PRINT_PAGE_WIDTH_PX + 'px';
@@ -1805,9 +1811,14 @@ function estimatePageCount(innerHtml){
   probe.style.columnFill = 'auto';
   probe.innerHTML = innerHtml;
   document.body.appendChild(probe);
-  const totalWidth = probe.scrollWidth;
+  let maxRight = 0;
+  probe.querySelectorAll('*').forEach(el => {
+    const r = el.getBoundingClientRect();
+    if(r.width > 0 || r.height > 0) maxRight = Math.max(maxRight, r.right);
+  });
   document.body.removeChild(probe);
-  return Math.max(1, Math.round(totalWidth / PRINT_PAGE_WIDTH_PX));
+  // -1px : tolère les arrondis quand un bloc finit exactement au bord de la dernière page.
+  return Math.max(1, Math.ceil((maxRight - 1) / PRINT_PAGE_WIDTH_PX));
 }
 function buildEvenPagedReport(a, detail){
   const inner = buildPrintReport(a, detail);
