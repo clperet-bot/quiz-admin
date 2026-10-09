@@ -1820,10 +1820,85 @@ function estimatePageCount(innerHtml){
   // -1px : tolère les arrondis quand un bloc finit exactement au bord de la dernière page.
   return Math.max(1, Math.ceil((maxRight - 1) / PRINT_PAGE_WIDTH_PX));
 }
+// Pagination déterministe : plutôt que de deviner combien de pages le navigateur va produire (une
+// différence de quelques pixels suffit à passer de 2 à 3 pages), on découpe nous-mêmes la copie en
+// "feuilles" de hauteur fixe (un peu plus courtes qu'une page imprimée) : une feuille = une page,
+// exactement. Le nombre de pages est donc connu avec certitude et on complète à un nombre pair.
+// Si un bloc est plus haut qu'une page (texte très long), on retombe sur l'estimation classique.
+function paginateReportSheets(inner){
+  const SHEET_H = Math.floor(PRINT_PAGE_HEIGHT_PX * 0.985);   // hauteur réelle d'une feuille
+  const FILL_H = SHEET_H - 6;                                  // remplissage max (léger jeu de sécurité)
+  const probe = document.createElement('div');
+  probe.className = 'pr-page';
+  probe.style.cssText = 'position:fixed;top:0;left:0;z-index:-1;visibility:hidden;box-sizing:border-box;width:' + PRINT_PAGE_WIDTH_PX + 'px;';
+  probe.innerHTML = inner;
+  document.body.appendChild(probe);
+  try{
+    const header = probe.querySelector('.pr-header');
+    const pad = probe.querySelector('.pr-body-pad');
+    if(!header || !pad) return null;
+    const outer = el => {
+      const cs = getComputedStyle(el);
+      return el.getBoundingClientRect().height + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
+    };
+    const padCS = getComputedStyle(pad);
+    const padV = (parseFloat(padCS.paddingTop) || 0) + (parseFloat(padCS.paddingBottom) || 0);
+    const headerH = outer(header);
+    // Unités de découpe : chaque bloc de la copie ; les sections "fluides" (qui peuvent se couper entre deux
+    // lignes de questions) sont découpées en leurs éléments, le titre restant collé à l'élément qui le suit.
+    const units = [];
+    const fits = h => h <= FILL_H - padV;
+    for(const el of Array.from(pad.children)){
+      const h = outer(el);
+      if(fits(h) && !el.classList.contains('pr-section-flow')){ units.push({ html: el.outerHTML, h }); continue; }
+      if(!el.classList.contains('pr-section')) return null;
+      const open = '<div class="' + el.className + '" style="margin-bottom:0;">';
+      const kids = Array.from(el.children);
+      let group = [], gh = 0;
+      const flush = (isLast) => {
+        if(!group.length) return;
+        const mb = isLast ? (parseFloat(getComputedStyle(el).marginBottom) || 0) : 0;
+        units.push({ html: open + group.join('') + '</div>', h: gh + mb, mb });
+        group = []; gh = 0;
+      };
+      kids.forEach((k, ki) => {
+        const kh = outer(k);
+        if(!fits(kh)) throw new Error('tall');
+        const isHead = k.classList.contains('pr-section-title') || k.classList.contains('pr-consigne');
+        group.push(k.outerHTML); gh += kh;
+        const next = kids[ki + 1];
+        if(!isHead) flush(!next);
+        else if(!next) flush(true);
+      });
+    }
+    const padStyle = padCS.paddingTop + ' ' + padCS.paddingRight + ' ' + padCS.paddingBottom + ' ' + padCS.paddingLeft;
+    const sheets = [[]];
+    let used = headerH + padV;
+    for(const u of units){
+      if(u.h > FILL_H - padV) return null;               // bloc plus haut qu'une page : on ne sait pas le découper
+      if(used + u.h > FILL_H && sheets[sheets.length - 1].length){ sheets.push([]); used = padV; }
+      sheets[sheets.length - 1].push(u.html); used += u.h;
+    }
+    if(sheets.length % 2 !== 0) sheets.push(null);        // feuille blanche pour finir sur un verso
+    return sheets.map((units2, idx) => {
+      const last = idx === sheets.length - 1;
+      const style = 'height:' + SHEET_H + 'px;overflow:visible;' + (last ? '' : 'break-after:page;page-break-after:always;');
+      if(units2 === null) return '<div class="pr-sheet" style="' + style + '"></div>';
+      return '<div class="pr-sheet" style="' + style + '">' + (idx === 0 ? header.outerHTML : '') +
+             '<div class="pr-body-pad" style="padding:' + padStyle + ';">' + units2.join('') + '</div></div>';
+    }).join('');
+  } catch(e) {
+    return null;
+  } finally {
+    document.body.removeChild(probe);
+  }
+}
 function buildEvenPagedReport(a, detail){
   const inner = buildPrintReport(a, detail);
+  const sheets = paginateReportSheets(inner);
+  if(sheets) return `<div class="pr-page">${sheets}</div>`;
   const pages = estimatePageCount(inner);
-  const blankPage = pages % 2 !== 0 ? '<div class="pr-page pr-blank-page"></div>' : '';
+  const blankPage = pages % 2 !== 0 ? '<div class="pr-page pr-blank-page">&nbsp;</div>' : '';
   return `<div class="pr-page">${inner}</div>${blankPage}`;
 }
 // Impression groupée : une correction par élève, chacune démarrant sur une nouvelle page
