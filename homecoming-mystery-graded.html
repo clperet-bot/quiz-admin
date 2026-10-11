@@ -475,6 +475,12 @@ PARTIE 3 (rédaction libre, "partie3") — l'élève devait répondre en 6-8 phr
 - "pourquoi_score" (0 à 2) : un mobile plausible et cohérent est-il donné ? 2 = oui, cohérent, 1 = présent mais vague/peu convaincant, 0 = absent ou incohérent
 Applique aussi l'AXE 2 (forme) de façon globale sur l'ensemble du texte : si le texte contient des erreurs graves de forme qui gênent la compréhension générale, réduis légèrement le total (jusqu'à -1 au total, pas plus) via un champ "forme_penalite" (0 ou -0.5 ou -1). Les fautes tolérées (accents, orthographe mineure) ne coûtent rien. Si le texte fait moins de 4 phrases, signale-le dans le commentaire mais ne pénalise que via les sous-scores eux-mêmes (contenu manquant = sous-scores plus bas), pas de pénalité de longueur séparée.
 
+RÈGLE DE LANGUE (prioritaire, s'applique AVANT tout le reste, y compris pour les élèves avec aménagement) : c'est un contrôle d'ANGLAIS. La production attendue (parties 2A et 3) doit être en anglais.
+- Si la réponse est écrite entièrement ou presque en français : score 0 pour cet item / pour toute la partie 3 (qui_score, comment_score et pourquoi_score à 0, forme_penalite à 0), MÊME SI le contenu est juste. Dans le commentaire, dis-le simplement : tu as bien trouvé la réponse mais il fallait l'écrire en anglais.
+- Si la réponse mélange français et anglais : ne compte que ce qui est exprimé en anglais ; les passages en français ne rapportent aucun point.
+- Un mot français isolé glissé dans une phrase anglaise (ex : "vernis à ongles" après une phrase correcte en anglais) ne rapporte rien mais n'annule pas le reste.
+Avant de noter, demande-toi toujours : "Dans quelle langue l'élève a-t-il écrit ?"
+
 Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown, avec EXACTEMENT cette forme :
 {"partie2a_items":[{"score":0,"comment":"..."},{"score":0,"comment":"..."},{"score":0,"comment":"..."}],"partie3":{"qui_score":0,"comment_score":0,"pourquoi_score":0,"forme_penalite":0,"comment":"..."},"feedback_global":"Une ou deux phrases en français, adressées directement à l'élève en le/la tutoyant, qui résument ce qui est réussi et ce qu'il faut retenir."}
 
