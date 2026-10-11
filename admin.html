@@ -154,6 +154,25 @@
   .report-footer-row{position:sticky; bottom:0; display:flex; background:var(--white); border-top:1px solid var(--line);}
   .report-close{flex:1; background:var(--white); padding:12px; font-weight:600; font-size:14px; color:var(--purple); border:none; cursor:pointer;}
 
+  /* ---- Oraux (enregistrements audio) ---- */
+  .oral-panel{max-width:640px;}
+  .oral-student{border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:14px; background:var(--white);}
+  .oral-student-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; flex-wrap:wrap;}
+  .oral-student-name{font-weight:700; font-size:15px;}
+  .oral-student-meta{font-size:12px; color:var(--ink-soft);}
+  .oral-q{margin:10px 0 0;}
+  .oral-q-label{font-size:12.5px; font-weight:600; color:var(--purple-dark); margin:0 0 4px;}
+  .oral-take-meta{font-size:11.5px; color:var(--ink-soft); margin:2px 0 6px;}
+  .oral-audio{width:100%; height:38px;}
+  .oral-old{margin-top:6px; font-size:12px; color:var(--ink-soft);}
+  .oral-old summary{cursor:pointer;}
+  .oral-score-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--purple-light); border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:13.5px;}
+  .oral-score-row input{width:80px; padding:7px 9px; border:1px solid var(--line); border-radius:7px; font-size:14px;}
+  .btn-oral-del{background:#fff; color:var(--red); border:1px solid var(--red); border-radius:7px; padding:6px 11px; font-size:12.5px; font-weight:600; cursor:pointer;}
+  .btn-oral-del:hover{background:#FDE2E2;}
+  .btn-oral-save{background:var(--purple); color:#fff; border:none; border-radius:7px; padding:7px 13px; font-size:13px; font-weight:600; cursor:pointer;}
+  .oral-pill{display:inline-block; background:var(--purple-light); color:var(--purple-dark); font-weight:700; font-size:12px; padding:3px 10px; border-radius:20px;}
+
   /* ---- Impression des comptes rendus ---- */
   #print-report-root{display:none;}
   @media print{
@@ -527,6 +546,7 @@
           <select id="filter-quiz"><option value="">Tous les quiz</option></select>
           <button id="print-quiz-corrections-btn" class="btn-print-corrections hidden">🖨️ Imprimer les corrections</button>
           <button id="print-recap-btn" class="btn-print-corrections">📋 Récapitulatif des notes (PDF)</button>
+          <button id="oral-list-btn" class="btn-print-corrections">🎧 Écouter les oraux</button>
           <button id="reset-results-btn" class="btn-danger-outline">Réinitialiser tous les résultats</button>
         </div>
         <p class="filter-hint">Pour le récapitulatif : choisis une matière et une classe ci-dessus (le quiz n'a pas besoin d'être précisé — tous les contrôles de cette matière/classe seront inclus).</p>
@@ -617,6 +637,22 @@
     <div class="report-footer-row">
       <button class="report-close" id="report-print-btn" style="border-right:1px solid var(--line);">🖨️ Imprimer</button>
       <button class="report-close" id="report-close-btn">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<div id="oral-modal" class="report-modal hidden">
+  <div class="report-panel oral-panel">
+    <div class="report-head">
+      <div class="report-head-top">
+        <div class="report-student" id="oral-title">Oraux</div>
+        <div class="report-score-pill" id="oral-pill"></div>
+      </div>
+      <div class="report-meta" id="oral-meta"></div>
+    </div>
+    <div class="report-body" id="oral-body"></div>
+    <div class="report-footer-row">
+      <button class="report-close" id="oral-close-btn">Fermer</button>
     </div>
   </div>
 </div>
@@ -1002,7 +1038,9 @@ async function loadResults(){
       <td>${a.student_name_raw}</td>
       <td>${classById[a.class_id] || '—'}</td>
       <td>${quizById[a.quiz_id] || '—'}</td>
-      <td>${a.cancelled ? '—' : `<span class="score-pill ${scoreClass(a.score, a.total)}">${a.score}/${a.total}</span>`}</td>
+      <td>${a.cancelled ? '—' : (isOralAttempt(a) && (a.score === null || a.score === undefined)
+          ? '<span class="oral-pill">🎧 à écouter</span>'
+          : `<span class="score-pill ${scoreClass(a.score, a.total)}">${a.score}/${a.total}</span>`)}${isOralAttempt(a) && !a.cancelled && a.score !== null && a.score !== undefined ? ' <span class="oral-pill">🎧</span>' : ''}</td>
       <td>${fmtDate(a.created_at)}</td>
       <td>${a.cancelled
         ? (released
@@ -1046,7 +1084,8 @@ async function loadResults(){
   wrap.querySelectorAll('[data-report]').forEach(row => {
     row.addEventListener('click', (e) => {
       if(e.target.closest('[data-release]') || e.target.closest('[data-delete]') || e.target.closest('[data-print-idx]')) return; // ces boutons gèrent leur propre clic
-      openReport(currentAttempts[parseInt(row.dataset.report)]);
+      const att = currentAttempts[parseInt(row.dataset.report)];
+      if(isOralAttempt(att)) openOralForAttempt(att); else openReport(att);
     });
   });
 
@@ -1116,8 +1155,9 @@ async function loadResults(){
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const a = currentAttempts[parseInt(btn.dataset.delete)];
-      const label = a.cancelled ? 'cette tentative annulée' : `la tentative de ${a.student_name_raw} (${a.score}/${a.total})`;
-      if(!confirm(`Supprimer ${label} ? Cette action est irréversible.`)) return;
+      const oral = isOralAttempt(a);
+      const label = a.cancelled ? 'cette tentative annulée' : (oral ? `l'oral de ${a.student_name_raw}` : `la tentative de ${a.student_name_raw} (${a.score}/${a.total})`);
+      if(!confirm(`Supprimer ${label}${oral ? ' ET ses enregistrements audio' : ''} ? Cette action est irréversible.`)) return;
       // .select() est indispensable : sans lui, une suppression bloquée par les droits d'accès (RLS)
       // ne renvoie AUCUNE erreur et semble "ne rien faire" — on vérifie donc qu'une ligne a bien été supprimée.
       const { data: deletedRows, error } = await supa.from('attempts').delete().eq('id', a.id).select();
@@ -1125,6 +1165,12 @@ async function loadResults(){
       if(!deletedRows || deletedRows.length === 0){
         alert("La suppression n'a pas fonctionné : le serveur n'a supprimé aucune tentative (probablement un problème de droits d'accès). Essaie de te déconnecter puis de te reconnecter, puis réessaie.");
         return;
+      }
+      if(oral){
+        try{
+          const rows = await fetchOralRows({ quizId: a.quiz_id, classId: a.class_id, studentNorm: a.student_name_normalized });
+          if(rows.length) await deleteOralRows(rows);
+        } catch(err){ alert('Tentative supprimée, mais les enregistrements audio n\'ont pas pu être tous effacés : ' + err.message); }
       }
       loadResults();
     });
@@ -1493,6 +1539,206 @@ function openReport(a){
   document.getElementById('report-body').innerHTML = html;
   document.getElementById('report-modal').classList.remove('hidden');
 }
+
+// -------- ORAUX : écoute, notation et suppression des enregistrements --------
+const ORAL_BUCKET = 'oral-recordings';
+
+function isOralAttempt(a){
+  return !!a && Array.isArray(a.answers_detail) && a.answers_detail.some(d => d && d.type === 'oral');
+}
+
+async function fetchOralRows({ quizId, classId, studentNorm }){
+  let q = supa.from('oral_recordings').select('*').order('created_at', { ascending: true }).limit(1000);
+  if(quizId) q = q.eq('quiz_id', quizId);
+  if(classId) q = q.eq('class_id', classId);
+  if(studentNorm) q = q.eq('student_name_normalized', studentNorm);
+  const { data, error } = await q;
+  if(error) throw error;
+  return data || [];
+}
+
+async function deleteOralRows(rows){
+  if(!rows.length) return;
+  const paths = rows.map(r => r.storage_path);
+  const { error: e1 } = await supa.storage.from(ORAL_BUCKET).remove(paths);
+  if(e1) throw e1;
+  const ids = rows.map(r => r.id);
+  const { data: del, error: e2 } = await supa.from('oral_recordings').delete().in('id', ids).select();
+  if(e2) throw e2;
+  if(!del || del.length === 0) throw new Error("aucune ligne supprimée (droits d'accès ?)");
+}
+
+function oralDateTime(iso){
+  try{ return new Date(iso).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }); }
+  catch(e){ return ''; }
+}
+function oralDur(sec){
+  sec = Math.round(Number(sec) || 0);
+  return Math.floor(sec/60) + ':' + String(sec % 60).padStart(2, '0');
+}
+
+// Affiche les enregistrements regroupés par élève, puis par question.
+async function renderOralModal(rows, { title, meta, pill, attempt, reload }){
+  document.getElementById('oral-title').textContent = title;
+  document.getElementById('oral-meta').textContent = meta || '';
+  document.getElementById('oral-pill').textContent = pill || '';
+  const body = document.getElementById('oral-body');
+  document.getElementById('oral-modal').classList.remove('hidden');
+
+  if(!rows.length){
+    body.innerHTML = '<p class="empty-note">Aucun enregistrement audio (déjà supprimés, ou rien n\'a été envoyé).</p>';
+    return;
+  }
+  body.innerHTML = '<p class="loading-note">Chargement des enregistrements…</p>';
+
+  // liens d'écoute temporaires (1 h)
+  const { data: signed, error: sErr } = await supa.storage.from(ORAL_BUCKET).createSignedUrls(rows.map(r => r.storage_path), 3600);
+  if(sErr){ body.innerHTML = '<p class="empty-note">Erreur : ' + escHtml(sErr.message) + '</p>'; return; }
+  const urlByPath = {};
+  (signed || []).forEach(x => { if(x && x.path && x.signedUrl) urlByPath[x.path] = x.signedUrl; });
+
+  // élève -> question -> prises
+  const students = new Map();
+  rows.forEach(r => {
+    const k = r.student_name_normalized + '|' + r.class_id + '|' + r.quiz_id;
+    if(!students.has(k)) students.set(k, { name: r.student_name_raw, classId: r.class_id, quizId: r.quiz_id, qs: new Map(), rows: [] });
+    const st = students.get(k);
+    st.rows.push(r);
+    if(!st.qs.has(r.question_key)) st.qs.set(r.question_key, { label: r.question_label, takes: [] });
+    st.qs.get(r.question_key).takes.push(r);
+  });
+
+  const classById = Object.fromEntries(CLASSES.map(c => [c.id, c.name]));
+  const quizById = Object.fromEntries(QUIZZES.map(q => [q.id, q.title]));
+  const list = Array.from(students.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+
+  let html = '';
+  if(attempt){
+    const cur = (attempt.score === null || attempt.score === undefined) ? '' : attempt.score;
+    html += `<div class="oral-score-row">
+      <strong>Note :</strong>
+      <input type="number" id="oral-score-input" min="0" max="20" step="0.5" value="${cur}" placeholder="—">
+      <span>/ 20</span>
+      <button class="btn-oral-save" id="oral-score-save">Enregistrer la note</button>
+      <span id="oral-score-msg" class="oral-student-meta"></span>
+    </div>`;
+  }
+  list.forEach((st, si) => {
+    html += `<div class="oral-student">
+      <div class="oral-student-head">
+        <div>
+          <div class="oral-student-name">${escHtml(st.name)}</div>
+          <div class="oral-student-meta">${escHtml(classById[st.classId] || '')} · ${escHtml(quizById[st.quizId] || '')}</div>
+        </div>
+        <button class="btn-oral-del" data-oral-del="${si}">🗑 Supprimer les audios</button>
+      </div>`;
+    Array.from(st.qs.entries()).sort((a, b) => a[0].localeCompare(b[0])).forEach(([key, q]) => {
+      const takes = q.takes.slice().sort((a, b) => a.take - b.take);
+      const last = takes[takes.length - 1];
+      const older = takes.slice(0, -1);
+      html += `<div class="oral-q">
+        <div class="oral-q-label">${escHtml(q.label)}</div>
+        <div class="oral-take-meta">${takes.length > 1 ? 'Dernière version (essai ' + last.take + ') — ' : ''}${oralDur(last.duration_seconds)} · ${oralDateTime(last.created_at)}</div>
+        ${urlByPath[last.storage_path] ? `<audio class="oral-audio" controls preload="none" src="${urlByPath[last.storage_path]}"></audio>` : '<p class="empty-note">Fichier introuvable.</p>'}
+        ${older.length ? `<details class="oral-old"><summary>${older.length} essai(s) précédent(s)</summary>${older.map(t => `
+          <div class="oral-take-meta">Essai ${t.take} — ${oralDur(t.duration_seconds)} · ${oralDateTime(t.created_at)}</div>
+          ${urlByPath[t.storage_path] ? `<audio class="oral-audio" controls preload="none" src="${urlByPath[t.storage_path]}"></audio>` : ''}`).join('')}</details>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+  });
+  if(list.length > 1){
+    html += `<div style="text-align:center; margin-top:6px;"><button class="btn-oral-del" id="oral-del-all">🗑 Supprimer TOUS les audios affichés (${rows.length})</button></div>`;
+  }
+  body.innerHTML = html;
+
+  body.querySelectorAll('[data-oral-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const st = list[parseInt(btn.dataset.oralDel)];
+      if(!confirm(`Supprimer définitivement les ${st.rows.length} enregistrement(s) audio de ${st.name} ? (La note et la copie restent.)`)) return;
+      try{ await deleteOralRows(st.rows); }
+      catch(err){ alert('Erreur : ' + err.message); return; }
+      await reload();
+    });
+  });
+  const delAll = body.querySelector('#oral-del-all');
+  if(delAll){
+    delAll.addEventListener('click', async () => {
+      if(!confirm(`Supprimer définitivement ces ${rows.length} enregistrements audio ? Cette action est irréversible.`)) return;
+      try{ await deleteOralRows(rows); }
+      catch(err){ alert('Erreur : ' + err.message); return; }
+      await reload();
+    });
+  }
+  const saveBtn = body.querySelector('#oral-score-save');
+  if(saveBtn){
+    saveBtn.addEventListener('click', async () => {
+      const msg = body.querySelector('#oral-score-msg');
+      const raw = body.querySelector('#oral-score-input').value.trim();
+      const val = raw === '' ? null : Number(raw);
+      if(val !== null && (isNaN(val) || val < 0 || val > 20)){ msg.textContent = 'Note entre 0 et 20.'; return; }
+      saveBtn.disabled = true;
+      const { data, error } = await supa.from('attempts').update({ score: val, total: 20 }).eq('id', attempt.id).select();
+      saveBtn.disabled = false;
+      if(error || !data || !data.length){ msg.textContent = 'Échec de l\'enregistrement.'; return; }
+      attempt.score = val; attempt.total = 20;
+      msg.textContent = '✓ Note enregistrée';
+      loadResults();
+    });
+  }
+}
+
+async function openOralForAttempt(a){
+  const classe = CLASSES.find(c => c.id === a.class_id);
+  const quiz = QUIZZES.find(q => q.id === a.quiz_id);
+  const load = async () => {
+    try{
+      const rows = await fetchOralRows({ quizId: a.quiz_id, classId: a.class_id, studentNorm: a.student_name_normalized });
+      await renderOralModal(rows, {
+        title: a.student_name_raw,
+        meta: `${quiz ? quiz.title : ''} · ${classe ? classe.name : ''} · ${fmtDate(a.created_at)}`,
+        pill: a.cancelled ? 'Annulée' : 'Oral',
+        attempt: a.cancelled ? null : a,
+        reload: load
+      });
+    } catch(err){
+      document.getElementById('oral-modal').classList.remove('hidden');
+      document.getElementById('oral-body').innerHTML = '<p class="empty-note">Erreur : ' + escHtml(err.message) + '</p>';
+    }
+  };
+  await load();
+}
+
+async function openOralList(){
+  const classId = document.getElementById('filter-class').value;
+  const quizId = document.getElementById('filter-quiz').value;
+  const load = async () => {
+    try{
+      const rows = await fetchOralRows({ quizId, classId });
+      const classe = CLASSES.find(c => c.id === classId);
+      const quiz = QUIZZES.find(q => q.id === quizId);
+      await renderOralModal(rows, {
+        title: 'Oraux enregistrés',
+        meta: [quiz ? quiz.title : 'Tous les quiz', classe ? classe.name : 'Toutes les classes'].join(' · '),
+        pill: rows.length + ' audio(s)',
+        attempt: null,
+        reload: load
+      });
+    } catch(err){
+      document.getElementById('oral-modal').classList.remove('hidden');
+      document.getElementById('oral-body').innerHTML = '<p class="empty-note">Erreur : ' + escHtml(err.message) + '</p>';
+    }
+  };
+  await load();
+}
+
+function closeOralModal(){
+  document.querySelectorAll('#oral-modal audio').forEach(a => { try{ a.pause(); }catch(e){} });
+  document.getElementById('oral-modal').classList.add('hidden');
+}
+document.getElementById('oral-close-btn').addEventListener('click', closeOralModal);
+document.getElementById('oral-modal').addEventListener('click', (e) => { if(e.target.id === 'oral-modal') closeOralModal(); });
+document.getElementById('oral-list-btn').addEventListener('click', openOralList);
 
 // -------- impression des comptes rendus --------
 function prLabelForKey(k){

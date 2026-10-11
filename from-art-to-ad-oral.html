@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From Art to Ad — Oral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#23224A;
+    --ink-soft:#4a4977;
+    --paper:#FAF7FF;
+    --card:#FFFFFF;
+    --blue:#3F6FE8;
+    --violet:#7B4DD6;
+    --green:#25A870;
+    --pink:#E8508F;
+    --amber:#F2A93B;
+    --line:rgba(35,34,74,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Poppins',sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  [hidden]{display:none !important;}
+
+  /* ---------- bandeau anti-triche ---------- */
+  .cheat-banner{
+    position:sticky; top:0; z-index:999;
+    background:var(--pink); color:#fff;
+    text-align:center; padding:10px 16px; font-size:14px; font-weight:600;
+  }
+
+  /* ---------- en-tête ---------- */
+  header{
+    padding:34px 18px 26px;
+    text-align:center;
+    background:linear-gradient(135deg, rgba(63,111,232,.10), rgba(123,77,214,.10) 55%, rgba(232,80,143,.10));
+    border-bottom:1px solid var(--line);
+  }
+  .title-ribbon{
+    display:inline-block;
+    background:var(--violet);
+    color:#fff;
+    font-weight:700;
+    font-size:clamp(24px,6vw,36px);
+    padding:10px 38px;
+    clip-path:polygon(0 0,100% 0,calc(100% - 18px) 50%,100% 100%,0 100%,18px 50%);
+  }
+  .tag{
+    display:block;
+    margin-top:12px;
+    font-weight:600;
+    color:var(--blue);
+    font-size:18px;
+  }
+  .eval-badge{
+    display:inline-block;
+    margin-top:12px;
+    background:var(--pink); color:#fff;
+    font-size:14px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase;
+    padding:5px 16px; border-radius:20px;
+  }
+  .who{
+    margin:14px 0 0;
+    font-size:15px;
+    color:var(--ink-soft);
+  }
+  .who strong{color:var(--ink);}
+
+  main{max-width:680px; margin:0 auto; padding:26px 16px 80px;}
+
+  /* ---------- cartes / cadres ---------- */
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:20px 20px;
+    margin-bottom:20px;
+  }
+  .frame{
+    background:var(--card);
+    border:3px solid var(--violet);
+    border-radius:6px;
+    box-shadow:0 0 0 6px var(--paper), 0 0 0 8px var(--blue), 0 10px 24px rgba(35,34,74,.10);
+    padding:22px 22px 24px;
+    margin:10px 8px 34px;
+  }
+  .step-list{list-style:none; margin:0; padding:0;}
+  .step-list li{display:flex; gap:14px; align-items:flex-start; margin-bottom:14px;}
+  .badge{
+    flex-shrink:0;
+    width:38px; height:38px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:18px; color:#fff;
+    background:var(--blue);
+  }
+  .badge.b2{background:var(--violet);}
+  .badge.b3{background:var(--green);}
+  .badge.b4{background:var(--pink);}
+  .notice{
+    border-left:6px solid var(--amber);
+    background:rgba(242,169,59,.14);
+    padding:12px 16px;
+    border-radius:8px;
+    font-weight:500;
+    margin:0 0 20px;
+  }
+
+  /* ---------- boutons ---------- */
+  button{font-family:'Poppins',sans-serif; cursor:pointer;}
+  .btn{
+    font-weight:600; font-size:16px;
+    color:#fff; background:var(--blue);
+    border:none; border-radius:30px;
+    padding:13px 28px;
+  }
+  .btn:hover:not(:disabled){filter:brightness(1.08);}
+  .btn:disabled{background:#b9bddb; cursor:not-allowed;}
+  .btn.green{background:var(--green);}
+  .btn.violet{background:var(--violet);}
+  .btn.pink{background:var(--pink);}
+  .btn:disabled, .btn.green:disabled, .btn.violet:disabled, .btn.pink:disabled{background:#b9bddb; color:#fff; cursor:not-allowed; filter:none;}
+  .btn.ghost{
+    background:#fff; color:var(--blue);
+    border:2px solid var(--blue);
+    padding:10px 20px; font-size:15px;
+  }
+  .btn.ghost:hover:not(:disabled){background:rgba(63,111,232,.08);}
+  .link-btn{
+    background:none; border:none; color:var(--ink-soft);
+    font-size:14px; text-decoration:underline; padding:8px 0;
+  }
+
+  /* ---------- niveau micro ---------- */
+  .meter{height:12px; background:rgba(35,34,74,.10); border-radius:8px; overflow:hidden; margin:10px 0;}
+  .meter > div{height:100%; width:0; background:linear-gradient(90deg,var(--green),var(--amber),var(--pink)); transition:width .08s linear;}
+  .status{font-size:15px; margin:8px 0 0;}
+  .status.ok{color:#17724a; font-weight:600;}
+  .status.warn{color:#9a5b00; font-weight:600;}
+  .status.err{color:#b3235f; font-weight:600;}
+
+  /* ---------- question ---------- */
+  .progress{display:flex; justify-content:center; gap:10px; margin-bottom:6px;}
+  .dot{
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(35,34,74,.10); color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:15px;
+  }
+  .dot.done{background:var(--green); color:#fff;}
+  .dot.now{background:var(--violet); color:#fff;}
+  .q-ribbon{
+    display:flex; align-items:center; gap:12px; margin:-6px 0 14px;
+  }
+  .q-ribbon .badge{background:var(--violet); width:44px; height:44px; font-size:20px;}
+  .q-label{font-weight:700; font-size:17px; color:var(--violet);}
+  .prompt{font-size:clamp(18px,4.4vw,21px); font-weight:600; margin:0 0 14px;}
+  .points{margin:0 0 14px; padding:12px 16px 12px 36px; background:rgba(63,111,232,.08); border-radius:10px;}
+  .points li{margin:3px 0;}
+  .points-title{font-weight:600; color:var(--blue); margin:0 0 4px; display:block;}
+
+  /* ---------- enregistreur ---------- */
+  .recorder{
+    background:var(--card);
+    border:2px dashed rgba(123,77,214,.45);
+    border-radius:18px;
+    padding:20px;
+    text-align:center;
+  }
+  .rec-btn{
+    width:96px; height:96px; border-radius:50%;
+    border:none; background:var(--pink); color:#fff;
+    display:inline-flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 16px rgba(232,80,143,.35);
+  }
+  .rec-btn:hover{filter:brightness(1.07);}
+  .rec-btn svg{width:42px; height:42px; fill:#fff;}
+  .rec-hint{margin:10px 0 0; font-weight:600;}
+  .timer{font-size:34px; font-weight:700; font-variant-numeric:tabular-nums; margin:2px 0;}
+  .rec-dot{display:inline-block; width:12px; height:12px; border-radius:50%; background:var(--pink); margin-right:8px; animation:blink 1s infinite;}
+  .rec-dot.paused{animation:none; background:var(--amber);}
+  @keyframes blink{50%{opacity:.25;}}
+  .rec-controls{display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:12px;}
+  audio{width:100%; margin:6px 0;}
+  .nav-row{display:flex; justify-content:center; margin-top:26px;}
+
+  /* ---------- écrans de fin ---------- */
+  .center-screen{
+    min-height:60vh; display:flex; align-items:center; justify-content:center;
+    padding:40px 20px; text-align:center;
+  }
+  .center-screen p{max-width:420px; font-size:17px;}
+  .center-screen.cancelled p{color:var(--pink); font-weight:600;}
+  .done-badge{
+    width:84px; height:84px; border-radius:50%; background:var(--green); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:46px; margin:0 auto 16px;
+  }
+  footer{text-align:center; padding:24px; color:var(--ink-soft); font-size:14px;}
+</style>
+</head>
+<body>
+
+<div id="cheat-banner" class="cheat-banner" hidden>⚠ Si tu quittes cette page, ta prof sera notifiée et tes enregistrements seront annulés.</div>
+
+<div id="access-gate" class="center-screen" hidden>
+  <p>Ce contrôle est évalué. Accède-y uniquement via le lien donné par ta prof (QR code de ta classe).</p>
+</div>
+
+<div id="app" hidden>
+
+<header>
+  <span class="title-ribbon" id="h-title"></span>
+  <span class="tag" id="h-tag"></span>
+  <span class="eval-badge">Contrôle évalué</span>
+  <p class="who">Élève : <strong id="who-name"></strong></p>
+</header>
+
+<main>
+
+  <!-- ===================== ÉCRAN DE DÉPART ===================== -->
+  <div id="screen-start">
+    <div class="card">
+      <ul class="step-list" id="start-steps"></ul>
+    </div>
+    <p class="notice" id="start-notice"></p>
+
+    <div class="card">
+      <div class="q-ribbon" style="margin-top:0">
+        <div class="badge b4">🎤</div>
+        <span class="q-label" style="color:var(--pink)">Teste ton micro</span>
+      </div>
+      <p style="margin:0 0 10px">Appuie sur le bouton, autorise le micro, puis dis quelques mots : la barre doit bouger.</p>
+      <button class="btn pink" id="mic-test-btn">Tester mon micro</button>
+      <div class="meter" id="mic-test-meter-wrap" hidden><div id="mic-test-meter"></div></div>
+      <p class="status" id="mic-test-status"></p>
+    </div>
+
+    <div style="text-align:center">
+      <button class="btn green" id="start-btn" disabled>Commencer</button>
+    </div>
+  </div>
+
+  <!-- ===================== QUESTIONS ===================== -->
+  <div id="screen-quiz" hidden>
+    <div class="progress" id="progress"></div>
+
+    <section class="frame">
+      <div class="q-ribbon">
+        <div class="badge" id="q-num">1</div>
+        <span class="q-label" id="q-label"></span>
+      </div>
+      <p class="prompt" id="q-prompt"></p>
+      <div id="q-points-wrap" hidden>
+        <span class="points-title">Points de comparaison</span>
+        <ul class="points" id="q-points"></ul>
+      </div>
+      <button class="btn ghost" id="speak-btn" hidden>🔊 Écouter la consigne</button>
+    </section>
+
+    <section class="recorder" id="recorder">
+
+      <!-- état : prêt -->
+      <div id="rec-idle">
+        <button class="rec-btn" id="rec-start" aria-label="Enregistrer">
+          <svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a6 6 0 0 1-12 0H4a8 8 0 0 0 7 7.93V22h2v-3.07A8 8 0 0 0 20 11h-2z"/></svg>
+        </button>
+        <p class="rec-hint" id="rec-hint">Appuie pour t'enregistrer</p>
+      </div>
+
+      <!-- état : enregistrement / pause -->
+      <div id="rec-live" hidden>
+        <div class="timer"><span class="rec-dot" id="rec-dot"></span><span id="timer">0:00</span></div>
+        <div class="meter"><div id="rec-meter"></div></div>
+        <p class="status" id="rec-live-status">Enregistrement en cours…</p>
+        <div class="rec-controls">
+          <button class="btn violet" id="rec-pause">⏸ Pause</button>
+          <button class="btn green" id="rec-stop">⏹ Terminer cette réponse</button>
+        </div>
+      </div>
+
+      <!-- état : réécoute -->
+      <div id="rec-review" hidden>
+        <p style="margin:0 0 4px; font-weight:600">Réécoute ta réponse</p>
+        <audio id="review-audio" controls preload="metadata"></audio>
+        <p class="status" id="upload-status"></p>
+        <div class="rec-controls">
+          <button class="btn ghost" id="redo-btn">↺ Recommencer cette réponse</button>
+          <button class="btn ghost" id="retry-upload-btn" hidden>Réessayer l'envoi</button>
+        </div>
+      </div>
+
+    </section>
+
+    <div class="nav-row">
+      <button class="btn green" id="next-btn" disabled>Question suivante →</button>
+    </div>
+    <div style="text-align:center">
+      <button class="link-btn" id="skip-btn">Je ne peux pas répondre à cette question</button>
+    </div>
+  </div>
+
+  <!-- ===================== FIN ===================== -->
+  <div id="screen-done" class="center-screen" hidden>
+    <div>
+      <div class="done-badge">✓</div>
+      <p id="done-msg" style="margin:0 auto"></p>
+    </div>
+  </div>
+
+</main>
+
+<footer id="footer"></footer>
+</div>
+
+<script>
+// ============ CONFIG — mêmes valeurs que les autres quiz notés ============
+const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+const BUCKET = "oral-recordings";
+// ==========================================================================
+
+// ============ CONTENU DU CONTRÔLE (seule partie à changer pour un autre oral) ============
+const QUIZ = {
+  title: "From Art to Ad",
+  tag: "Comparer une œuvre d'art et ma publicité",
+  footer: "Lycée Godefroy de Bouillon — From Art to Ad",
+  maxSeconds: 240,
+  intro: [
+    "Tu vas t'enregistrer en <strong>anglais</strong>, une question après l'autre.",
+    "Tu peux faire <strong>pause</strong>, te <strong>réécouter</strong> et <strong>recommencer</strong> une réponse.",
+    "Réutilise les phrases et le vocabulaire du cours.",
+    "Tu ne peux pas quitter cette page pendant le contrôle."
+  ],
+  notice: "⚠ Supports autorisés uniquement : ta pub et l'œuvre originale.",
+  questions: [
+    {
+      key: "q1",
+      label: "Je présente l'œuvre d'art",
+      prompt: "Présente l'œuvre d'art en anglais : le titre, l'artiste, la date, ce qu'on voit."
+    },
+    {
+      key: "q2",
+      label: "Je présente ma publicité",
+      prompt: "Présente ta publicité en anglais : la marque, le produit, le but."
+    },
+    {
+      key: "q3",
+      label: "Je décris et je compare",
+      prompt: "Décris et compare les deux en anglais : au moins 3 points de comparaison.",
+      points: [
+        "les couleurs",
+        "l'arrière-plan",
+        "ce qu'on ajoute ou remplace",
+        "les personnes et les objets",
+        "la marque, le logo, le slogan",
+        "le but de la pub"
+      ]
+    }
+  ]
+};
+// =========================================================================================
+
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const params = new URLSearchParams(location.search);
+const studentName = params.get('student');
+const classId = params.get('class_id');
+const quizId = params.get('quiz_id');
+
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function normalizeName(s){
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
+}
+function slug(s){
+  return normalizeName(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'eleve';
+}
+function fmtTime(sec){
+  sec = Math.max(0, Math.round(sec));
+  return Math.floor(sec/60) + ':' + String(sec%60).padStart(2,'0');
+}
+
+if(!studentName || !classId || !quizId){
+  $('access-gate').hidden = false;
+} else {
+  init();
+}
+
+function init(){
+  $('app').hidden = false;
+  $('h-title').textContent = QUIZ.title;
+  $('h-tag').textContent = QUIZ.tag;
+  $('who-name').textContent = studentName;
+  $('footer').textContent = QUIZ.footer;
+  document.title = QUIZ.title + ' — Oral';
+  $('start-notice').textContent = QUIZ.notice;
+
+  $('start-steps').innerHTML = QUIZ.intro.map((t, i) =>
+    `<li><div class="badge ${['','b2','b3','b4'][i % 4]}">${i+1}</div><div>${t}</div></li>`
+  ).join('');
+
+  setupMicTest();
+  $('start-btn').addEventListener('click', startQuiz);
+}
+
+// =====================================================================
+//  ANTI-TRICHE (même règles que les autres contrôles notés)
+//  - sortie de la page / de la fenêtre > 5 s  => tentative annulée
+//  - sortie brève => simple avertissement
+//  Les demandes d'autorisation du micro mettent la surveillance en pause
+//  quelques secondes pour ne pas déclencher de faux positif.
+// =====================================================================
+let cheatArmed = false;
+let cheatPaused = false;
+let cheatTriggered = false;
+let finished = false;
+let awayTimer = null;
+let windowBlurTimer = null;
+
+function pauseCheatFor(promise){
+  cheatPaused = true;
+  awayTimer = null; windowBlurTimer = null;
+  const release = () => setTimeout(() => { cheatPaused = false; awayTimer = null; windowBlurTimer = null; }, 1500);
+  return Promise.resolve(promise).then(v => { release(); return v; }, e => { release(); throw e; });
+}
+
+function withCheatPause(fn){
+  cheatPaused = true; awayTimer = null; windowBlurTimer = null;
+  try{ return fn(); }
+  finally{ setTimeout(() => { cheatPaused = false; awayTimer = null; windowBlurTimer = null; }, 1500); }
+}
+
+function warnBrief(msg){
+  $('cheat-banner').textContent = msg;
+}
+
+document.addEventListener('visibilitychange', () => {
+  if(!cheatArmed || cheatTriggered || finished) return;
+  if(cheatPaused){ awayTimer = null; return; }
+  if(document.hidden){
+    awayTimer = Date.now();
+  } else if(awayTimer){
+    const away = (Date.now() - awayTimer) / 1000;
+    awayTimer = null;
+    if(away > 5){
+      cheatTriggered = true;
+      cancelAttempt();
+    } else {
+      warnBrief("⚠ Tu es sorti.e du contrôle. Si tu recommences, ta tentative sera annulée et ta prof sera notifiée.");
+    }
+  }
+});
+
+window.addEventListener('blur', () => {
+  if(!cheatArmed || cheatTriggered || finished || cheatPaused || document.hidden) return;
+  windowBlurTimer = Date.now();
+});
+window.addEventListener('focus', () => {
+  if(!cheatArmed || cheatTriggered || finished || !windowBlurTimer) return;
+  if(cheatPaused){ windowBlurTimer = null; return; }
+  const away = (Date.now() - windowBlurTimer) / 1000;
+  windowBlurTimer = null;
+  if(away > 5){
+    cheatTriggered = true;
+    cancelAttempt();
+  } else {
+    warnBrief("⚠ Tu as quitté la fenêtre du contrôle (écran partagé / autre appli). Si tu recommences, ta tentative sera annulée et ta prof sera notifiée.");
+  }
+});
+
+window.addEventListener('beforeunload', e => {
+  if(cheatArmed && !finished && !cheatTriggered){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+// ---- Empêche la mise en veille de l'écran (une veille = sortie de page = faux positif) ----
+let wakeLock = null;
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+  } catch(e){}
+}
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && cheatArmed && !finished) requestWakeLock();
+});
+
+// =====================================================================
+//  MICRO
+// =====================================================================
+let stream = null;
+let audioCtx = null;
+let meterRaf = null;
+let meterSrc = null;
+let meterPeak = 0;
+
+function micAlive(){
+  return stream && stream.getAudioTracks().some(t => t.readyState === 'live');
+}
+
+async function getMic(){
+  if(micAlive()) return stream;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
+    throw new Error('unsupported');
+  }
+  stream = await pauseCheatFor(navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: true, noiseSuppression: true }
+  }));
+  return stream;
+}
+
+function startMeter(barEl){
+  stopMeter();
+  meterPeak = 0;
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = audioCtx || new AC();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    meterSrc = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    meterSrc.connect(analyser);
+    const data = new Uint8Array(analyser.fftSize);
+    const loop = () => {
+      analyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for(let i = 0; i < data.length; i++){
+        const x = (data[i] - 128) / 128;
+        sum += x * x;
+      }
+      const rms = Math.sqrt(sum / data.length);
+      if(rms > meterPeak) meterPeak = rms;
+      barEl.style.width = Math.min(100, rms * 450) + '%';
+      meterRaf = requestAnimationFrame(loop);
+    };
+    loop();
+  } catch(e){
+    meterPeak = 1; // pas de mesure possible : on ne déclenche pas d'alerte « silence »
+  }
+}
+function stopMeter(){
+  if(meterRaf) cancelAnimationFrame(meterRaf);
+  meterRaf = null;
+  try{ if(meterSrc) meterSrc.disconnect(); } catch(e){}
+  meterSrc = null;
+}
+function releaseMic(){
+  stopMeter();
+  try{ if(stream) stream.getTracks().forEach(t => t.stop()); } catch(e){}
+  stream = null;
+}
+
+let micTestTimer = null;
+function setupMicTest(){
+  const btn = $('mic-test-btn');
+  const st = $('mic-test-status');
+  btn.addEventListener('click', async () => {
+    st.className = 'status';
+    st.textContent = 'Autorise le micro quand ton navigateur te le demande…';
+    try{
+      await getMic();
+    } catch(e){
+      if(e && e.message === 'unsupported'){
+        st.className = 'status err';
+        st.textContent = "Ce navigateur ne permet pas l'enregistrement. Essaie avec Chrome (Android) ou Safari (iPhone), ou préviens ta prof.";
+      } else {
+        st.className = 'status err';
+        st.textContent = "Le micro est bloqué. Autorise-le dans les réglages du navigateur (cadenas à côté de l'adresse), puis réessaie.";
+      }
+      return;
+    }
+    $('mic-test-meter-wrap').hidden = false;
+    startMeter($('mic-test-meter'));
+    st.className = 'status';
+    st.textContent = 'Dis quelques mots…';
+    btn.textContent = 'Retester mon micro';
+    $('start-btn').disabled = false;
+    clearTimeout(micTestTimer);
+    micTestTimer = setTimeout(() => {
+      if(meterPeak > 0.02){
+        st.className = 'status ok';
+        st.textContent = "✓ Ton micro fonctionne. Tu peux commencer.";
+      } else {
+        st.className = 'status warn';
+        st.textContent = "Je n'entends presque rien. Parle plus fort ou rapproche-toi du micro, puis appuie sur « Retester ».";
+      }
+      stopMeter();
+    }, 3500);
+  });
+}
+
+// =====================================================================
+//  CONTRÔLE : déroulé
+// =====================================================================
+let current = 0;
+const state = QUIZ.questions.map(() => ({ takes: [], skipped: false }));
+const sessionId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+  : (Date.now() + '-' + Math.random().toString(36).slice(2));
+
+async function startQuiz(){
+  clearTimeout(micTestTimer);
+  stopMeter();
+  $('screen-start').hidden = true;
+  $('screen-quiz').hidden = false;
+  $('cheat-banner').hidden = false;
+  cheatArmed = true;
+  requestWakeLock();
+  renderProgress();
+  showQuestion(0);
+}
+
+function renderProgress(){
+  $('progress').innerHTML = QUIZ.questions.map((q, i) => {
+    const cls = i < current ? 'dot done' : (i === current ? 'dot now' : 'dot');
+    return `<div class="${cls}">${i < current ? '✓' : i + 1}</div>`;
+  }).join('');
+}
+
+function showQuestion(i){
+  current = i;
+  const q = QUIZ.questions[i];
+  renderProgress();
+  $('q-num').textContent = i + 1;
+  $('q-label').textContent = q.label;
+  $('q-prompt').textContent = q.prompt;
+  if(q.points && q.points.length){
+    $('q-points').innerHTML = q.points.map(p => `<li>${p}</li>`).join('');
+    $('q-points-wrap').hidden = false;
+  } else {
+    $('q-points-wrap').hidden = true;
+  }
+  stopSpeaking();
+  try{ $('review-audio').pause(); } catch(e){}
+  $('speak-btn').hidden = !('speechSynthesis' in window);
+  $('speak-btn').textContent = '🔊 Écouter la consigne';
+  $('next-btn').textContent = (i === QUIZ.questions.length - 1) ? 'Terminer mon oral ✓' : 'Question suivante →';
+  $('skip-btn').hidden = false;
+  resetRecorderUI();
+  refreshNext();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function okTakes(qi){ return state[qi].takes.filter(t => t.status === 'ok'); }
+function anyUploading(qi){ return state[qi].takes.some(t => t.status === 'uploading'); }
+
+function refreshNext(){
+  const s = state[current];
+  const ready = (okTakes(current).length > 0 || s.skipped) && !anyUploading(current) && recState === 'idle-or-review';
+  $('next-btn').disabled = !ready;
+}
+
+// =====================================================================
+//  CONSIGNES LUES À VOIX HAUTE (voix du navigateur, gratuite)
+// =====================================================================
+let speaking = false;
+function pickFrenchVoice(){
+  const voices = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+  return voices.find(v => /^fr(-|_)FR/i.test(v.lang)) || voices.find(v => /^fr/i.test(v.lang)) || null;
+}
+function stopSpeaking(){
+  try{ if('speechSynthesis' in window) speechSynthesis.cancel(); } catch(e){}
+  speaking = false;
+  const b = $('speak-btn');
+  if(b) b.textContent = '🔊 Écouter la consigne';
+}
+function speakCurrent(){
+  if(!('speechSynthesis' in window)) return;
+  if(speaking){ stopSpeaking(); return; }
+  const q = QUIZ.questions[current];
+  let text = q.prompt;
+  if(q.points && q.points.length) text += ' Points de comparaison : ' + q.points.join(', ') + '.';
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'fr-FR';
+  u.rate = 0.92;
+  const v = pickFrenchVoice();
+  if(v) u.voice = v;
+  u.onend = u.onerror = () => { speaking = false; $('speak-btn').textContent = '🔊 Écouter la consigne'; };
+  speaking = true;
+  $('speak-btn').textContent = '⏹ Arrêter la lecture';
+  speechSynthesis.speak(u);
+}
+if('speechSynthesis' in window){ try{ speechSynthesis.getVoices(); } catch(e){} }
+$('speak-btn').addEventListener('click', speakCurrent);
+
+// =====================================================================
+//  ENREGISTREUR
+// =====================================================================
+let recState = 'idle-or-review';   // 'idle-or-review' | 'recording' | 'paused'
+let rec = null;
+let chunks = [];
+let recStartTs = 0;
+let accMs = 0;
+let timerInt = null;
+let recMime = '';
+let discardOnStop = false;
+let lastPeak = 0;
+
+function pickMime(){
+  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+  if(!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+  for(const m of candidates){
+    if(MediaRecorder.isTypeSupported(m)) return m;
+  }
+  return '';
+}
+function baseMime(m){ return (m || 'audio/webm').split(';')[0]; }
+function extFromMime(m){
+  const b = baseMime(m);
+  if(b.includes('mp4') || b.includes('m4a') || b.includes('aac')) return 'm4a';
+  if(b.includes('ogg')) return 'ogg';
+  if(b.includes('wav')) return 'wav';
+  if(b.includes('mpeg')) return 'mp3';
+  return 'webm';
+}
+
+function showRecPanel(which){
+  $('rec-idle').hidden = which !== 'idle';
+  $('rec-live').hidden = which !== 'live';
+  $('rec-review').hidden = which !== 'review';
+}
+
+function resetRecorderUI(){
+  const takes = state[current].takes;
+  if(takes.length){
+    showReview(takes[takes.length - 1]);
+  } else {
+    showRecPanel('idle');
+    $('rec-hint').textContent = "Appuie pour t'enregistrer";
+  }
+}
+
+function tickTimer(){
+  const live = recState === 'recording' ? (Date.now() - recStartTs) : 0;
+  const total = accMs + live;
+  $('timer').textContent = fmtTime(total / 1000);
+  if(total / 1000 >= QUIZ.maxSeconds) stopRecording();
+}
+
+async function startRecording(){
+  if(recState !== 'idle-or-review' || cheatTriggered) return;
+  stopSpeaking();
+  try{
+    await getMic();
+  } catch(e){
+    $('rec-hint').textContent = "Le micro n'est pas disponible. Vérifie l'autorisation du micro puis réessaie.";
+    return;
+  }
+  recMime = pickMime();
+  chunks = [];
+  discardOnStop = false;
+  try{
+    rec = recMime ? new MediaRecorder(stream, { mimeType: recMime }) : new MediaRecorder(stream);
+  } catch(e){
+    $('rec-hint').textContent = "L'enregistrement n'a pas pu démarrer. Préviens ta prof.";
+    return;
+  }
+  rec.ondataavailable = ev => { if(ev.data && ev.data.size) chunks.push(ev.data); };
+  rec.onstop = onRecorderStop;
+  rec.onerror = () => { try{ rec.stop(); }catch(e){} };
+  accMs = 0;
+  recStartTs = Date.now();
+  rec.start(1000);
+  recState = 'recording';
+  showRecPanel('live');
+  $('rec-dot').classList.remove('paused');
+  $('rec-live-status').textContent = 'Enregistrement en cours…';
+  $('rec-pause').textContent = '⏸ Pause';
+  $('rec-pause').hidden = (typeof rec.pause !== 'function');
+  $('timer').textContent = '0:00';
+  startMeter($('rec-meter'));
+  timerInt = setInterval(tickTimer, 250);
+  $('skip-btn').hidden = true;
+  refreshNext();
+}
+
+function togglePause(){
+  if(!rec) return;
+  if(recState === 'recording'){
+    try{ rec.pause(); } catch(e){ return; }
+    accMs += Date.now() - recStartTs;
+    recState = 'paused';
+    $('rec-dot').classList.add('paused');
+    $('rec-live-status').textContent = 'En pause — appuie sur « Reprendre » quand tu es prêt.e.';
+    $('rec-pause').textContent = '▶ Reprendre';
+  } else if(recState === 'paused'){
+    try{ rec.resume(); } catch(e){ return; }
+    recStartTs = Date.now();
+    recState = 'recording';
+    $('rec-dot').classList.remove('paused');
+    $('rec-live-status').textContent = 'Enregistrement en cours…';
+    $('rec-pause').textContent = '⏸ Pause';
+  }
+}
+
+function stopRecording(){
+  if(!rec || recState === 'idle-or-review') return;
+  if(recState === 'recording') accMs += Date.now() - recStartTs;
+  recState = 'idle-or-review';
+  clearInterval(timerInt);
+  lastPeak = meterPeak;
+  stopMeter();
+  try{ if(rec.state !== 'inactive') rec.stop(); } catch(e){ onRecorderStop(); }
+}
+
+function onRecorderStop(){
+  clearInterval(timerInt);
+  if(recState !== 'idle-or-review'){
+    // arrêt inattendu (ex. l'appli est passée en arrière-plan) : on garde ce qui a été capté
+    if(recState === 'recording') accMs += Date.now() - recStartTs;
+    recState = 'idle-or-review';
+    lastPeak = meterPeak;
+    stopMeter();
+  }
+  if(discardOnStop){ chunks = []; return; }
+  const blob = new Blob(chunks, { type: (rec && rec.mimeType) || recMime || 'audio/webm' });
+  chunks = [];
+  if(!blob.size){
+    showRecPanel('idle');
+    $('rec-hint').textContent = "Rien n'a été enregistré. Réessaie.";
+    $('skip-btn').hidden = false;
+    refreshNext();
+    return;
+  }
+  const s = state[current];
+  const take = {
+    n: s.takes.length + 1,
+    blob,
+    mime: blob.type || recMime || 'audio/webm',
+    duration: accMs / 1000,
+    peak: lastPeak,
+    url: URL.createObjectURL(blob),
+    status: 'uploading',
+    path: null,
+    rowSaved: false
+  };
+  s.takes.push(take);
+  s.skipped = false;
+  showReview(take);
+  uploadTake(current, take);
+}
+
+function showReview(take){
+  showRecPanel('review');
+  const a = $('review-audio');
+  a.src = take.url;
+  updateUploadStatus(take);
+  $('skip-btn').hidden = false;
+  refreshNext();
+}
+
+function updateUploadStatus(take){
+  const st = $('upload-status');
+  const retry = $('retry-upload-btn');
+  retry.hidden = take.status !== 'failed';
+  if(take.status === 'uploading'){
+    st.className = 'status';
+    st.textContent = 'Envoi en cours… ne ferme pas la page.';
+  } else if(take.status === 'ok'){
+    let extra = '';
+    if(take.peak < 0.015) extra = " Attention : je n'entends presque rien dans cet enregistrement — réécoute-le, et recommence si besoin.";
+    else if(take.duration < 3) extra = ' Réponse très courte : tu peux recommencer si tu veux en dire plus.';
+    st.className = 'status ' + (extra ? 'warn' : 'ok');
+    st.textContent = '✓ Réponse envoyée (' + fmtTime(take.duration) + ').' + extra;
+  } else {
+    st.className = 'status err';
+    st.textContent = "L'envoi a échoué (connexion ?). Appuie sur « Réessayer l'envoi ».";
+  }
+}
+
+async function uploadTake(qi, take){
+  take.status = 'uploading';
+  if(qi === current) { updateUploadStatus(take); refreshNext(); }
+  const q = QUIZ.questions[qi];
+  const path = `${quizId}/${classId}/${slug(studentName)}/${sessionId}/${q.key}_take${take.n}.${extFromMime(take.mime)}`;
+  for(let i = 0; i < 3; i++){
+    try{
+      if(!take.path){
+        const { error } = await supa.storage.from(BUCKET).upload(path, take.blob, {
+          contentType: baseMime(take.mime),
+          upsert: false
+        });
+        if(error && !/exist|duplicate/i.test(error.message || '')) throw error;
+        take.path = path;
+      }
+      if(!take.rowSaved){
+        const { error: e2 } = await supa.from('oral_recordings').insert({
+          session_id: sessionId,
+          quiz_id: quizId,
+          class_id: classId,
+          student_name_raw: studentName,
+          student_name_normalized: normalizeName(studentName),
+          question_key: q.key,
+          question_label: q.prompt,
+          take: take.n,
+          storage_path: take.path,
+          mime_type: baseMime(take.mime),
+          duration_seconds: Math.round(take.duration * 10) / 10
+        });
+        if(e2) throw e2;
+        take.rowSaved = true;
+      }
+      take.status = 'ok';
+      break;
+    } catch(e){
+      take.status = 'failed';
+      await sleep(900 * (i + 1));
+    }
+  }
+  const takes = state[qi].takes;
+  if(qi === current && takes[takes.length - 1] === take){
+    updateUploadStatus(take);
+    refreshNext();
+  }
+}
+
+// ---- boutons ----
+$('rec-start').addEventListener('click', startRecording);
+$('rec-pause').addEventListener('click', togglePause);
+$('rec-stop').addEventListener('click', stopRecording);
+$('redo-btn').addEventListener('click', () => {
+  if(anyUploading(current)) return;
+  showRecPanel('idle');
+  $('rec-hint').textContent = "Appuie pour refaire ta réponse (la dernière version sera celle à corriger)";
+  $('skip-btn').hidden = false;
+  refreshNext();
+});
+$('retry-upload-btn').addEventListener('click', () => {
+  const takes = state[current].takes;
+  const last = takes[takes.length - 1];
+  if(last && last.status === 'failed') uploadTake(current, last);
+});
+$('skip-btn').addEventListener('click', () => {
+  if(recState !== 'idle-or-review') return;
+  if(!withCheatPause(() => confirm("Tu es sûr.e de vouloir passer cette question sans répondre ?"))) return;
+  state[current].skipped = true;
+  goNext();
+});
+$('next-btn').addEventListener('click', goNext);
+
+function goNext(){
+  stopSpeaking();
+  const next = current + 1;
+  if(next >= QUIZ.questions.length){
+    finishQuiz();
+  } else {
+    showQuestion(next);
+  }
+}
+
+// =====================================================================
+//  ENVOI FINAL
+// =====================================================================
+function buildAnswersDetail(){
+  return QUIZ.questions.map((q, i) => ({
+    question: q.prompt,
+    label: q.label,
+    type: 'oral',
+    skipped: state[i].skipped && okTakes(i).length === 0,
+    recordings: okTakes(i).map(t => ({ take: t.n, path: t.path, seconds: Math.round(t.duration * 10) / 10 }))
+  }));
+}
+function buildSummaryText(){
+  return '[Contrôle oral — voir les enregistrements audio]\n' + QUIZ.questions.map((q, i) => {
+    const n = okTakes(i).length;
+    return `${i + 1}. ${q.label} : ` + (n ? `${n} enregistrement(s)` : 'pas de réponse');
+  }).join('\n');
+}
+
+async function saveAttempt(payload){
+  for(let i = 0; i < 3; i++){
+    try{
+      const { error } = await supa.from('attempts').insert(payload);
+      if(!error) return true;
+    } catch(e){}
+    await sleep(1000 * (i + 1));
+  }
+  return false;
+}
+
+async function finishQuiz(){
+  if(finished) return;
+  $('next-btn').disabled = true;
+  $('next-btn').textContent = 'Envoi en cours…';
+  // attend les envois en cours
+  for(let w = 0; w < 40; w++){
+    if(!state.some((s, i) => anyUploading(i))) break;
+    await sleep(500);
+  }
+  const failedLeft = state.some(s => s.takes.length && !s.takes.some(t => t.status === 'ok'));
+  if(failedLeft){
+    $('next-btn').disabled = false;
+    $('next-btn').textContent = 'Terminer mon oral ✓';
+    withCheatPause(() => alert("Une de tes réponses n'a pas pu être envoyée. Appuie sur « Réessayer l'envoi » sous ton enregistrement, puis termine."));
+    return;
+  }
+  const ok = await saveAttempt({
+    quiz_id: quizId,
+    class_id: classId,
+    student_name_raw: studentName,
+    student_name_normalized: normalizeName(studentName),
+    score: null,
+    total: 20,
+    cancelled: false,
+    answers_detail: buildAnswersDetail(),
+    writing_text: buildSummaryText(),
+    writing_correction: null
+  });
+  finished = true;
+  cheatArmed = false;
+  releaseMic();
+  try{ if(wakeLock) wakeLock.release(); } catch(e){}
+  $('cheat-banner').hidden = true;
+  $('screen-quiz').hidden = true;
+  $('screen-done').hidden = false;
+  $('done-msg').textContent = ok
+    ? "Ton oral a bien été envoyé. Ta prof va l'écouter. Tu peux fermer cette page."
+    : "⚠ Tes enregistrements sont envoyés, mais la validation finale a échoué (connexion). Préviens ta prof avant de partir.";
+  window.scrollTo({ top: 0 });
+}
+
+// =====================================================================
+//  TENTATIVE ANNULÉE (sortie de la page)
+// =====================================================================
+async function cancelAttempt(){
+  // on coupe tout enregistrement en cours, sans l'envoyer
+  discardOnStop = true;
+  try{ if(rec && rec.state !== 'inactive') rec.stop(); } catch(e){}
+  recState = 'idle-or-review';
+  clearInterval(timerInt);
+  stopSpeaking();
+  releaseMic();
+  try{ if(wakeLock) wakeLock.release(); } catch(e){}
+
+  $('app').hidden = true;
+  $('cheat-banner').hidden = true;
+  const gate = $('access-gate');
+  gate.classList.add('cancelled');
+  gate.innerHTML = '<p>Tentative annulée : tu as quitté le contrôle. Ta prof a été notifiée. Reviens demain pour réessayer.</p>';
+  gate.hidden = false;
+
+  try{
+    await supa.from('attempts').insert({
+      quiz_id: quizId,
+      class_id: classId,
+      student_name_raw: studentName,
+      student_name_normalized: normalizeName(studentName),
+      score: null,
+      total: null,
+      cancelled: true,
+      answers_detail: buildAnswersDetail(),
+      writing_text: '[Tentative annulée — contrôle oral interrompu]\n' + buildSummaryText()
+    });
+  } catch(e){}
+}
+</script>
+</body>
+</html>
