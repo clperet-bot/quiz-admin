@@ -568,6 +568,7 @@ let cheatTriggered = false;
 let awayTimer = null;
 document.addEventListener('visibilitychange', () => {
   if(cheatTriggered) return;
+  windowBlurTimer = null; // un changement de visibilité remplace tout blur en cours (évite un double décompte)
   if(document.hidden){
     awayTimer = Date.now();
   } else if(awayTimer){
@@ -586,13 +587,18 @@ document.addEventListener('visibilitychange', () => {
 // quiz reste "visible" au sens de visibilitychange même quand l'élève clique dans l'autre
 // fenêtre pour taper/chercher quelque chose — seul le focus de la fenêtre change. On surveille
 // donc aussi blur/focus de la fenêtre, avec la même règle (plus de 5 secondes ailleurs = annulée).
+// Sur téléphone (iPhone/Android) il n'y a pas d'écran partagé : les événements blur/focus de la fenêtre y sont
+// déclenchés à tort (clavier, correcteur, menu copier-coller, centre de notifications...) et sont parfois perdus
+// au retour, ce qui annulait des copies sans que l'élève soit sorti. Sur téléphone on ne garde donc que
+// visibilitychange (changement d'appli ou d'onglet, verrouillage de l'écran).
+const IS_PHONE = /iPhone|iPod|Android.*Mobile/i.test(navigator.userAgent || '');
 let windowBlurTimer = null;
 window.addEventListener('blur', () => {
-  if(cheatTriggered || document.hidden) return;
+  if(IS_PHONE || cheatTriggered || document.hidden) return;
   windowBlurTimer = Date.now();
 });
 window.addEventListener('focus', () => {
-  if(cheatTriggered || !windowBlurTimer) return;
+  if(IS_PHONE || cheatTriggered || !windowBlurTimer) return;
   const awaySeconds = (Date.now() - windowBlurTimer) / 1000;
   windowBlurTimer = null;
   if(awaySeconds > 5){
