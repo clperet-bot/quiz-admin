@@ -518,6 +518,7 @@
           </select>
           <select id="filter-class"><option value="">Toutes les classes</option></select>
           <select id="filter-quiz"><option value="">Tous les quiz</option></select>
+          <button id="results-refresh-btn" class="btn-print-corrections" type="button" title="Recharge les résultats en gardant les filtres">🔄 Actualiser</button>
           <button id="print-quiz-corrections-btn" class="btn-print-corrections hidden">🖨️ Imprimer les corrections</button>
           <button id="print-recap-btn" class="btn-print-corrections">📋 Récapitulatif des notes (PDF)</button>
           <button id="oral-list-btn" class="btn-print-corrections">🎧 Écouter les oraux</button>
@@ -579,6 +580,7 @@
             <option value="1ère MELEC">1ère MELEC</option>
           </select>
           <select id="filter-practice-quiz"><option value="">Tous les quiz</option></select>
+          <button id="practice-refresh-btn" class="btn-print-corrections" type="button" title="Recharge le suivi en gardant les filtres">🔄 Actualiser</button>
           <button id="reset-practice-btn" class="btn-danger-outline">Réinitialiser les résultats d'entraînement</button>
         </div>
 
@@ -699,7 +701,7 @@ async function enterApp(user){
   document.getElementById('user-name').textContent = name;
   document.getElementById('user-avatar').textContent = name.slice(0,2).toUpperCase();
   await loadDashboard(); // charge les classes et quiz (nécessaires aux filtres des autres écrans)
-  goView('home');
+  goView(initialView());
 }
 
 // check existing session on load
@@ -719,6 +721,36 @@ function prefixMatch(text, q){
   const toks = wordsOf(q); if(!toks.length) return true;
   const ws = wordsOf(text);
   return toks.every(t => ws.some(w => w.startsWith(t)));
+}
+
+// -------- boutons « Actualiser » (rechargent les données sans quitter la page ni perdre les filtres) --------
+function wireRefreshBtn(id, loader){
+  const btn = document.getElementById(id); if(!btn) return;
+  btn.addEventListener('click', async () => {
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = '⏳ Actualisation…';
+    try{ await loader(); } finally { btn.disabled = false; btn.textContent = label; }
+  });
+}
+document.addEventListener('DOMContentLoaded', () => {
+  wireRefreshBtn('results-refresh-btn', () => loadResults());
+  wireRefreshBtn('practice-refresh-btn', () => loadPracticeResults());
+});
+
+// -------- tri par nom de famille --------
+// Les noms sont enregistrés « Prénom Nom » : le prénom est le premier mot, le nom de famille tout le reste
+// (« Léa Dupont Martin » → nom « Dupont Martin »). Tri : nom de famille, puis prénom.
+function nameParts(full){
+  const t = String(full == null ? '' : full).trim().replace(/\s+/g, ' ');
+  const i = t.indexOf(' ');
+  return i < 0 ? { first: t, last: '' } : { first: t.slice(0, i), last: t.slice(i + 1) };
+}
+function cmpFamily(a, b){
+  const pa = nameParts(a), pb = nameParts(b);
+  const opt = { sensitivity: 'base' };
+  // sans nom de famille saisi, on se rabat sur le prénom
+  return (pa.last || pa.first).localeCompare(pb.last || pb.first, 'fr', opt)
+      || pa.first.localeCompare(pb.first, 'fr', opt);
 }
 
 // -------- cours en ligne (liste du suivi, regroupée par matière) --------
@@ -844,10 +876,19 @@ document.addEventListener('click', e => {
 });
 document.getElementById('back-to-dashboard').addEventListener('click', () => goView('dashboard'));
 
+// La page affichée est mémorisée dans l'adresse (#results…) : un rafraîchissement du navigateur (F5, tirer pour
+// rafraîchir sur mobile) ramène donc sur la même page au lieu de l'accueil. (« class » a besoin d'une classe
+// choisie : on retombe alors sur le tableau de bord.)
+const RESTORABLE_VIEWS = ['home','dashboard','results','practice-qr','practice-results'];
+function initialView(){
+  const v = (location.hash || '').replace('#', '');
+  return RESTORABLE_VIEWS.includes(v) ? v : 'home';
+}
 function showView(view){
   ['home','dashboard','class','results','practice-qr','practice-results'].forEach(v => {
     document.getElementById('view-'+v).classList.toggle('hidden', v !== view);
   });
+  try{ history.replaceState(null, '', RESTORABLE_VIEWS.includes(view) ? '#' + view : location.pathname + location.search); }catch(e){}
   setNavActive(view);
   if(view === 'dashboard') loadDashboard();
   if(view === 'results') loadResults();
@@ -1156,12 +1197,9 @@ async function loadResults(){
     return;
   }
 
-  // Tri alphabétique par prénom (premier mot du nom saisi)
-  attempts.sort((a, b) => {
-    const firstA = (a.student_name_raw || '').trim().split(' ')[0] || '';
-    const firstB = (b.student_name_raw || '').trim().split(' ')[0] || '';
-    return firstA.localeCompare(firstB, 'fr', { sensitivity: 'base' });
-  });
+  // Tri alphabétique par nom de famille (puis prénom) ; à égalité, la tentative la plus récente d'abord
+  attempts.sort((a, b) => cmpFamily(a.student_name_raw, b.student_name_raw)
+    || (new Date(b.created_at) - new Date(a.created_at)));
 
   const classById = Object.fromEntries(CLASSES.map(c => [c.id, c.name]));
   const quizById = Object.fromEntries(QUIZZES.map(q => [q.id, q.title]));
@@ -1169,16 +1207,16 @@ async function loadResults(){
   // Par défaut, toutes les tentatives non annulées sont cochées pour l'impression groupée.
   selectedPrintIdxs = new Set(attempts.map((a, i) => i).filter(i => !attempts[i].cancelled));
 
-  // Regroupement par prénom : toutes les tentatives du même prénom (déjà triées
+  // Regroupement par élève : toutes les tentatives du même élève (déjà triées
   // alphabétiquement juste au-dessus, donc consécutives) sont rassemblées sous
-  // une ligne dépliable — clic sur le prénom = affiche/masque ses tentatives.
+  // une ligne dépliable — clic sur le nom = affiche/masque ses tentatives.
   const groups = [];
   let curKey = null, curGroup = null;
   attempts.forEach((a, i) => {
-    const first = (a.student_name_raw || '').trim().split(' ')[0] || '(sans nom)';
-    const key = first.toLocaleLowerCase('fr');
+    const full = (a.student_name_raw || '').trim().replace(/\s+/g, ' ') || '(sans nom)';
+    const key = normTxt(full) + '|' + a.class_id;
     if(key !== curKey){
-      curGroup = { name: first, idxs: [] };
+      curGroup = { name: full, idxs: [] };
       groups.push(curGroup);
       curKey = key;
     }
@@ -1767,7 +1805,7 @@ async function renderOralModal(rows, { title, meta, pill, attempt, reload }){
 
   const classById = Object.fromEntries(CLASSES.map(c => [c.id, c.name]));
   const quizById = Object.fromEntries(QUIZZES.map(q => [q.id, q.title]));
-  const list = Array.from(students.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+  const list = Array.from(students.values()).sort((a, b) => cmpFamily(a.name, b.name));
 
   let html = '';
   if(attempt){
@@ -2356,7 +2394,7 @@ async function buildRecapHtml(matiere, classId){
     if(!byStudent[key]) byStudent[key] = { name: a.student_name_raw, scores: {} };
     byStudent[key].scores[a.quiz_id] = { score: a.score, total: a.total };
   });
-  const students = Object.values(byStudent).sort((a,b) => a.name.localeCompare(b.name, 'fr', {sensitivity:'base'}));
+  const students = Object.values(byStudent).sort((a,b) => cmpFamily(a.name, b.name));
 
   const header = `
     <div class="pr-recap-header">
@@ -2555,7 +2593,7 @@ async function loadPracticeResults(){
       byStudent[key].lastMax = a.max_score;
     }
   });
-  const summaryRows = Object.values(byStudent).sort((a,b) => a.name.localeCompare(b.name, 'fr', {sensitivity:'base'}));
+  const summaryRows = Object.values(byStudent).sort((a,b) => cmpFamily(a.name, b.name));
 
   summaryWrap.innerHTML = `
     <table class="result-table">
@@ -2574,18 +2612,19 @@ async function loadPracticeResults(){
   `;
 
   // -------- Historique détaillé --------
-  const sortedAttempts = [...attempts].sort((a,b) => a.student_name.localeCompare(b.student_name, 'fr', {sensitivity:'base'}));
+  const sortedAttempts = [...attempts].sort((a,b) => cmpFamily(a.student_name, b.student_name)
+    || (new Date(b.completed_at) - new Date(a.completed_at)));
   currentPracticeAttempts = sortedAttempts;
 
-  // Même regroupement par prénom que pour les quiz évalués : les tentatives du même
-  // prénom (consécutives puisque triées ci-dessus) sont rassemblées sous une ligne dépliable.
+  // Même regroupement par élève que pour les quiz évalués : les tentatives du même
+  // élève (consécutives puisque triées ci-dessus) sont rassemblées sous une ligne dépliable.
   const groupsP = [];
   let curKeyP = null, curGroupP = null;
   sortedAttempts.forEach((a, i) => {
-    const first = (a.student_name || '').trim().split(' ')[0] || '(sans nom)';
-    const key = first.toLocaleLowerCase('fr');
+    const full = (a.student_name || '').trim().replace(/\s+/g, ' ') || '(sans nom)';
+    const key = normTxt(full) + '|' + a.classe;
     if(key !== curKeyP){
-      curGroupP = { name: first, idxs: [] };
+      curGroupP = { name: full, idxs: [] };
       groupsP.push(curGroupP);
       curKeyP = key;
     }
