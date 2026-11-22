@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Devenir soi — Contrôle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#23224A;
+    --ink-soft:#4a4977;
+    --paper:#FAF7FF;
+    --card:#FFFFFF;
+    --blue:#3F6FE8;
+    --violet:#7B4DD6;
+    --green:#25A870;
+    --pink:#E8508F;
+    --amber:#F2A93B;
+    --line:rgba(35,34,74,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Poppins',sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  [hidden]{display:none !important;}
+
+  /* ---------- bandeau anti-triche ---------- */
+  .cheat-banner{
+    position:sticky; top:0; z-index:999;
+    background:var(--pink); color:#fff;
+    text-align:center; padding:10px 16px; font-size:14px; font-weight:600;
+  }
+
+  /* ---------- en-tête ---------- */
+  header{
+    padding:34px 18px 26px;
+    text-align:center;
+    background:linear-gradient(135deg, rgba(63,111,232,.10), rgba(123,77,214,.10) 55%, rgba(232,80,143,.10));
+    border-bottom:1px solid var(--line);
+  }
+  .title-ribbon{
+    display:inline-block;
+    background:var(--violet);
+    color:#fff;
+    font-weight:700;
+    font-size:clamp(24px,6vw,36px);
+    padding:10px 38px;
+    clip-path:polygon(0 0,100% 0,calc(100% - 18px) 50%,100% 100%,0 100%,18px 50%);
+  }
+  .tag{
+    display:block;
+    margin-top:12px;
+    font-weight:600;
+    color:var(--blue);
+    font-size:18px;
+  }
+  .eval-badge{
+    display:inline-block;
+    margin-top:12px;
+    background:var(--pink); color:#fff;
+    font-size:14px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase;
+    padding:5px 16px; border-radius:20px;
+  }
+  .who{
+    margin:14px 0 0;
+    font-size:15px;
+    color:var(--ink-soft);
+  }
+  .who strong{color:var(--ink);}
+
+  main{max-width:680px; margin:0 auto; padding:26px 16px 80px;}
+
+  /* ---------- cartes / cadres ---------- */
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:20px 20px;
+    margin-bottom:20px;
+  }
+  .frame{
+    background:var(--card);
+    border:3px solid var(--violet);
+    border-radius:6px;
+    box-shadow:0 0 0 6px var(--paper), 0 0 0 8px var(--blue), 0 10px 24px rgba(35,34,74,.10);
+    padding:22px 22px 24px;
+    margin:10px 8px 34px;
+  }
+  .step-list{list-style:none; margin:0; padding:0;}
+  .step-list li{display:flex; gap:14px; align-items:flex-start; margin-bottom:14px;}
+  .badge{
+    flex-shrink:0;
+    width:38px; height:38px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:18px; color:#fff;
+    background:var(--blue);
+  }
+  .badge.b2{background:var(--violet);}
+  .badge.b3{background:var(--green);}
+  .badge.b4{background:var(--pink);}
+  .notice{
+    border-left:6px solid var(--amber);
+    background:rgba(242,169,59,.14);
+    padding:12px 16px;
+    border-radius:8px;
+    font-weight:500;
+    margin:0 0 20px;
+  }
+
+  /* ---------- boutons ---------- */
+  button{font-family:'Poppins',sans-serif; cursor:pointer;}
+  .btn{
+    font-weight:600; font-size:16px;
+    color:#fff; background:var(--blue);
+    border:none; border-radius:30px;
+    padding:13px 28px;
+  }
+  .btn:hover:not(:disabled){filter:brightness(1.08);}
+  .btn:disabled{background:#b9bddb; cursor:not-allowed;}
+  .btn.green{background:var(--green);}
+  .btn.violet{background:var(--violet);}
+  .btn.pink{background:var(--pink);}
+  .btn:disabled, .btn.green:disabled, .btn.violet:disabled, .btn.pink:disabled{background:#b9bddb; color:#fff; cursor:not-allowed; filter:none;}
+  .btn.ghost{
+    background:#fff; color:var(--blue);
+    border:2px solid var(--blue);
+    padding:10px 20px; font-size:15px;
+  }
+  .btn.ghost:hover:not(:disabled){background:rgba(63,111,232,.08);}
+  .link-btn{
+    background:none; border:none; color:var(--ink-soft);
+    font-size:14px; text-decoration:underline; padding:8px 0;
+  }
+
+  /* ---------- niveau micro ---------- */
+  .meter{height:12px; background:rgba(35,34,74,.10); border-radius:8px; overflow:hidden; margin:10px 0;}
+  .meter > div{height:100%; width:0; background:linear-gradient(90deg,var(--green),var(--amber),var(--pink)); transition:width .08s linear;}
+  .status{font-size:15px; margin:8px 0 0;}
+  .status.ok{color:#17724a; font-weight:600;}
+  .status.warn{color:#9a5b00; font-weight:600;}
+  .status.err{color:#b3235f; font-weight:600;}
+
+  /* ---------- question ---------- */
+  .progress{display:flex; justify-content:center; gap:10px; margin-bottom:6px;}
+  .dot{
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(35,34,74,.10); color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:15px;
+  }
+  .dot.done{background:var(--green); color:#fff;}
+  .dot.now{background:var(--violet); color:#fff;}
+  .q-ribbon{
+    display:flex; align-items:center; gap:12px; margin:-6px 0 14px;
+  }
+  .q-ribbon .badge{background:var(--violet); width:44px; height:44px; font-size:20px;}
+  .q-label{font-weight:700; font-size:17px; color:var(--violet);}
+  .prompt{font-size:clamp(18px,4.4vw,21px); font-weight:600; margin:0 0 14px;}
+  .points{margin:0 0 14px; padding:12px 16px 12px 36px; background:rgba(63,111,232,.08); border-radius:10px;}
+  .points li{margin:3px 0;}
+  .points-title{font-weight:600; color:var(--blue); margin:0 0 4px; display:block;}
+
+  /* ---------- enregistreur ---------- */
+  .recorder{
+    background:var(--card);
+    border:2px dashed rgba(123,77,214,.45);
+    border-radius:18px;
+    padding:20px;
+    text-align:center;
+  }
+  .rec-btn{
+    width:96px; height:96px; border-radius:50%;
+    border:none; background:var(--pink); color:#fff;
+    display:inline-flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 16px rgba(232,80,143,.35);
+  }
+  .rec-btn:hover{filter:brightness(1.07);}
+  .rec-btn svg{width:42px; height:42px; fill:#fff;}
+  .rec-hint{margin:10px 0 0; font-weight:600;}
+  .timer{font-size:34px; font-weight:700; font-variant-numeric:tabular-nums; margin:2px 0;}
+  .rec-dot{display:inline-block; width:12px; height:12px; border-radius:50%; background:var(--pink); margin-right:8px; animation:blink 1s infinite;}
+  .rec-dot.paused{animation:none; background:var(--amber);}
+  @keyframes blink{50%{opacity:.25;}}
+  .rec-controls{display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:12px;}
+  audio{width:100%; margin:6px 0;}
+  .nav-row{display:flex; justify-content:center; margin-top:26px;}
+
+  /* ---------- écrans de fin ---------- */
+  .center-screen{
+    min-height:60vh; display:flex; align-items:center; justify-content:center;
+    padding:40px 20px; text-align:center;
+  }
+  .center-screen p{max-width:420px; font-size:17px;}
+  .center-screen.cancelled p{color:var(--pink); font-weight:600;}
+  .done-badge{
+    width:84px; height:84px; border-radius:50%; background:var(--green); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:46px; margin:0 auto 16px;
+  }
+  footer{text-align:center; padding:24px; color:var(--ink-soft); font-size:14px;}
+
+  body{font-size:17px;}
+  .cheat-banner{font-size:15px;}
+  .part-tag{display:inline-block;background:rgba(123,77,214,.12);color:var(--violet);font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;padding:3px 12px;border-radius:14px;margin:0 0 8px;}
+  .pts{float:right;font-size:14px;font-weight:700;color:var(--blue);}
+  .textblock{border-left:6px solid var(--green);background:#fff;border-radius:10px;padding:14px 16px;margin:0 0 6px;font-size:17px;line-height:1.75;}
+  .textblock.b{border-left-color:var(--pink);}
+  .textblock p{margin:0 0 10px;}
+  .textblock p:last-child{margin-bottom:0;}
+  .text-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:14px 0 8px;}
+  .text-label{font-weight:700;font-size:18px;color:#fff;background:var(--green);padding:4px 18px;border-radius:20px;}
+  .text-label.b{background:var(--pink);}
+  .gloss{font-size:15px;background:rgba(242,169,59,.16);border-radius:10px;padding:8px 12px;margin:6px 0 0;}
+  details.reread{margin:0 0 16px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 16px;}
+  details.reread summary{cursor:pointer;font-weight:600;color:var(--violet);}
+  textarea.ans{width:100%;border:2px solid rgba(35,34,74,.25);border-radius:14px;padding:14px 16px;font-family:'Poppins',sans-serif;font-size:17px;line-height:1.6;color:var(--ink);background:#fff;resize:vertical;min-height:110px;}
+  textarea.ans.long{min-height:260px;}
+  textarea.ans:focus,.cell:focus{outline:none;border-color:var(--violet);}
+  .tbl{display:grid;gap:12px;}
+  .tbl-row{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;}
+  .tbl-row b{display:block;margin-bottom:6px;color:var(--violet);}
+  .cell-lab{font-size:14px;font-weight:700;margin:6px 0 2px;display:block;}
+  .cell{width:100%;border:2px solid rgba(35,34,74,.25);border-radius:12px;padding:10px 12px;font-family:'Poppins',sans-serif;font-size:17px;min-height:70px;resize:vertical;background:#fff;}
+  .org{border-left:6px solid var(--violet);background:rgba(123,77,214,.08);border-radius:10px;padding:12px 16px;margin:0 0 14px;line-height:1.7;}
+  .or-sep{text-align:center;font-weight:700;color:var(--ink-soft);margin:18px 0 8px;}
+  .speak-small{font-size:14px;padding:7px 14px;}
+</style>
+</head>
+<body>
+
+<div id="cheat-banner" class="cheat-banner" hidden>⚠ Si tu quittes cette page, ta prof sera notifiée et ta tentative sera annulée.</div>
+
+<div id="access-gate" class="center-screen" hidden>
+  <p>Ce contrôle est évalué. Accède-y uniquement via le lien donné par ta prof (QR code de ta classe).</p>
+</div>
+
+<div id="app" hidden>
+
+<header>
+  <span class="title-ribbon" id="h-title"></span>
+  <span class="tag" id="h-tag"></span>
+  <span class="eval-badge">Contrôle évalué</span>
+  <p class="who">Élève : <strong id="who-name"></strong></p>
+</header>
+
+<main>
+
+  <!-- ===================== ÉCRAN DE DÉPART ===================== -->
+  <div id="screen-start">
+    <div class="card">
+      <ul class="step-list" id="start-steps"></ul>
+    </div>
+    <p class="notice" id="start-notice"></p>
+
+    <div class="card">
+      <div class="q-ribbon" style="margin-top:0">
+        <div class="badge b4">🎤</div>
+        <span class="q-label" style="color:var(--pink)">Micro (facultatif)</span>
+      </div>
+      <p style="margin:0 0 10px">Tu veux répondre à l'oral ? Teste ton micro : appuie sur le bouton, autorise le micro, puis dis quelques mots. Tu peux aussi ne pas l'utiliser et écrire tes réponses.</p>
+      <button class="btn pink" id="mic-test-btn">Tester mon micro</button>
+      <div class="meter" id="mic-test-meter-wrap" hidden><div id="mic-test-meter"></div></div>
+      <p class="status" id="mic-test-status"></p>
+    </div>
+
+    <div style="text-align:center">
+      <button class="btn green" id="start-btn">Commencer le contrôle</button>
+    </div>
+  </div>
+
+  <!-- ===================== LES TEXTES ===================== -->
+  <div id="screen-texts" hidden>
+    <p class="prompt" style="text-align:center">Lis les deux textes de Daniel Pennac, ou écoute-les.</p>
+    <div id="texts-full"></div>
+    <div class="nav-row"><button class="btn green" id="go-questions">J'ai lu : voir les questions →</button></div>
+  </div>
+
+  <!-- ===================== QUESTIONS ===================== -->
+  <div id="screen-quiz" hidden>
+    <div class="progress" id="progress"></div>
+
+    <section class="frame">
+      <span class="part-tag" id="q-part"></span><span class="pts" id="q-pts"></span>
+      <div class="q-ribbon">
+        <div class="badge" id="q-num">1</div>
+        <span class="q-label" id="q-label"></span>
+      </div>
+      <p class="prompt" id="q-prompt"></p>
+      <div id="q-points-wrap" hidden>
+        <span class="points-title" id="q-points-title"></span>
+        <ul class="points" id="q-points"></ul>
+      </div>
+      <div id="q-org" class="org" hidden></div>
+      <button class="btn ghost speak-small" id="speak-btn" hidden>🔊 Écouter la consigne</button>
+    </section>
+
+    <details class="reread"><summary>📖 Relire ou écouter les textes</summary><div id="texts-mini"></div></details>
+
+    <div id="answer-area"></div>
+
+    <div class="or-sep" id="or-sep">— ou réponds à l'oral —</div>
+
+    <section class="recorder" id="recorder">
+
+      <div id="rec-idle">
+        <button class="rec-btn" id="rec-start" aria-label="Enregistrer">
+          <svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zm6-4a6 6 0 0 1-12 0H4a8 8 0 0 0 7 7.93V22h2v-3.07A8 8 0 0 0 20 11h-2z"/></svg>
+        </button>
+        <p class="rec-hint" id="rec-hint">Appuie pour t'enregistrer</p>
+      </div>
+
+      <div id="rec-live" hidden>
+        <div class="timer"><span class="rec-dot" id="rec-dot"></span><span id="timer">0:00</span></div>
+        <div class="meter"><div id="rec-meter"></div></div>
+        <p class="status" id="rec-live-status">Enregistrement en cours…</p>
+        <div class="rec-controls">
+          <button class="btn violet" id="rec-pause">⏸ Pause</button>
+          <button class="btn green" id="rec-stop">⏹ Terminer cette réponse</button>
+        </div>
+      </div>
+
+      <div id="rec-review" hidden>
+        <p style="margin:0 0 4px; font-weight:600">Réécoute ta réponse</p>
+        <audio id="review-audio" controls preload="metadata"></audio>
+        <p class="status" id="upload-status"></p>
+        <div class="rec-controls">
+          <button class="btn ghost" id="redo-btn">↺ Recommencer cette réponse</button>
+          <button class="btn ghost" id="retry-upload-btn" hidden>Réessayer l'envoi</button>
+        </div>
+      </div>
+
+    </section>
+
+    <div class="nav-row">
+      <button class="btn green" id="next-btn" disabled>Question suivante →</button>
+    </div>
+    <div style="text-align:center">
+      <button class="link-btn" id="skip-btn">Je ne peux pas répondre à cette question</button>
+    </div>
+  </div>
+
+  <!-- ===================== FIN ===================== -->
+  <div id="screen-done" class="center-screen" hidden>
+    <div>
+      <div class="done-badge">✓</div>
+      <p id="done-msg" style="margin:0 auto"></p>
+    </div>
+  </div>
+
+</main>
+
+<footer id="footer"></footer>
+</div>
+
+<script>
+// ============ CONFIG — mêmes valeurs que les autres quiz notés ============
+const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+const BUCKET = "oral-recordings";
+// ==========================================================================
+
+
+// ============ CONTENU DU CONTRÔLE ============
+const QUIZ = {
+  title: "Devenir soi",
+  tag: "Comparer deux textes de Daniel Pennac",
+  footer: "Lycée Godefroy de Bouillon — Devenir soi : écritures autobiographiques",
+  maxSeconds: 240,
+  intro: [
+    "Tu lis (ou tu écoutes) <strong>deux textes</strong> de Daniel Pennac, puis tu réponds à <strong>8 questions</strong>.",
+    "Tu peux <strong>écrire</strong> tes réponses, ou répondre <strong>à l'oral</strong> avec le micro, ou faire les deux.",
+    "Tu peux <strong>écouter</strong> chaque consigne et chaque texte avec le bouton 🔊.",
+    "Tu ne peux pas quitter cette page pendant le contrôle."
+  ],
+  notice: "⏱ Durée conseillée : 1 heure. Réponds avec des phrases.",
+  texts: [
+    { id: "A", title: "Texte A", sub: "Pennac raconte son enfance",
+      paras: [
+        "« Donc, j'étais un mauvais élève. Chaque soir de mon enfance, je rentrais à la maison poursuivi par l'école. Mes carnets disaient la réprobation de mes maîtres. Quand je n'étais pas le dernier de ma classe, c'est que j'en étais l'avant-dernier. (Champagne !) Fermé à l'arithmétique d'abord, aux mathématiques ensuite, profondément dysorthographique, rétif à la mémorisation des dates et à la localisation des lieux géographiques, inapte à l'apprentissage des langues étrangères, réputé paresseux (leçons non apprises, travail non fait), je rapportais à la maison des résultats pitoyables que ne rachetaient ni la musique, ni le sport, ni d'ailleurs aucune activité parascolaire.",
+        "— Tu comprends ? Est-ce que seulement tu comprends ce que je t'explique ?",
+        "Je ne comprenais pas. »"
+      ],
+      gloss: "Mots : réprobation = désapprobation · dysorthographique = très faible en orthographe · rétif = qui n'y arrive pas." },
+    { id: "B", title: "Texte B", sub: "Pennac parle de ses professeurs",
+      paras: [
+        "« Les professeurs qui m'ont sauvé – et qui ont fait de moi un professeur – n'étaient pas formés pour ça. Ils ne se sont pas préoccupés des origines de mon infirmité scolaire. Ils n'ont pas perdu de temps à en chercher les causes et pas davantage à me sermonner. Ils étaient des adultes confrontés à des adolescents en péril. Ils se sont dit qu'il y avait urgence. Ils ont plongé.",
+        "Ils m'ont raté. Ils ont plongé de nouveau, jour après jour, encore et encore… Ils ont fini par me sortir de là. Et beaucoup d'autres avec moi. Ils nous ont littéralement repêchés. Nous leur devons la vie. »"
+      ],
+      gloss: "Mots : sermonner = faire la morale · en péril = en danger · repêcher = sortir de l'eau." }
+  ],
+  questions: [
+    { key: "q1", part: "Partie 1 · Je comprends", pts: 2, label: "Texte A : quel élève ?",
+      prompt: "Texte A : quel élève était Pennac ? Relève une phrase du texte qui le montre." },
+    { key: "q2", part: "Partie 1 · Je comprends", pts: 2, label: "Texte A : ce qu'il ressent",
+      prompt: "Texte A : que ressent Pennac face à l'école ? Cite un mot ou une phrase du texte." },
+    { key: "q3", part: "Partie 1 · Je comprends", pts: 2, label: "Texte B : l'aide",
+      prompt: "Texte B : que font les professeurs pour aider Pennac ? Relève deux verbes ou expressions." },
+    { key: "q4", part: "Partie 1 · Je comprends", pts: 1, label: "Texte B : quand ça ne marche pas",
+      prompt: "Texte B : que font les professeurs quand ils n'y arrivent pas du premier coup ?" },
+    { key: "q5", part: "Partie 1 · Je comprends", pts: 1, label: "Texte B : la reconnaissance",
+      prompt: "Texte B : pourquoi Pennac écrit-il « Nous leur devons la vie » ? Explique avec tes mots." },
+    { key: "q6", part: "Partie 2 · Je compare", pts: 3, label: "Le tableau", type: "table",
+      prompt: "Complète le tableau avec des mots ou de courtes phrases : pour chaque ligne, dis ce qui se passe dans le texte A, puis dans le texte B.",
+      rows: ["Ce que font les adultes", "Ce que ressent Pennac", "Ce que ça change pour lui"] },
+    { key: "q7", part: "Partie 2 · Je compare", pts: 3, label: "Je compare les deux textes",
+      prompt: "En quoi les deux textes sont-ils différents ? En quoi se ressemblent-ils ? Écris 3 ou 4 phrases.",
+      pointsTitle: "La liste pour comparer",
+      points: ["comme", "de même", "les deux textes", "aussi", "alors que", "tandis que", "au contraire", "mais", "différent", "pareil", "ressembler à", "par rapport à"] },
+    { key: "q8", part: "Partie 3 · Je réfléchis et j'écris", pts: 6, label: "Ma réponse écrite", long: true,
+      prompt: "Les paroles et les gestes d'un professeur ou d'une professeure peuvent-ils changer l'image qu'un élève a de lui-même ? Réponds en 8 à 10 lignes.",
+      org: ["<strong>① Je réponds</strong> à la question (oui, non, ça dépend).",
+            "<strong>② Premier argument</strong> + un exemple pris dans un texte (A ou B).",
+            "<strong>③ Deuxième argument</strong> + un autre exemple (un texte ou ce que j'ai vu en cours).",
+            "<strong>④ Je conclus</strong> en une phrase.",
+            "Pour t'aider : d'abord · ensuite · enfin · car · par exemple · c'est pourquoi"] }
+  ]
+};
+// =========================================================================================
+
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const params = new URLSearchParams(location.search);
+const studentName = params.get('student');
+const classId = params.get('class_id');
+const quizId = params.get('quiz_id');
+
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function normalizeName(s){
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
+}
+function slug(s){
+  return normalizeName(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'eleve';
+}
+function fmtTime(sec){
+  sec = Math.max(0, Math.round(sec));
+  return Math.floor(sec/60) + ':' + String(sec%60).padStart(2,'0');
+}
+
+
+if(!studentName || !classId || !quizId){
+  $('access-gate').hidden = false;
+} else {
+  init();
+}
+
+function init(){
+  $('app').hidden = false;
+  $('h-title').textContent = QUIZ.title;
+  $('h-tag').textContent = QUIZ.tag;
+  $('who-name').textContent = studentName;
+  $('footer').textContent = QUIZ.footer;
+  document.title = QUIZ.title + ' — Contrôle';
+  $('start-notice').textContent = QUIZ.notice;
+  $('start-steps').innerHTML = QUIZ.intro.map((t, i) =>
+    `<li><div class="badge ${['','b2','b3','b4'][i % 4]}">${i+1}</div><div>${t}</div></li>`
+  ).join('');
+  if(!window.MediaRecorder || !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
+    // pas d'enregistrement possible : on masque la partie orale, l'élève écrit
+    $('mic-test-btn').closest('.card').hidden = true;
+    $('recorder').hidden = true;
+    $('or-sep').hidden = true;
+  }
+  setupMicTest();
+  $('start-btn').addEventListener('click', startQuiz);
+  $('go-questions').addEventListener('click', () => {
+    stopSpeaking();
+    $('screen-texts').hidden = true;
+    $('screen-quiz').hidden = false;
+    showQuestion(0);
+  });
+}
+
+// =====================================================================
+//  ANTI-TRICHE (même règles que les autres contrôles notés)
+//  - sortie de la page / de la fenêtre > 5 s  => tentative annulée
+//  - sortie brève => simple avertissement
+//  Les demandes d'autorisation du micro mettent la surveillance en pause
+//  quelques secondes pour ne pas déclencher de faux positif.
+// =====================================================================
+let cheatArmed = false;
+let cheatPaused = false;
+let cheatTriggered = false;
+let finished = false;
+let awayTimer = null;
+let windowBlurTimer = null;
+
+function pauseCheatFor(promise){
+  cheatPaused = true;
+  awayTimer = null; windowBlurTimer = null;
+  const release = () => setTimeout(() => { cheatPaused = false; awayTimer = null; windowBlurTimer = null; }, 1500);
+  return Promise.resolve(promise).then(v => { release(); return v; }, e => { release(); throw e; });
+}
+
+function withCheatPause(fn){
+  cheatPaused = true; awayTimer = null; windowBlurTimer = null;
+  try{ return fn(); }
+  finally{ setTimeout(() => { cheatPaused = false; awayTimer = null; windowBlurTimer = null; }, 1500); }
+}
+
+function warnBrief(msg){
+  $('cheat-banner').textContent = msg;
+}
+
+document.addEventListener('visibilitychange', () => {
+  if(!cheatArmed || cheatTriggered || finished) return;
+  if(cheatPaused){ awayTimer = null; return; }
+  if(document.hidden){
+    awayTimer = Date.now();
+  } else if(awayTimer){
+    const away = (Date.now() - awayTimer) / 1000;
+    awayTimer = null;
+    if(away > 5){
+      cheatTriggered = true;
+      cancelAttempt();
+    } else {
+      warnBrief("⚠ Tu es sorti.e du contrôle. Si tu recommences, ta tentative sera annulée et ta prof sera notifiée.");
+    }
+  }
+});
+
+window.addEventListener('blur', () => {
+  if(!cheatArmed || cheatTriggered || finished || cheatPaused || document.hidden) return;
+  windowBlurTimer = Date.now();
+});
+window.addEventListener('focus', () => {
+  if(!cheatArmed || cheatTriggered || finished || !windowBlurTimer) return;
+  if(cheatPaused){ windowBlurTimer = null; return; }
+  const away = (Date.now() - windowBlurTimer) / 1000;
+  windowBlurTimer = null;
+  if(away > 5){
+    cheatTriggered = true;
+    cancelAttempt();
+  } else {
+    warnBrief("⚠ Tu as quitté la fenêtre du contrôle (écran partagé / autre appli). Si tu recommences, ta tentative sera annulée et ta prof sera notifiée.");
+  }
+});
+
+window.addEventListener('beforeunload', e => {
+  if(cheatArmed && !finished && !cheatTriggered){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+// ---- Empêche la mise en veille de l'écran (une veille = sortie de page = faux positif) ----
+let wakeLock = null;
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+  } catch(e){}
+}
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && cheatArmed && !finished) requestWakeLock();
+});
+
+// =====================================================================
+//  MICRO
+// =====================================================================
+let stream = null;
+let audioCtx = null;
+let meterRaf = null;
+let meterSrc = null;
+let meterPeak = 0;
+
+function micAlive(){
+  return stream && stream.getAudioTracks().some(t => t.readyState === 'live');
+}
+
+async function getMic(){
+  if(micAlive()) return stream;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
+    throw new Error('unsupported');
+  }
+  stream = await pauseCheatFor(navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: true, noiseSuppression: true }
+  }));
+  return stream;
+}
+
+function startMeter(barEl){
+  stopMeter();
+  meterPeak = 0;
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = audioCtx || new AC();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    meterSrc = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    meterSrc.connect(analyser);
+    const data = new Uint8Array(analyser.fftSize);
+    const loop = () => {
+      analyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for(let i = 0; i < data.length; i++){
+        const x = (data[i] - 128) / 128;
+        sum += x * x;
+      }
+      const rms = Math.sqrt(sum / data.length);
+      if(rms > meterPeak) meterPeak = rms;
+      barEl.style.width = Math.min(100, rms * 450) + '%';
+      meterRaf = requestAnimationFrame(loop);
+    };
+    loop();
+  } catch(e){
+    meterPeak = 1; // pas de mesure possible : on ne déclenche pas d'alerte « silence »
+  }
+}
+function stopMeter(){
+  if(meterRaf) cancelAnimationFrame(meterRaf);
+  meterRaf = null;
+  try{ if(meterSrc) meterSrc.disconnect(); } catch(e){}
+  meterSrc = null;
+}
+function releaseMic(){
+  stopMeter();
+  try{ if(stream) stream.getTracks().forEach(t => t.stop()); } catch(e){}
+  stream = null;
+}
+
+let micTestTimer = null;
+function setupMicTest(){
+  const btn = $('mic-test-btn');
+  const st = $('mic-test-status');
+  btn.addEventListener('click', async () => {
+    st.className = 'status';
+    st.textContent = 'Autorise le micro quand ton navigateur te le demande…';
+    try{
+      await getMic();
+    } catch(e){
+      if(e && e.message === 'unsupported'){
+        st.className = 'status err';
+        st.textContent = "Ce navigateur ne permet pas l'enregistrement. Essaie avec Chrome (Android) ou Safari (iPhone), ou préviens ta prof.";
+      } else {
+        st.className = 'status err';
+        st.textContent = "Le micro est bloqué. Autorise-le dans les réglages du navigateur (cadenas à côté de l'adresse), puis réessaie.";
+      }
+      return;
+    }
+    $('mic-test-meter-wrap').hidden = false;
+    startMeter($('mic-test-meter'));
+    st.className = 'status';
+    st.textContent = 'Dis quelques mots…';
+    btn.textContent = 'Retester mon micro';
+    $('start-btn').disabled = false;
+    clearTimeout(micTestTimer);
+    micTestTimer = setTimeout(() => {
+      if(meterPeak > 0.02){
+        st.className = 'status ok';
+        st.textContent = "✓ Ton micro fonctionne. Tu peux commencer.";
+      } else {
+        st.className = 'status warn';
+        st.textContent = "Je n'entends presque rien. Parle plus fort ou rapproche-toi du micro, puis appuie sur « Retester ».";
+      }
+      stopMeter();
+    }, 3500);
+  });
+}
+
+
+// =====================================================================
+//  CONTRÔLE : déroulé
+// =====================================================================
+let current = 0;
+const state = QUIZ.questions.map(q => ({
+  takes: [], skipped: false,
+  text: '',
+  cells: (q.rows || []).map(() => ({ a: '', b: '' }))
+}));
+const sessionId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+  : (Date.now() + '-' + Math.random().toString(36).slice(2));
+
+function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function textsHtml(withSpeak){
+  return QUIZ.texts.map((t, i) => `
+    <div class="text-head">
+      <span class="text-label ${i ? 'b' : ''}">${t.title}</span>
+      <span style="font-weight:600;color:var(--ink-soft)">${t.sub}</span>
+      ${withSpeak ? `<button class="btn ghost speak-small" data-speak-text="${i}">🔊 Écouter le ${t.title.toLowerCase()}</button>` : ''}
+    </div>
+    <div class="textblock ${i ? 'b' : ''}">${t.paras.map(p => `<p>${esc(p)}</p>`).join('')}</div>
+    <p class="gloss">${esc(t.gloss)}</p>`).join('');
+}
+function wireTextSpeakButtons(root){
+  root.querySelectorAll('[data-speak-text]').forEach(b => {
+    b.addEventListener('click', () => {
+      const t = QUIZ.texts[parseInt(b.dataset.speakText)];
+      speak(t.title + '. ' + t.paras.join(' '), b);
+    });
+  });
+}
+
+async function startQuiz(){
+  clearTimeout(micTestTimer);
+  stopMeter();
+  $('screen-start').hidden = true;
+  $('screen-texts').hidden = false;
+  $('texts-full').innerHTML = textsHtml(true);
+  wireTextSpeakButtons($('texts-full'));
+  $('texts-mini').innerHTML = textsHtml(true);
+  wireTextSpeakButtons($('texts-mini'));
+  $('cheat-banner').hidden = false;
+  cheatArmed = true;
+  requestWakeLock();
+  window.scrollTo({ top: 0 });
+}
+
+function renderProgress(){
+  $('progress').innerHTML = QUIZ.questions.map((q, i) => {
+    const cls = i < current ? 'dot done' : (i === current ? 'dot now' : 'dot');
+    return `<div class="${cls}" style="width:30px;height:30px;font-size:14px">${i < current ? '✓' : i + 1}</div>`;
+  }).join('');
+}
+
+function hasTyped(qi){
+  const q = QUIZ.questions[qi], s = state[qi];
+  if(q.type === 'table') return s.cells.some(c => c.a.trim() || c.b.trim());
+  return s.text.trim().length > 0;
+}
+
+function renderAnswerArea(i){
+  const q = QUIZ.questions[i], s = state[i];
+  const area = $('answer-area');
+  if(q.type === 'table'){
+    area.innerHTML = '<div class="tbl">' + q.rows.map((r, ri) => `
+      <div class="tbl-row"><b>${esc(r)}</b>
+        <label class="cell-lab" for="c${ri}a">Texte A</label><textarea class="cell" id="c${ri}a" data-r="${ri}" data-k="a">${esc(s.cells[ri].a)}</textarea>
+        <label class="cell-lab" for="c${ri}b">Texte B</label><textarea class="cell" id="c${ri}b" data-r="${ri}" data-k="b">${esc(s.cells[ri].b)}</textarea>
+      </div>`).join('') + '</div>';
+    area.querySelectorAll('textarea.cell').forEach(el => el.addEventListener('input', () => {
+      state[current].cells[+el.dataset.r][el.dataset.k] = el.value;
+      refreshNext();
+    }));
+  } else {
+    area.innerHTML = `<textarea class="ans ${q.long ? 'long' : ''}" id="ans" placeholder="Écris ta réponse ici…">${esc(s.text)}</textarea>`;
+    $('ans').addEventListener('input', e => { state[current].text = e.target.value; refreshNext(); });
+  }
+}
+
+function showQuestion(i){
+  current = i;
+  const q = QUIZ.questions[i];
+  renderProgress();
+  $('q-num').textContent = i + 1;
+  $('q-part').textContent = q.part;
+  $('q-pts').textContent = q.pts + (q.pts > 1 ? ' points' : ' point');
+  $('q-label').textContent = q.label;
+  $('q-prompt').textContent = q.prompt;
+  if(q.points && q.points.length){
+    $('q-points-title').textContent = q.pointsTitle || 'Aide';
+    $('q-points').innerHTML = q.points.map(p => `<li>${p}</li>`).join('');
+    $('q-points-wrap').hidden = false;
+  } else {
+    $('q-points-wrap').hidden = true;
+  }
+  if(q.org){
+    $('q-org').innerHTML = '<strong style="color:var(--violet)">Comment organiser ma réponse :</strong><br>' + q.org.join('<br>');
+    $('q-org').hidden = false;
+  } else {
+    $('q-org').hidden = true;
+  }
+  stopSpeaking();
+  try{ $('review-audio').pause(); } catch(e){}
+  $('speak-btn').hidden = !('speechSynthesis' in window);
+  $('speak-btn').textContent = '🔊 Écouter la consigne';
+  $('next-btn').textContent = (i === QUIZ.questions.length - 1) ? 'Terminer mon contrôle ✓' : 'Question suivante →';
+  $('skip-btn').hidden = false;
+  renderAnswerArea(i);
+  resetRecorderUI();
+  refreshNext();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function okTakes(qi){ return state[qi].takes.filter(t => t.status === 'ok'); }
+function anyUploading(qi){ return state[qi].takes.some(t => t.status === 'uploading'); }
+
+function refreshNext(){
+  const s = state[current];
+  const answered = hasTyped(current) || okTakes(current).length > 0 || s.skipped;
+  const ready = answered && !anyUploading(current) && recState === 'idle-or-review';
+  $('next-btn').disabled = !ready;
+}
+
+// =====================================================================
+//  CONSIGNES ET TEXTES LUS À VOIX HAUTE (voix du navigateur, gratuite)
+// =====================================================================
+let speaking = false;
+let speakBtn = null;
+function pickFrenchVoice(){
+  const voices = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+  return voices.find(v => /^fr(-|_)FR/i.test(v.lang)) || voices.find(v => /^fr/i.test(v.lang)) || null;
+}
+function resetSpeakLabels(){
+  document.querySelectorAll('[data-speak-text]').forEach(b => {
+    const i = parseInt(b.dataset.speakText);
+    b.textContent = '🔊 Écouter le ' + QUIZ.texts[i].title.toLowerCase();
+  });
+  const b = $('speak-btn');
+  if(b) b.textContent = '🔊 Écouter la consigne';
+}
+function stopSpeaking(){
+  try{ if('speechSynthesis' in window) speechSynthesis.cancel(); } catch(e){}
+  speaking = false; speakBtn = null;
+  resetSpeakLabels();
+}
+function speak(text, btn){
+  if(!('speechSynthesis' in window)) return;
+  if(speaking && speakBtn === btn){ stopSpeaking(); return; }
+  stopSpeaking();
+  // on découpe en phrases : les longues lectures s'arrêtent sinon sur certains navigateurs
+  const chunks = text.replace(/\s+/g, ' ').match(/[^.!?…]+[.!?…]*\s*/g) || [text];
+  const v = pickFrenchVoice();
+  speaking = true; speakBtn = btn;
+  btn.textContent = '⏹ Arrêter la lecture';
+  chunks.forEach((c, i) => {
+    const u = new SpeechSynthesisUtterance(c.trim());
+    u.lang = 'fr-FR'; u.rate = 0.92;
+    if(v) u.voice = v;
+    if(i === chunks.length - 1){
+      u.onend = u.onerror = () => { if(speakBtn === btn){ speaking = false; speakBtn = null; resetSpeakLabels(); } };
+    }
+    speechSynthesis.speak(u);
+  });
+}
+function speakCurrent(){
+  const q = QUIZ.questions[current];
+  let text = q.prompt;
+  if(q.points && q.points.length) text += ' ' + (q.pointsTitle || 'Aide') + ' : ' + q.points.join(', ') + '.';
+  if(q.org) text += ' Comment organiser ma réponse : ' + q.org.join(' ').replace(/<[^>]+>/g, '').replace(/[①②③④]/g, '');
+  speak(text, $('speak-btn'));
+}
+if('speechSynthesis' in window){ try{ speechSynthesis.getVoices(); } catch(e){} }
+$('speak-btn').addEventListener('click', speakCurrent);
+
+// =====================================================================
+//  ENREGISTREUR
+// =====================================================================
+let recState = 'idle-or-review';   // 'idle-or-review' | 'recording' | 'paused'
+let rec = null;
+let chunks = [];
+let recStartTs = 0;
+let accMs = 0;
+let timerInt = null;
+let recMime = '';
+let discardOnStop = false;
+let lastPeak = 0;
+
+function pickMime(){
+  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+  if(!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+  for(const m of candidates){
+    if(MediaRecorder.isTypeSupported(m)) return m;
+  }
+  return '';
+}
+function baseMime(m){ return (m || 'audio/webm').split(';')[0]; }
+function extFromMime(m){
+  const b = baseMime(m);
+  if(b.includes('mp4') || b.includes('m4a') || b.includes('aac')) return 'm4a';
+  if(b.includes('ogg')) return 'ogg';
+  if(b.includes('wav')) return 'wav';
+  if(b.includes('mpeg')) return 'mp3';
+  return 'webm';
+}
+
+function showRecPanel(which){
+  $('rec-idle').hidden = which !== 'idle';
+  $('rec-live').hidden = which !== 'live';
+  $('rec-review').hidden = which !== 'review';
+}
+
+function resetRecorderUI(){
+  const takes = state[current].takes;
+  if(takes.length){
+    showReview(takes[takes.length - 1]);
+  } else {
+    showRecPanel('idle');
+    $('rec-hint').textContent = "Appuie pour t'enregistrer";
+  }
+}
+
+function tickTimer(){
+  const live = recState === 'recording' ? (Date.now() - recStartTs) : 0;
+  const total = accMs + live;
+  $('timer').textContent = fmtTime(total / 1000);
+  if(total / 1000 >= QUIZ.maxSeconds) stopRecording();
+}
+
+async function startRecording(){
+  if(recState !== 'idle-or-review' || cheatTriggered) return;
+  stopSpeaking();
+  try{
+    await getMic();
+  } catch(e){
+    $('rec-hint').textContent = "Le micro n'est pas disponible. Vérifie l'autorisation du micro puis réessaie.";
+    return;
+  }
+  recMime = pickMime();
+  chunks = [];
+  discardOnStop = false;
+  try{
+    rec = recMime ? new MediaRecorder(stream, { mimeType: recMime }) : new MediaRecorder(stream);
+  } catch(e){
+    $('rec-hint').textContent = "L'enregistrement n'a pas pu démarrer. Préviens ta prof.";
+    return;
+  }
+  rec.ondataavailable = ev => { if(ev.data && ev.data.size) chunks.push(ev.data); };
+  rec.onstop = onRecorderStop;
+  rec.onerror = () => { try{ rec.stop(); }catch(e){} };
+  accMs = 0;
+  recStartTs = Date.now();
+  rec.start(1000);
+  recState = 'recording';
+  showRecPanel('live');
+  $('rec-dot').classList.remove('paused');
+  $('rec-live-status').textContent = 'Enregistrement en cours…';
+  $('rec-pause').textContent = '⏸ Pause';
+  $('rec-pause').hidden = (typeof rec.pause !== 'function');
+  $('timer').textContent = '0:00';
+  startMeter($('rec-meter'));
+  timerInt = setInterval(tickTimer, 250);
+  $('skip-btn').hidden = true;
+  refreshNext();
+}
+
+function togglePause(){
+  if(!rec) return;
+  if(recState === 'recording'){
+    try{ rec.pause(); } catch(e){ return; }
+    accMs += Date.now() - recStartTs;
+    recState = 'paused';
+    $('rec-dot').classList.add('paused');
+    $('rec-live-status').textContent = 'En pause — appuie sur « Reprendre » quand tu es prêt.e.';
+    $('rec-pause').textContent = '▶ Reprendre';
+  } else if(recState === 'paused'){
+    try{ rec.resume(); } catch(e){ return; }
+    recStartTs = Date.now();
+    recState = 'recording';
+    $('rec-dot').classList.remove('paused');
+    $('rec-live-status').textContent = 'Enregistrement en cours…';
+    $('rec-pause').textContent = '⏸ Pause';
+  }
+}
+
+function stopRecording(){
+  if(!rec || recState === 'idle-or-review') return;
+  if(recState === 'recording') accMs += Date.now() - recStartTs;
+  recState = 'idle-or-review';
+  clearInterval(timerInt);
+  lastPeak = meterPeak;
+  stopMeter();
+  try{ if(rec.state !== 'inactive') rec.stop(); } catch(e){ onRecorderStop(); }
+}
+
+function onRecorderStop(){
+  clearInterval(timerInt);
+  if(recState !== 'idle-or-review'){
+    // arrêt inattendu (ex. l'appli est passée en arrière-plan) : on garde ce qui a été capté
+    if(recState === 'recording') accMs += Date.now() - recStartTs;
+    recState = 'idle-or-review';
+    lastPeak = meterPeak;
+    stopMeter();
+  }
+  if(discardOnStop){ chunks = []; return; }
+  const blob = new Blob(chunks, { type: (rec && rec.mimeType) || recMime || 'audio/webm' });
+  chunks = [];
+  if(!blob.size){
+    showRecPanel('idle');
+    $('rec-hint').textContent = "Rien n'a été enregistré. Réessaie.";
+    $('skip-btn').hidden = false;
+    refreshNext();
+    return;
+  }
+  const s = state[current];
+  const take = {
+    n: s.takes.length + 1,
+    blob,
+    mime: blob.type || recMime || 'audio/webm',
+    duration: accMs / 1000,
+    peak: lastPeak,
+    url: URL.createObjectURL(blob),
+    status: 'uploading',
+    path: null,
+    rowSaved: false
+  };
+  s.takes.push(take);
+  s.skipped = false;
+  showReview(take);
+  uploadTake(current, take);
+}
+
+function showReview(take){
+  showRecPanel('review');
+  const a = $('review-audio');
+  a.src = take.url;
+  updateUploadStatus(take);
+  $('skip-btn').hidden = false;
+  refreshNext();
+}
+
+function updateUploadStatus(take){
+  const st = $('upload-status');
+  const retry = $('retry-upload-btn');
+  retry.hidden = take.status !== 'failed';
+  if(take.status === 'uploading'){
+    st.className = 'status';
+    st.textContent = 'Envoi en cours… ne ferme pas la page.';
+  } else if(take.status === 'ok'){
+    let extra = '';
+    if(take.peak < 0.015) extra = " Attention : je n'entends presque rien dans cet enregistrement — réécoute-le, et recommence si besoin.";
+    else if(take.duration < 3) extra = ' Réponse très courte : tu peux recommencer si tu veux en dire plus.';
+    st.className = 'status ' + (extra ? 'warn' : 'ok');
+    st.textContent = '✓ Réponse envoyée (' + fmtTime(take.duration) + ').' + extra;
+  } else {
+    st.className = 'status err';
+    st.textContent = "L'envoi a échoué (connexion ?). Appuie sur « Réessayer l'envoi ».";
+  }
+}
+
+async function uploadTake(qi, take){
+  take.status = 'uploading';
+  if(qi === current) { updateUploadStatus(take); refreshNext(); }
+  const q = QUIZ.questions[qi];
+  const path = `${quizId}/${classId}/${slug(studentName)}/${sessionId}/${q.key}_take${take.n}.${extFromMime(take.mime)}`;
+  for(let i = 0; i < 3; i++){
+    try{
+      if(!take.path){
+        const { error } = await supa.storage.from(BUCKET).upload(path, take.blob, {
+          contentType: baseMime(take.mime),
+          upsert: false
+        });
+        if(error && !/exist|duplicate/i.test(error.message || '')) throw error;
+        take.path = path;
+      }
+      if(!take.rowSaved){
+        const { error: e2 } = await supa.from('oral_recordings').insert({
+          session_id: sessionId,
+          quiz_id: quizId,
+          class_id: classId,
+          student_name_raw: studentName,
+          student_name_normalized: normalizeName(studentName),
+          question_key: q.key,
+          question_label: q.prompt,
+          take: take.n,
+          storage_path: take.path,
+          mime_type: baseMime(take.mime),
+          duration_seconds: Math.round(take.duration * 10) / 10
+        });
+        if(e2) throw e2;
+        take.rowSaved = true;
+      }
+      take.status = 'ok';
+      break;
+    } catch(e){
+      take.status = 'failed';
+      await sleep(900 * (i + 1));
+    }
+  }
+  const takes = state[qi].takes;
+  if(qi === current && takes[takes.length - 1] === take){
+    updateUploadStatus(take);
+    refreshNext();
+  }
+}
+
+// ---- boutons ----
+$('rec-start').addEventListener('click', startRecording);
+$('rec-pause').addEventListener('click', togglePause);
+$('rec-stop').addEventListener('click', stopRecording);
+$('redo-btn').addEventListener('click', () => {
+  if(anyUploading(current)) return;
+  showRecPanel('idle');
+  $('rec-hint').textContent = "Appuie pour refaire ta réponse (la dernière version sera celle à corriger)";
+  $('skip-btn').hidden = false;
+  refreshNext();
+});
+$('retry-upload-btn').addEventListener('click', () => {
+  const takes = state[current].takes;
+  const last = takes[takes.length - 1];
+  if(last && last.status === 'failed') uploadTake(current, last);
+});
+$('skip-btn').addEventListener('click', () => {
+  if(recState !== 'idle-or-review') return;
+  if(!withCheatPause(() => confirm("Tu es sûr.e de vouloir passer cette question sans répondre ?"))) return;
+  state[current].skipped = true;
+  goNext();
+});
+$('next-btn').addEventListener('click', goNext);
+
+function goNext(){
+  stopSpeaking();
+  const next = current + 1;
+  if(next >= QUIZ.questions.length){
+    finishQuiz();
+  } else {
+    showQuestion(next);
+  }
+}
+
+// =====================================================================
+//  ENVOI FINAL
+// =====================================================================
+function typedAnswerOf(i){
+  const q = QUIZ.questions[i], s = state[i];
+  if(q.type === 'table'){
+    return q.rows.map((r, ri) => `${r} — Texte A : ${s.cells[ri].a.trim() || '(vide)'} | Texte B : ${s.cells[ri].b.trim() || '(vide)'}`).join('\n');
+  }
+  return s.text.trim();
+}
+function buildAnswersDetail(){
+  return QUIZ.questions.map((q, i) => ({
+    question: q.prompt,
+    label: q.part + ' · ' + q.label,
+    type: 'oral',               // le tableau de bord ouvre ainsi la fenêtre avec audio + réponses écrites
+    max_points: q.pts,
+    answer: typedAnswerOf(i),
+    skipped: state[i].skipped && !hasTyped(i) && okTakes(i).length === 0,
+    recordings: okTakes(i).map(t => ({ take: t.n, path: t.path, seconds: Math.round(t.duration * 10) / 10 }))
+  }));
+}
+function buildSummaryText(){
+  return QUIZ.questions.map((q, i) => {
+    const n = okTakes(i).length;
+    const typed = typedAnswerOf(i);
+    return `${i + 1}. ${q.label} : ` + (typed ? typed : '(pas de réponse écrite)') + (n ? ` [+ ${n} enregistrement(s) audio]` : '');
+  }).join('\n');
+}
+
+async function saveAttempt(payload){
+  for(let i = 0; i < 3; i++){
+    try{
+      const { error } = await supa.from('attempts').insert(payload);
+      if(!error) return true;
+    } catch(e){}
+    await sleep(1000 * (i + 1));
+  }
+  return false;
+}
+
+async function finishQuiz(){
+  if(finished) return;
+  $('next-btn').disabled = true;
+  $('next-btn').textContent = 'Envoi en cours…';
+  for(let w = 0; w < 40; w++){
+    if(!state.some((s, i) => anyUploading(i))) break;
+    await sleep(500);
+  }
+  const failedLeft = state.some(s => s.takes.length && !s.takes.some(t => t.status === 'ok'));
+  if(failedLeft){
+    $('next-btn').disabled = false;
+    $('next-btn').textContent = 'Terminer mon contrôle ✓';
+    withCheatPause(() => alert("Une de tes réponses orales n'a pas pu être envoyée. Appuie sur « Réessayer l'envoi » sous ton enregistrement, puis termine."));
+    return;
+  }
+  const ok = await saveAttempt({
+    quiz_id: quizId,
+    class_id: classId,
+    student_name_raw: studentName,
+    student_name_normalized: normalizeName(studentName),
+    score: null,
+    total: 20,
+    cancelled: false,
+    answers_detail: buildAnswersDetail(),
+    writing_text: buildSummaryText(),
+    writing_correction: null
+  });
+  finished = true;
+  cheatArmed = false;
+  releaseMic();
+  try{ if(wakeLock) wakeLock.release(); } catch(e){}
+  $('cheat-banner').hidden = true;
+  $('screen-quiz').hidden = true;
+  $('screen-done').hidden = false;
+  $('done-msg').textContent = ok
+    ? "Ton contrôle a bien été envoyé. Ta prof va le corriger. Tu peux fermer cette page."
+    : "⚠ Tes réponses orales sont envoyées, mais la validation finale a échoué (connexion). Préviens ta prof avant de partir.";
+  window.scrollTo({ top: 0 });
+}
+
+// =====================================================================
+//  TENTATIVE ANNULÉE (sortie de la page)
+// =====================================================================
+async function cancelAttempt(){
+  discardOnStop = true;
+  try{ if(rec && rec.state !== 'inactive') rec.stop(); } catch(e){}
+  recState = 'idle-or-review';
+  clearInterval(timerInt);
+  stopSpeaking();
+  releaseMic();
+  try{ if(wakeLock) wakeLock.release(); } catch(e){}
+
+  $('app').hidden = true;
+  $('cheat-banner').hidden = true;
+  const gate = $('access-gate');
+  gate.classList.add('cancelled');
+  gate.innerHTML = '<p>Tentative annulée : tu as quitté le contrôle. Ta prof a été notifiée. Reviens demain pour réessayer.</p>';
+  gate.hidden = false;
+
+  try{
+    await supa.from('attempts').insert({
+      quiz_id: quizId,
+      class_id: classId,
+      student_name_raw: studentName,
+      student_name_normalized: normalizeName(studentName),
+      score: null,
+      total: null,
+      cancelled: true,
+      answers_detail: buildAnswersDetail(),
+      writing_text: '[Tentative annulée — contrôle interrompu]\n' + buildSummaryText()
+    });
+  } catch(e){}
+}
+</script>
+</body>
+</html>

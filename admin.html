@@ -1780,14 +1780,21 @@ async function renderOralModal(rows, { title, meta, pill, attempt, reload }){
   const body = document.getElementById('oral-body');
   document.getElementById('oral-modal').classList.remove('hidden');
 
-  if(!rows.length){
+  // réponses ÉCRITES éventuelles (contrôles où l'élève peut écrire ET/OU s'enregistrer)
+  const typedItems = (attempt && Array.isArray(attempt.answers_detail))
+    ? attempt.answers_detail.filter(d => d && typeof d === 'object' && d.answer !== undefined)
+    : [];
+  const hasTyped = typedItems.some(d => String(d.answer || '').trim());
+  if(!rows.length && !hasTyped){
     body.innerHTML = '<p class="empty-note">Aucun enregistrement audio (déjà supprimés, ou rien n\'a été envoyé).</p>';
     return;
   }
   body.innerHTML = '<p class="loading-note">Chargement des enregistrements…</p>';
 
   // liens d'écoute temporaires (1 h)
-  const { data: signed, error: sErr } = await supa.storage.from(ORAL_BUCKET).createSignedUrls(rows.map(r => r.storage_path), 3600);
+  const { data: signed, error: sErr } = rows.length
+    ? await supa.storage.from(ORAL_BUCKET).createSignedUrls(rows.map(r => r.storage_path), 3600)
+    : { data: [], error: null };
   if(sErr){ body.innerHTML = '<p class="empty-note">Erreur : ' + escHtml(sErr.message) + '</p>'; return; }
   const urlByPath = {};
   (signed || []).forEach(x => { if(x && x.path && x.signedUrl) urlByPath[x.path] = x.signedUrl; });
@@ -1817,6 +1824,20 @@ async function renderOralModal(rows, { title, meta, pill, attempt, reload }){
       <button class="btn-oral-save" id="oral-score-save">Enregistrer la note</button>
       <span id="oral-score-msg" class="oral-student-meta"></span>
     </div>`;
+  }
+  if(hasTyped){
+    html += '<div class="oral-student"><div class="oral-student-head"><div><div class="oral-student-name">Réponses écrites</div><div class="oral-student-meta">À corriger avec le barème (les audios éventuels sont plus bas)</div></div></div>';
+    typedItems.forEach((d, i) => {
+      const ans = String(d.answer || '').trim();
+      const nAudio = Array.isArray(d.recordings) ? d.recordings.length : 0;
+      html += `<div class="oral-q">
+        <div class="oral-q-label">${i + 1}. ${escHtml(d.question || d.label || '')}${d.max_points ? ' <span class="oral-student-meta">(' + d.max_points + ' pt' + (d.max_points > 1 ? 's' : '') + ')</span>' : ''}</div>
+        <div style="white-space:pre-wrap;margin-top:4px">${ans ? escHtml(ans) : '<span class="empty-note">(pas de réponse écrite)</span>'}</div>
+        ${nAudio ? '<div class="oral-student-meta">🎤 ' + nAudio + ' enregistrement(s) audio ci-dessous</div>' : ''}
+        ${d.skipped ? '<div class="oral-student-meta">Question passée par l\'élève</div>' : ''}
+      </div>`;
+    });
+    html += '</div>';
   }
   list.forEach((st, si) => {
     html += `<div class="oral-student">
