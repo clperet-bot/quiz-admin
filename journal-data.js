@@ -175,46 +175,147 @@ const TYPE_GUIDE = {
     article:'Le format dépend de ta rubrique : brève (2 à 3 phrases avec les 5W), interview (questions et réponses), reportage ou tribune libre (avis signé et argumenté). Pour l\'article évalué, reste factuel.' }
 };
 
+
+/* ============ Contenu repris de la fiche papier (étapes 4, 6 à 10) ============ */
+// Rappel « info ou pas ? » (étape 4)
+const INFO_OR_NOT = [['Info','un fait vérifié.'],['Rumeur','une information non vérifiée.'],['Opinion','un avis.'],['Anecdote','une histoire personnelle.']];
+const ANECDOTE = [['« Hier, j\'ai raté le bus et le prof m\'a puni. »','une histoire personnelle (anecdote)'],['« Le bus 12 a eu 20 minutes de retard lundi, selon la vie scolaire. »','une information']];
+
+// Étape 6 : poser ses questions
+const STATUS_OPTS = ['⏳ Pas encore commencé', '💬 J\'ai posé mes questions en vrai', '👩‍🏫 J\'ai montré mon mail à ma prof', '📤 J\'ai envoyé mon mail', '📬 J\'ai reçu la réponse'];
+
+// Étape 7 : exemple guidé d'un article d'information
+const ARTICLE_EXAMPLE = [
+  ['Titre', 'Un exercice d\'évacuation mobilise 600 élèves', 'Court, avec un verbe d\'action.', '#E85D8C'],
+  ['Chapeau', 'Mardi 12 novembre, tout le lycée a quitté les bâtiments lors d\'un exercice prévu depuis la rentrée.', 'Il résume les W.', '#7B5FE0'],
+  ['Les faits', '**Mardi 12 novembre,** vers 10 h, l\'alarme a retenti dans le bâtiment A. Les 600 élèves ont rejoint la cour en moins de cinq minutes.', 'Quoi, qui, où, quand.', '#2E8B57'],
+  ['Le pourquoi', '**Il s\'agissait d\'**un exercice programmé pour tester les nouvelles consignes de sécurité.', 'La cause.', '#1FA9C9'],
+  ['Le témoin', '« Tout s\'est bien passé, même si certains ont mis du temps à sortir », **explique** M. Lemoine, professeur de sciences.', 'Guillemets, nom, fonction.', '#4C6EF5'],
+  ['La suite', '**Selon la direction,** un second exercice aura lieu en mars.', 'Conséquence ou ouverture.', '#F28C28']
+];
+const ARTICLE_MUST = ['pas de « je »', 'phrases courtes', 'un témoin cité', 'aucun avis personnel'];
+const OTHER_MODELS = [
+  { t:'Interview', c:'#C9ECF5', x:'Noa, élève, a lancé le club de dessin. **Journaliste :** Pourquoi ce club ? **Noa :** Il n\'y avait rien à faire à la pause.', s:'présentation, questions ouvertes, réponses citées.' },
+  { t:'Brève', c:'#BEEBD9', x:'Le self change d\'horaires. À partir du 4 décembre, il ouvre dès 11 h 45. Les menus restent affichés dans le hall.', s:'quoi, quand, info pratique.' },
+  { t:'Critique', c:'#FBD9DE', x:'Le film de la sortie est une réussite : l\'image est superbe. **Seul bémol :** une fin trop rapide. Je le recommande.', s:'je présente, réussi, moins réussi, verdict.' },
+  { t:'Chronique', c:'#FDEBC4', x:'Ah, le lundi matin… Mon réveil et moi, nous nous disputons depuis des années. Aujourd\'hui encore, il a gagné.', s:'accroche, exemple vécu, regard drôle, chute.' },
+  { t:'Éditorial', c:'#E0D7FA', x:'Le lycée a besoin d\'une salle de travail calme. **Il faudrait que** les élèves puissent s\'y concentrer. Il est temps d\'agir.', s:'constat, arguments, appel à l\'action.' }
+];
+// Le plan de l'article selon le type (4 paragraphes)
+const PLAN_COLS = ['Type d\'article', '① Paragraphe 1', '② Paragraphe 2', '③ Paragraphe 3', '④ Paragraphe 4'];
+const PLAN_TYPES = [
+  ['Information', 'les faits', 'le pourquoi', 'un témoin (« … », explique [nom])', 'la suite'],
+  ['Interview', 'qui est la personne', 'question 1', 'question 2', 'ce que je retiens'],
+  ['Critique', 'je présente', 'le réussi', 'le moins réussi', 'le verdict'],
+  ['Chronique', 'l\'accroche', 'un exemple', 'un regard drôle', 'la chute'],
+  ['Éditorial', 'le constat', 'argument 1', 'argument 2', 'l\'appel']
+];
+
+// Étape 8 : repérer les erreurs d'un texte
+const TEXT_FIX = '« Ce matin, on a eu une alerte au lycée. Les élèves sont sortis et ils ne comprenaient pas pourquoi. Après, la police est venue et tout est redevenu normal. Moi, je trouve que c\'est abusé, personne n\'a rien expliqué ! »';
+
+// Étape 9 : classer les informations, choisir les images
+const PLACE_OPTS = ['À la Une', 'En page intérieure', 'En brève'];
+const PLACE_ITEMS = [
+  '« Une alerte incendie a fait évacuer 600 élèves. »',
+  '« Le menu de la semaine au self. »',
+  '« Un élève du lycée a gagné un concours régional de robotique. »',
+  '« Les horaires du CDI changent la semaine prochaine. »',
+  '« Le gymnase sera fermé deux mois pour travaux. »',
+  '« Interview d\'un nouveau professeur. »'
+];
+const PLACE_ASK = ['Combien de personnes sont concernées ?', 'Est-ce récent ?', 'Est-ce important pour les lecteurs ?', 'Est-ce surprenant ou utile ?'];
+const IMG_QUALITIES = [['Utile', 'elle illustre l\'info, elle ne décore pas.'], ['Nette', 'bien cadrée, ni floue ni trop sombre.'], ['Autorisée', 'tes photos ou des images libres de droits ; pas d\'élève reconnaissable sans autorisation.'], ['Légendée', 'une phrase : qui, quoi, où, et la source.']];
+
+// Étape 10 : la mise en page sur Canva
+const LAYOUT_RULES = [['Une grille', 'je range titres, images et textes en colonnes.'], ['2 polices', 'une pour les titres, une pour le texte.'], ['3 couleurs', 'pas plus, toujours les mêmes.'], ['Des titres hiérarchisés', 'le gros titre est le plus gros.'], ['De l\'espace blanc', 'je laisse respirer la page.']];
+const CANVA_STEPS = [
+  'Sur Canva, clique sur « Créer un design » et choisis un format A4.',
+  'Ajoute une 2e page : ton journal = la Une + la page 2.',
+  'Applique tes 2 polices et tes 3 couleurs.',
+  'Page 1 : place le titre du journal, la date, le gros titre, l\'image et les accroches.',
+  'Page 2 : place ton article, ta brève, ton image et sa légende.',
+  'Importe tes images (« Importer ») ou cherche des images libres dans Canva.',
+  'Vérifie : alignements, texte lisible, titres plus gros que le texte, aucune faute.',
+  'Télécharge en PDF (« Partager », puis « Télécharger ») et rends ton fichier.'
+];
+const CANVA_TIPS = ['Utilise « Annuler » si tu te trompes.', 'Garde les mêmes polices partout.', 'Enregistre souvent.'];
+const READY_CHECK = ['Mon article respecte les 5 W.', 'Mon article est relu et corrigé.', 'Ma Une a un gros titre et une image.', 'Mes images ont une légende.', 'J\'utilise 2 polices et 3 couleurs.', 'Mon PDF est exporté.'];
+// Grille de bilan du journal complet (/20)
+const GRID_FINAL = [
+  { id:'f_struct', name:'Structure journalistique (5 W)', max:4 },
+  { id:'f_style', name:'Style journalistique', max:3 },
+  { id:'f_titre', name:'Titre et chapeau', max:2 },
+  { id:'f_ortho', name:'Orthographe et grammaire', max:2 },
+  { id:'f_hier', name:'Hiérarchie et Une', max:3 },
+  { id:'f_img', name:'Images et légendes', max:3 },
+  { id:'f_page', name:'Mise en page', max:3 }
+];
+
 const course = {
   id:'journal-lycee',
   title:'Créer le journal du lycée',
   subtitle:'Français 2nde — Informer, s\'informer',
   studentPage:'cours-journal.html',
   steps:[
-    { n:1, title:'Mon équipe', skill:'équipe', lu:null,
+    { n:1, title:'Mon équipe', skill:'Expression écrite', lu:null,
+      task:'monter mon équipe de rédaction : son nom, ses membres et ma spécialité.',
+      acts:['Je donne un nom à ma rédaction','Je choisis ma spécialité'],
       goal:'Objectif : inscrire ton équipe de rédaction (son nom, ses membres) et choisir ta spécialité de journaliste.',
       qs:[{id:'1-team', prompt:'Nom de l\'équipe, membres, spécialité'}] },
-    { n:2, title:'Choisir le type de journal', skill:'EE', lu:'Écrire : argumenter un choix (type de journal)',
+    { n:2, title:'Choisir le type de journal', skill:'Expression écrite', lu:'Écrire : argumenter un choix (type de journal)',
+      task:'choisir le type de journal de mon équipe et expliquer pourquoi.',
+      acts:['Je comprends les 3 types de journal','J\'écris le choix de mon équipe'],
       goal:'Objectif : comprendre les 3 types de journal, puis écrire le choix de ton équipe et pourquoi il intéressera les élèves du lycée.',
       qs:[{id:'2-quiz', prompt:'Quel type de journal ?'},{id:'2-type', prompt:'Le type de journal de mon équipe'}] },
-    { n:3, title:'Définir les rubriques', skill:'EE', lu:'Écrire : organiser un journal (rubriques)',
+    { n:3, title:'Définir les rubriques', skill:'Expression écrite', lu:'Écrire : organiser un journal (rubriques)',
+      task:'choisir le titre de mon journal et ses rubriques.',
+      acts:['Je comprends ce qu\'est une rubrique','Je choisis mon titre et au moins 4 rubriques'],
       goal:'Objectif : comprendre ce qu\'est une rubrique, puis choisir les rubriques de ton journal et son titre.',
       qs:[{id:'3-quiz', prompt:'Les rubriques'},{id:'3-rub', prompt:'Titre du journal et rubriques choisies'}] },
-    { n:4, title:'Choisir mon sujet et mes témoins', skill:'CE + EE', lu:'S\'informer : choisir une information à traiter',
+    { n:4, title:'Choisir mon sujet et mes témoins', skill:'Compréhension et expression écrites', lu:'S\'informer : choisir une information à traiter',
+      task:'choisir un vrai sujet d\'information et des témoins variés.',
+      acts:['Je choisis mon sujet','Je comprends la pluralité des témoignages','Je choisis mes témoins'],
       goal:'Objectif : choisir le sujet de ton article (à partir de l\'info hebdo ou de l\'actualité du moment) et les personnes variées que tu vas interviewer.',
       qs:[{id:'4-quiz', prompt:'La pluralité des témoignages'},{id:'4-subject', prompt:'Mon sujet d\'article et mes témoins'}] },
-    { n:5, title:'Préparer l\'enquête', skill:'EE', lu:'S\'informer : préparer une interview (questions)',
+    { n:5, title:'Préparer l\'enquête', skill:'Expression écrite', lu:'S\'informer : préparer une interview (questions)',
+      task:'préparer mon enquête : les 5 W et mes questions.',
+      acts:['Je distingue questions ouvertes et fermées','Je remplis les 5 W','J\'écris mes questions'],
       goal:'Objectif : lister les informations à trouver (les 5W) et écrire de bonnes questions d\'interview.',
       qs:[{id:'5-quiz', prompt:'Questions ouvertes ou fermées ?'},{id:'5-5w', prompt:'Les 5W de mon article'},{id:'5-questions', prompt:'Mes questions d\'interview'}] },
-    { n:6, title:'Écrire le mail d\'interview', skill:'EE', lu:'Écrire : rédiger un mail formel',
-      goal:'Objectif : écrire un mail poli à la personne que tu veux interviewer, avec tes questions.',
-      qs:[{id:'6-quiz', prompt:'Bien écrire un mail'},{id:'6-mail', prompt:'Mon mail d\'interview'},{id:'6-sent', prompt:'Où en est mon mail ?'}] },
-    { n:7, title:'Rédiger mon article', skill:'EE', lu:'Écrire : rédiger un article de presse',
+    { n:6, title:'Interroger mes témoins', skill:'Expression écrite', lu:'Écrire : rédiger un mail formel',
+      task:'poser mes questions à mes témoins, en vrai ou par mail, et noter leurs réponses.',
+      acts:['Je pose mes questions (en vrai si possible, par mail sinon)','Je note la réponse mot pour mot','Si besoin, j\'écris mon mail'],
+      goal:'Objectif : poser tes questions à tes témoins (en vrai si possible, par mail sinon) et garder leurs réponses.',
+      qs:[{id:'6-sent', prompt:'Où en est mon interview ?'},{id:'6-temoin', prompt:'Mes témoins et leurs réponses'},{id:'6-quiz', prompt:'Bien écrire un mail'},{id:'6-mail', prompt:'Mon mail d\'interview'}] },
+    { n:7, title:'Rédiger mon article', skill:'Expression écrite', lu:'Écrire : rédiger un article de presse',
+      task:'écrire mon article dans le style journalistique, puis ma brève.',
+      acts:['J\'étudie un exemple guidé','Je rédige mon article','J\'écris ma brève'],
       goal:'Objectif : rédiger ton article avec les informations obtenues, en suivant les 5 conseils du journaliste.',
-      qs:[{id:'7-quiz', prompt:'Les conseils du journaliste'},{id:'7-article', prompt:'Mon article'}] },
-    { n:8, title:'Relire et vérifier', skill:'EE', lu:'Écrire : relire et corriger un écrit',
+      qs:[{id:'7-quiz', prompt:'Les conseils du journaliste'},{id:'7-article', prompt:'Mon article'},{id:'7-breve', prompt:'Ma brève'}] },
+    { n:8, title:'Relire et corriger', skill:'Expression écrite', lu:'Écrire : relire et corriger un écrit',
+      task:'relire et corriger mon article.',
+      acts:['Je repère les erreurs d\'un texte','Je relis mon article avec la grille','Je vois où j\'en suis avec la grille sur 20'],
       goal:'Objectif : relire ton article avec la grille de relecture, puis voir où tu en es avec la grille d\'évaluation.',
-      qs:[{id:'8-check', prompt:'Grille de relecture'},{id:'8-eval', prompt:'Article final (grille d\'évaluation)'}] },
-    { n:9, title:'La Une et le style graphique', skill:'EE', lu:'Écrire : concevoir la Une d\'un journal',
-      goal:'Objectif : imaginer la Une de ton journal et choisir un style graphique cohérent.',
-      qs:[{id:'9-quiz', prompt:'Les éléments d\'une Une'},{id:'9-plan', prompt:'Le plan de ma Une'},{id:'9-maquette', prompt:'Maquette de ma Une (facultatif)'}] }
+      qs:[{id:'8-texte', prompt:'Repérer les erreurs d\'un texte'},{id:'8-check', prompt:'Grille de relecture'},{id:'8-eval', prompt:'Article final (grille d\'évaluation)'}] },
+    { n:9, title:'La Une et les images', skill:'Compréhension et expression écrites', lu:'Écrire : concevoir la Une d\'un journal',
+      task:'construire la Une de mon journal : classer les informations, choisir le gros titre et les images.',
+      acts:['Je classe 6 informations','Je compose ma Une','Je choisis et je légende mes images'],
+      goal:'Objectif : classer les informations, imaginer la Une de ton journal, choisir un style graphique et des images légendées.',
+      qs:[{id:'9-quiz', prompt:'Les éléments d\'une Une'},{id:'9-classement', prompt:'Classer 6 informations'},{id:'9-plan', prompt:'Le plan de ma Une'},{id:'9-images', prompt:'Mes images et leur légende'},{id:'9-maquette', prompt:'Maquette de ma Une (facultatif)'}] },
+    { n:10, title:'Je réalise mon journal', skill:'Compétence numérique', lu:'Réaliser un journal avec un outil numérique (Canva)',
+      task:'mettre en page mon journal de 2 pages et le réaliser sur Canva.',
+      acts:['Je dessine mon chemin de fer','Je réalise mon journal sur Canva','Je fais le bilan'],
+      goal:'Objectif : mettre en page ton journal de 2 pages, le réaliser sur Canva puis faire le bilan.',
+      qs:[{id:'10-chemin', prompt:'Mon chemin de fer'},{id:'10-canva', prompt:'Ma réalisation sur Canva'},{id:'10-bilan', prompt:'Le bilan de mon journal'},{id:'10-rendu', prompt:'Mon journal terminé (facultatif)'}] }
   ]
 };
 course.allQuestions = [];
 course.steps.forEach(s => (s.qs || []).forEach((q, i) => { q.step = s.n; q.level = '—'; q.index = i; course.allQuestions.push(q); }));
 // questions facultatives (ne bloquent pas la validation de l'étape)
-course.optional = ['6-sent', '9-maquette'];
+course.optional = ['6-temoin', '6-quiz', '6-mail', '9-maquette', '10-rendu'];
 
 window.JOURNAL_COURSE = course;
-window.JOURNAL_DATA = { ROLES, TYPES, QUIZ_TYPES, QUIZ_RUB, QUIZ_OPEN, OPEN_OPTS, QUIZ_MAIL, MAIL_MODEL, G_NOW, QUIZ_ARTICLE, QUIZ_PLURAL, PROFILES, TYPE_GUIDE, EVENTS, TIPS, CHECKLIST, GRID, UNE_QUIZ, UNE_OPTS, FONTS, HEBDO };
+window.JOURNAL_DATA = { ROLES, TYPES, QUIZ_TYPES, QUIZ_RUB, QUIZ_OPEN, OPEN_OPTS, QUIZ_MAIL, MAIL_MODEL, G_NOW, QUIZ_ARTICLE, QUIZ_PLURAL, PROFILES, TYPE_GUIDE, EVENTS, TIPS, CHECKLIST, GRID, UNE_QUIZ, UNE_OPTS, FONTS, HEBDO,
+  INFO_OR_NOT, ANECDOTE, STATUS_OPTS, ARTICLE_EXAMPLE, ARTICLE_MUST, OTHER_MODELS, PLAN_COLS, PLAN_TYPES, TEXT_FIX, PLACE_OPTS, PLACE_ITEMS, PLACE_ASK, IMG_QUALITIES, LAYOUT_RULES, CANVA_STEPS, CANVA_TIPS, READY_CHECK, GRID_FINAL };
 })();

@@ -208,6 +208,18 @@
   .pick{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;background:#F8F7FD;border-radius:12px;padding:8px 12px;margin-bottom:6px;font-size:15px;} .pick small{display:block;color:var(--ink-soft);}
   .hebdo img{border-radius:10px;border:1px solid var(--line);margin:8px 0;}
   .chkrow{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;background:#F8F7FD;border-radius:12px;margin-bottom:6px;font-size:15.5px;} .chkrow input{width:20px;height:20px;margin-top:3px;flex:none;}
+  .taskbox{display:grid;grid-template-columns:150px 1fr 1fr;gap:10px;margin-bottom:14px;}
+  .taskbox>div{background:#fff;border:2px solid var(--violet);border-radius:16px;padding:10px 14px;font-size:15px;}
+  .taskbox .tb-skill{background:var(--violet);color:#fff;font-weight:700;display:flex;align-items:center;}
+  .taskbox ol{margin:4px 0 0;padding-left:20px;}
+  .exrow{display:flex;gap:10px;align-items:stretch;margin-bottom:8px;} .extag{flex:none;width:96px;color:#fff;font-weight:700;font-size:14px;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;}
+  .exbody{flex:1;border:2px solid var(--ink);border-radius:12px;padding:8px 12px;font-size:15.5px;background:#fff;} .exbody small{display:block;color:var(--ink-soft);margin-top:2px;font-size:14px;}
+  .modelgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:8px;} .modelcard{border-radius:14px;padding:10px 14px;font-size:15px;} .modelcard b.t{display:block;font-size:16.5px;margin-bottom:4px;} .modelcard small{display:block;margin-top:6px;color:#444;}
+  .placeline{margin:0 0 10px;font-size:15.5px;} .placeline select{margin-top:4px;}
+  details.prev{margin:0 0 10px;font-size:14.5px;} details.prev summary{cursor:pointer;font-weight:600;color:var(--violet-deep);}
+  .canva-step{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;background:#F8F7FD;border-radius:12px;margin-bottom:6px;font-size:15.5px;} .canva-step input{width:20px;height:20px;margin-top:3px;flex:none;} .canva-step .no{flex:none;width:28px;height:28px;border-radius:50%;background:var(--violet);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;}
+  .gridself select{min-width:70px;}
+  @media (max-width:640px){ .taskbox{grid-template-columns:1fr;} .exrow{flex-direction:column;} .extag{width:auto;padding:4px 10px;justify-content:flex-start;} }
   .test-banner{background:#FFE7C2;color:#7a4300;font-weight:600;text-align:center;padding:6px 12px;font-size:14px;}
   @media (max-width:640px){ .mailmodel .part{grid-template-columns:1fr;gap:2px;} }
   textarea{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:16px;line-height:1.5;background:#fff;resize:vertical;}
@@ -345,8 +357,9 @@ const taNode = (rows, ph, val) => { const ta = h('textarea', {rows:rows, placeho
 // exercice corrigé automatiquement (menus déroulants) : 2 essais, puis correction affichée
 function detCard(q, title, instruct, build, expected, describe, onDone){
   const st = S(q.id); const box = cardShell(q, title, instruct);
-  if(st.done && (st.restored || st.frozen)){
-    box.append(h('div', {class:'corr', style:'margin-left:0'}, h('small', null, 'Ma réponse'), st.answer || ''), st.feedback ? h('div', {class:'fb ' + (st.correct === false ? 'ko' : 'ok'), style:'margin-left:0'}, st.feedback) : null);
+  if(st.done && (st.restored || st.frozen) && !st.editing){
+    box.append(h('div', {class:'corr', style:'margin-left:0'}, h('small', null, 'Ma réponse'), st.answer || ''), st.feedback ? h('div', {class:'fb ' + (st.correct === false ? 'ko' : 'ok'), style:'margin-left:0'}, st.feedback) : null,
+      editBtn(() => { st.editing = true; st.frozen = false; st.restored = false; st.tries = 0; box.replaceWith(detCard(q, title, instruct, build, expected, describe, onDone)); }, '✏️ Refaire cet exercice'));
     box.classList.add('done'); return box;
   }
   const selects = []; box.append(build(selects));
@@ -362,9 +375,9 @@ function detCard(q, title, instruct, build, expected, describe, onDone){
     let feedback = ok ? 'Bravo, tout est juste !' : revealed ? 'Pas tout à fait : la correction est affichée, relis-la bien.' : n + ' bonne' + (n > 1 ? 's' : '') + ' réponse' + (n > 1 ? 's' : '') + ' sur ' + res.length + '. Corrige les cases en rouge.';
     if(revealed) selects.forEach((s, i) => { s.value = expected[i]; s.classList.remove('bad'); s.classList.add('good'); });
     st.answer = answer; st.correct = ok; st.revealed = revealed; st.feedback = feedback; st.done = ok || revealed; st.extra = {score:n, total:res.length};
-    saveAnswer(q, answer, ok, revealed, feedback, st.extra);
+    if(!(st.editing && !ok && !revealed)) saveAnswer(q, answer, ok, revealed, feedback, st.extra);
     setFb(ok ? 'ok' : revealed ? 'ko' : 'warn', feedback);
-    if(st.done){ st.frozen = true; selects.forEach(s => s.disabled = true); btn.classList.add('hidden'); box.classList.add('done'); box.querySelector('.q-n').textContent = '✓'; updateChrome(); onDone && onDone(); }
+    if(st.done){ st.frozen = true; st.editing = false; selects.forEach(s => s.disabled = true); btn.classList.add('hidden'); box.classList.add('done'); box.querySelector('.q-n').textContent = '✓'; updateChrome(); onDone && onDone(); }
   });
   box.append(btn, fb); return box;
 }
@@ -379,14 +392,16 @@ function quiz(q, title, instruct, items){
 function aiCard(o){
   const q = o.q, st = S(q.id); const box = cardShell(q, o.title, o.instruct);
   const showAfter = (ex, el) => { if(o.after && ex){ const a = o.after(ex); if(a) el.append(a); } };
-  if(st.done && (st.restored || st.frozen)){
+  if(st.done && (st.restored || st.frozen) && !st.editing){
     box.append(h('div', {class:'corr', style:'margin-left:0'}, h('small', null, 'Ma réponse'), st.answer || ''));
     const c = st.extra && st.extra.corrected;
     if(c && norm(c) !== norm(st.answer)) box.append(h('div', {class:'corr', style:'margin-left:0;background:var(--green-bg)'}, h('small', null, 'Version corrigée'), c));
     if(st.feedback) box.append(h('div', {class:'fb ' + (st.correct === false ? 'ko' : 'ok'), style:'margin-left:0'}, st.feedback));
     showAfter(st.extra, box);
+    box.append(editBtn(() => { st.editing = true; st.frozen = false; st.restored = false; st.tries = 0; o.setDisabled(false); box.replaceWith(aiCard(o)); }));
     box.classList.add('done'); return box;
   }
+  if(st.editing && st.answer) box.append(h('details', {class:'prev'}, h('summary', null, 'Voir ma réponse précédente'), h('div', {class:'corr', style:'margin-left:0'}, st.answer)));
   box.append(o.node);
   const fb = h('div', {class:'fb hidden', style:'margin:10px 0 0'}); const btn = h('button', {class:'btn', type:'button', style:'margin-top:10px'}, o.btnLabel || 'Vérifier');
   const setFb = (k, t) => { fb.className = 'fb ' + k; fb.textContent = t; };
@@ -406,9 +421,9 @@ function aiCard(o){
     if(ok === true && o.wantCorrected && !corrected) corrected = text;
     st.answer = text; st.feedback = feedback; st.correct = ok; st.revealed = revealed;
     st.extra = Object.assign({corrected}, scores ? {scores} : {}, o.extra ? o.extra() : {});
-    saveAnswer(q, text, ok, revealed, feedback, st.extra);
+    if(!(st.editing && ok === false && !revealed)) saveAnswer(q, text, ok, revealed, feedback, st.extra);
     if(ok !== false || revealed){
-      st.done = true; st.frozen = true; o.setDisabled(true); btn.classList.add('hidden'); box.classList.add('done'); box.querySelector('.q-n').textContent = '✓';
+      st.done = true; st.frozen = true; st.editing = false; o.setDisabled(true); btn.classList.add('hidden'); box.classList.add('done'); box.querySelector('.q-n').textContent = '✓';
       setFb(ok === false ? 'ko' : 'ok', feedback);
       if(corrected && norm(corrected) !== norm(text)) box.append(h('div', {class:'corr', style:'margin-left:0;background:var(--green-bg)'}, h('small', null, ok === false ? 'Version à retenir' : 'Version corrigée'), corrected));
       showAfter(st.extra, box);
@@ -459,7 +474,7 @@ function levelupReminder(step){
 }
 function isTeacher(){ if(TEST_MODE) return true; if(!ID) return false; const t = String(ID.norm || ID.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z]+/).filter(Boolean); return t.includes('clemence') && (t.includes('peret') || t.includes('perret')); }
 // Étapes verrouillées dans l'ordre (retour en arrière toujours possible) ; la prof (ou ?test=1) a tout ouvert
-function stepUnlocked(n){ if(isTeacher() || n === 1) return true; for(let m = 1; m < n; m++){ if(!stepDone(m)) return false; } return true; }
+function stepUnlocked(n){ if(isTeacher() || n === 1 || stepStarted(n)) return true; for(let m = 1; m < n; m++){ if(!stepDone(m)) return false; } return true; }
 function stepPill(s){
   if(!stepUnlocked(s.n)) return h('span', {class:'pill'}, '🔒 à débloquer');
   if(stepDone(s.n)) return h('span', {class:'pill ok'}, '✅ validée');
@@ -476,21 +491,25 @@ function renderHome(){
   });
   app.replaceChildren(TEST_MODE ? h('div', {class:'test-banner', style:'border-radius:12px;margin-bottom:12px'}, '🧪 Mode test : rien n\'est enregistré') : null,
     h('div', {class:'hero'}, h('div', {class:'band'}, h('h1', null, '📰 Le journal du lycée'), h('p', null, 'Français · Informer, s\'informer')),
-      h('div', {class:'in'}, h('b', null, 'Ta mission : '), rich("tu es **journaliste** du lycée. Avec ton équipe, **choisis** ton journal, **interviewe**, **écris** ton article et imagine la **Une**."))),
+      h('div', {class:'in'}, h('b', null, 'Ta mission : '), rich("tu es **journaliste** du lycée. Avec ton équipe, **choisis** ton journal, **interviewe**, **écris** ton article, construis la **Une** et réalise ton journal sur **Canva**."))),
     h('div', {class:'roadmap'}, rows),
     C.steps.every(s => stepDone(s.n)) ? finishCard() : null,
-    next ? h('div', {style:'margin-top:18px;text-align:center'}, h('button', {class:'btn', type:'button', onclick:() => renderStep(next.n)}, (stepStarted(next.n) ? 'Continuer · ' : 'Commencer · ') + 'étape ' + next.n)) : null);
+    next ? h('div', {style:'margin-top:18px;text-align:center'}, h('button', {class:'btn', type:'button', onclick:() => renderStep(next.n)}, (stepStarted(next.n) ? 'Continuer · ' : 'Commencer · ') + 'étape ' + next.n)) : null,
+    C.steps.some(s => stepStarted(s.n)) ? h('div', {style:'margin-top:14px;text-align:center'}, h('button', {class:'btn ghost', type:'button', onclick:() => { REDO = true; renderStep(1); }}, '🔄 Refaire le parcours depuis le début'), h('div', {style:'font-size:13.5px;color:var(--ink-soft);margin-top:6px'}, 'Tu retrouves tes réponses et tu peux les modifier.')) : null);
   window.scrollTo(0,0);
 }
 function finishCard(){ return h('div', {class:'finish'}, h('h2', null, '🎉 Parcours terminé !'), h('p', null, 'Ta prof a reçu ton travail. Bravo, journaliste !')); }
 
 const rich = s => { const sp = document.createElement('span'); sp.innerHTML = String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/\*\*(.+?)\*\*/g, '<b class="hl">$1</b>'); return sp; };
-let chrome = {};
+let chrome = {}; let REDO = false;
+const editBtn = (fn, label) => h('button', {class:'btn small ghost', type:'button', style:'margin-top:10px', onclick:fn}, label || '✏️ Modifier ma réponse');
 function stepShell(n){
   const s = C.steps[n-1];
   const head = h('div', {class:'step-head'}, h('div', {class:'badge-n'}, String(n)), h('div', {class:'ribbon'}, s.title, h('span', {class:'pill'}, s.skill)));
-  const goal = h('div', {class:'goal'}, '🎯 ' + s.goal); const body = h('div'), banner = h('div'), nav = h('div', {class:'step-nav'});
-  app.replaceChildren(head, goal, body, banner, nav); chrome = {n, s, body, banner, nav}; window.scrollTo(0,0); return body;
+  const info = h('div', {class:'taskbox'}, h('div', {class:'tb-skill'}, s.skill), h('div', null, h('b', null, 'Tâche : '), s.task), h('div', null, h('b', null, 'Activités :'), h('ol', null, (s.acts || []).map(a => h('li', null, a)))));
+  const redo = REDO ? h('div', {class:'fb info', style:'margin:0 0 12px'}, '🔄 Tu refais le parcours : tes réponses sont conservées. Clique sur « ✏️ Modifier ma réponse » sous une réponse pour la changer. Ta prof verra la dernière version.') : null;
+  const body = h('div'), banner = h('div'), nav = h('div', {class:'step-nav'});
+  app.replaceChildren(head, info, redo, body, banner, nav); chrome = {n, s, body, banner, nav}; window.scrollTo(0,0); return body;
 }
 const CIRC = ['⓪','①','②','③','④','⑤','⑥','⑦','⑧','⑨'];
 function todoList(n){
@@ -522,7 +541,7 @@ function updateChrome(){
   else nxt = done ? h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉') : h('span');
   nav.replaceChildren(prev, nxt);
 }
-function renderStep(n){ if(!stepUnlocked(n)) return renderHome(); setTop(true); const body = stepShell(n); [null, viewTeam, viewType, viewRub, viewSubject, viewEnquete, viewMail, viewArticle, viewRelecture, viewUne][n](body); updateChrome(); }
+function renderStep(n){ if(!stepUnlocked(n)) return renderHome(); setTop(true); const body = stepShell(n); [null, viewTeam, viewType, viewRub, viewSubject, viewEnquete, viewMail, viewArticle, viewRelecture, viewUne, viewCanva][n](body); updateChrome(); }
 
 /* ============ ÉTAPE 1 : mon équipe ============ */
 function viewTeam(body){
@@ -627,6 +646,10 @@ function viewSubject(body){
   body.append(h('div', {class:'box'}, h('h3', null, 'Étape 1 de l\'enquête : choisir son sujet'), h('div', {style:'font-size:15.5px'}, 'Ton sujet doit être en lien avec le lycée ou les élèves : un événement (sortie, tournoi, spectacle), un projet, une activité d\'un club, un portrait d\'élève ou de professeur, un débat sur un sujet qui concerne les jeunes. Tu peux aussi parler de ',
     h('b', null, 'ce qui se passe en ce moment'), ' : les cours à distance, les manifestations dans les lycées, ce qui s\'est passé à Godefroy…')));
   body.append(guideBox([['sujets', 'Quel sujet choisir ?'], ['personnes', 'Qui interviewer ?']]));
+  body.append(h('div', {class:'box warm'}, h('h3', null, 'Info ou pas ?'),
+    D.INFO_OR_NOT.map(([a, b]) => h('p', {style:'margin:0 0 4px;font-size:15.5px'}, h('b', null, a + ' : '), b)),
+    h('p', {style:'margin:8px 0 4px;font-size:15.5px'}, h('b', null, 'Attention à l\'anecdote !')),
+    D.ANECDOTE.map(([t, r]) => h('p', {style:'margin:0 0 4px;font-size:15px'}, t + ' → ', h('b', null, r + '.')))));
   body.append(hebdoBox((t, w) => { subject.value = t; if(w && !who.value) who.value = w; const c = document.getElementById('q-4-subject'); if(c) c.scrollIntoView({behavior:'smooth'}); }));
   body.append(h('div', {class:'box warm'}, h('h3', null, '🗣️ La pluralité des témoignages'),
     h('div', {style:'font-size:15.5px'}, h('p', {style:'margin:0 0 6px'}, h('b', null, 'Pluralité'), ' veut dire « il y en a plusieurs, et ils sont différents ». Une ', h('b', null, 'pluralité de témoignages'), ' : tu interroges des personnes différentes pour montrer plusieurs points de vue.'),
@@ -670,46 +693,79 @@ function viewEnquete(body){
     extra:() => ({questions:qi.map(i => i.value.trim()), sources:src.value.trim()}) }));
 }
 
-/* ============ ÉTAPE 6 : mail d'interview ============ */
+/* ============ ÉTAPE 6 : interroger mes témoins (en vrai ou par mail) ============ */
 function viewMail(body){
-  body.append(h('div', {class:'box warm'}, h('h3', null, 'Écrire un mail poli'), h('p', {style:'margin:0 0 6px;font-size:15.5px'}, 'Tu écris à un adulte que tu ne connais pas toujours : ton mail doit être clair, poli et complet. Voici un exemple, avec ses 8 parties :'),
+  body.append(h('div', {class:'box warm'}, h('h3', null, 'Poser mes questions à mes témoins'),
+    h('p', {style:'margin:0 0 6px;font-size:15.5px'}, 'Pose tes questions à ton témoin ', h('b', null, 'en vrai'), ' si possible, avec l\'accord de la personne. Si ce n\'est pas possible, envoie-les ', h('b', null, 'par mail'), ' : l\'aide pour écrire ton mail est juste en dessous.'),
+    h('p', {style:'margin:0;font-size:15.5px'}, 'Tu vas interroger plusieurs personnes. Note la réponse de chacune ', h('b', null, 'mot pour mot'), ', avec son nom et sa fonction.')));
+  // 1. où en est mon interview ?
+  const q6 = C.allQuestions.find(x => x.id === '6-sent'); const st = S('6-sent');
+  const OPTS = D.STATUS_OPTS;
+  const out = h('div'); const showMsg = () => out.replaceChildren(st.answer ? h('div', {class:'fb ok', style:'margin:10px 0 0'}, '✔ Noté : ' + st.answer) : null);
+  const btns = OPTS.map(label => { const b = h('button', {type:'button', class:'choice' + (st.answer && st.answer === label.replace(/^\S+\s/, '') ? ' sel' : '')}, label);
+    b.addEventListener('click', async () => { btns.forEach(x => x.classList.remove('sel')); b.classList.add('sel'); st.answer = label.replace(/^\S+\s/, ''); st.done = true; st.correct = null; st.tries++; st.extra = {status:st.answer}; showMsg(); await saveAnswer(q6, st.answer, null, false, '', st.extra); updateChrome(); });
+    return b; });
+  body.append(h('div', {class:'q' + (qDone('6-sent') ? ' done' : ''), id:'q-6-sent'}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, qDone('6-sent') ? '✓' : '•'), h('div', {class:'q-p'}, '1. Où en est mon interview ?', h('small', null, 'Choisis ta réponse, et change-la quand ça avance. Tu peux passer à la suite dès que tu as choisi : tu reviendras noter les réponses de tes témoins.'))), btns, out));
+  showMsg();
+  // 2. mes témoins et leurs réponses (facultatif, à garder pour l'article)
+  const qT = C.allQuestions.find(x => x.id === '6-temoin'); const stT = S('6-temoin'); const exT = stT.extra || {};
+  const e5 = X('5-questions');
+  const tem = taNode(9, 'Un bloc par personne :\nNom et fonction : Mme Martin, professeure\nMa question : …\nSa réponse, mot pour mot : « … »', exT.temoins || '');
+  const fbT = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
+  const btnT = h('button', {class:'btn', type:'button', style:'margin-top:8px'}, stT.done ? 'Mettre à jour' : 'Enregistrer mes témoins');
+  btnT.addEventListener('click', async () => {
+    if(words(tem.value) < 12){ fbT.className = 'fb warn'; fbT.textContent = 'Note au moins le nom, la fonction et une réponse de ton témoin 🙂'; return; }
+    btnT.disabled = true; stT.tries++; stT.done = true; stT.correct = null; stT.extra = {temoins:tem.value.trim()}; stT.answer = tem.value.trim(); stT.feedback = '';
+    await saveAnswer(qT, stT.answer, null, false, '', stT.extra);
+    btnT.disabled = false; btnT.textContent = 'Mettre à jour'; fbT.className = 'fb ok'; fbT.textContent = '✔ C\'est noté ! Tu les retrouveras à l\'étape 7, quand tu écriras ton article.'; updateChrome();
+  });
+  body.append(h('div', {class:'q' + (stT.done ? ' done' : ''), id:'q-6-temoin'}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, stT.done ? '✓' : '•'), h('div', {class:'q-p'}, '2. Mes témoins et leurs réponses', h('small', null, 'Dès que tu as les réponses, note-les ici (facultatif, mais tu en auras besoin pour écrire ton article). Plusieurs personnes = plusieurs blocs.'))),
+    e5.questions && e5.questions.length ? h('details', {class:'prev'}, h('summary', null, 'Revoir mes questions de l\'étape 5'), h('div', {class:'corr', style:'margin-left:0'}, e5.questions.map((x, i) => (i + 1) + '. ' + x).join('\n'))) : null,
+    tem, btnT, fbT));
+  // 3. aide au mail (si interview par mail)
+  const mailPart = h('div');
+  mailPart.append(h('div', {class:'box warm'}, h('h3', null, 'Écrire un mail poli'), h('p', {style:'margin:0 0 6px;font-size:15.5px'}, 'Tu écris à un adulte que tu ne connais pas toujours : ton mail doit être clair, poli et complet. Voici un exemple, avec ses 8 parties :'),
     h('div', {class:'mailmodel'}, D.MAIL_MODEL.map(([a, b]) => h('div', {class:'part'}, h('b', null, a), h('div', null, b))))));
-  body.append(h('div', {class:'fb info', style:'margin:0 0 12px'}, 'Tu vas interroger plusieurs personnes : un mail par personne. Écris ici le mail pour la première ; tu pourras ensuite le copier et l\'adapter (destinataire, présentation de ta demande, questions) pour les autres.'));
-  body.append(quiz(C.allQuestions.find(x => x.id === '6-quiz'), '1. Je choisis les bonnes formules', null, D.QUIZ_MAIL.map(it => ({q:it.q, opts:it.opts, exp:it.opts[it.ans]}))));
-  const prior = X('6-mail'); const e5 = X('5-questions');
+  mailPart.append(h('div', {class:'fb info', style:'margin:0 0 12px'}, 'Un mail par personne : écris ici le mail pour la première, puis copie-le et adapte-le (destinataire, présentation de ta demande, questions) pour les autres.'));
+  mailPart.append(quiz(C.allQuestions.find(x => x.id === '6-quiz'), 'Je choisis les bonnes formules', null, D.QUIZ_MAIL.map(it => ({q:it.q, opts:it.opts, exp:it.opts[it.ans]}))));
+  const prior = X('6-mail');
   const to = inp('Ex. : Mme Martin, professeure de sciences', prior.to);
   const obj = inp('Objet du mail', prior.objet);
   const defaultBody = (e5.questions && e5.questions.length) ? '\n\n' + e5.questions.map((x, i) => (i + 1) + '. ' + x).join('\n') + '\n\n' : '';
   const msg = taNode(12, 'Bonjour …,\n\nJe m\'appelle …', ''); if(!msg.value) msg.value = defaultBody ? 'Bonjour …,' + defaultBody + 'Cordialement,' : '';
-  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '6-mail'), title:'2. Mon mail d\'interview', instruct:'Écris ton mail en suivant l\'exemple. Tes questions de l\'étape 5 sont déjà recopiées dans le message : complète-le !',
+  mailPart.append(aiCard({ q:C.allQuestions.find(x => x.id === '6-mail'), title:'Mon mail d\'interview', instruct:'Écris ton mail en suivant l\'exemple. Tes questions de l\'étape 5 sont déjà recopiées dans le message : complète-le !',
     node:h('div', null, fld('Destinataire (qui est-ce ?)', to), fld('Objet', obj), fld('Mon message', msg)),
     getText:() => (!to.value.trim() || !obj.value.trim() || !msg.value.trim()) ? '' : 'DESTINATAIRE : ' + to.value.trim() + '\nOBJET : ' + obj.value.trim() + '\nMESSAGE :\n' + msg.value.trim(),
     emptyMsg:'Remplis le destinataire, l\'objet et le message 🙂', setDisabled:v => { to.disabled = v; obj.disabled = v; msg.disabled = v; }, minWords:45, wantCorrected:true, context:SUBJ,
     rubric:"Mail formel envoyé par un lycéen à un adulte pour demander une interview pour le journal du lycée. Éléments attendus : un objet clair ; une formule d'appel adaptée (Bonjour Madame/Monsieur …,) ; la présentation de l'élève (prénom, nom ou classe, journal) ; l'explication de la demande ; les questions (au moins 3, numérotées) ; un délai de réponse (une date ou « avant … ») ; un remerciement ; une formule de politesse (Cordialement…) ; une signature. Registre poli avec vouvoiement (si le destinataire est un adulte), pas de langage SMS. ok = true si au plus 2 éléments manquent et si le ton est poli. Dans le feedback, nomme les éléments qui manquent. 'corrected' : le message corrigé (orthographe, grammaire, politesse), sans ajouter les éléments manquants.",
     extra:() => ({to:to.value.trim(), objet:obj.value.trim()}) }));
-  // où en est mon mail ?
-  const q6 = C.allQuestions.find(x => x.id === '6-sent'); const st = S('6-sent');
-  const OPTS = ['⏳ Pas encore envoyé', '👩‍🏫 Montré à ma prof', '📤 Envoyé à la personne', '📬 J\'ai reçu la réponse'];
-  const out = h('div'); const showMsg = () => out.replaceChildren(st.answer ? h('div', {class:'fb ok', style:'margin:10px 0 0'}, '✔ Noté : ' + st.answer) : null);
-  const btns = OPTS.map(label => { const b = h('button', {type:'button', class:'choice' + (st.answer && st.answer.endsWith(label.replace(/^\S+\s/, '')) ? ' sel' : '')}, label);
-    b.addEventListener('click', async () => { btns.forEach(x => x.classList.remove('sel')); b.classList.add('sel'); st.answer = label.replace(/^\S+\s/, ''); st.done = true; st.correct = null; st.tries++; st.extra = {status:st.answer}; showMsg(); await saveAnswer(q6, st.answer, null, false, '', st.extra); updateChrome(); });
-    return b; });
-  body.append(h('div', {class:'q', id:'q-6-sent'}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, qDone('6-sent') ? '✓' : '•'), h('div', {class:'q-p'}, '3. Où en est mon mail ?', h('small', null, 'Montre ton mail à ta prof avant de l\'envoyer. Mets à jour cette réponse quand ça avance (facultatif mais utile).'))), btns, out));
-  showMsg();
+  body.append(h('details', {class:'vocab', open:(qDone('6-mail') || qDone('6-quiz')) ? true : null}, h('summary', null, '✉️ Je les interroge par mail : l\'aide pour écrire mon mail (facultatif)'), mailPart));
 }
 
-/* ============ ÉTAPE 7 : rédiger l'article ============ */
+/* ============ ÉTAPE 7 : rédiger l'article et la brève ============ */
 function viewArticle(body){
   body.append(h('div', {class:'box warm'}, h('h3', null, '✍️ Écrire comme un journaliste : les 5 conseils'),
-    D.TIPS.map(([t, d], i) => h('div', {class:'tip5'}, h('div', {class:'n'}, String(i + 1)), h('div', null, h('b', null, t), h('div', {style:'font-size:15px'}, d))))));
+    D.TIPS.map(([t, d], i) => h('div', {class:'tip5'}, h('div', {class:'n'}, String(i + 1)), h('div', null, h('b', null, t), h('div', {style:'font-size:15px'}, d)))),
+    h('div', {class:'fb info', style:'margin:8px 0 0'}, 'Besoin d\'aide pour rédiger ? Demande à ta prof les ateliers « Écrire comme un journaliste ».')));
   body.append(guideBox([['article', 'Comment écrire ton article ?']]));
+  // exemple guidé
+  body.append(h('div', {class:'box'}, h('h3', null, '🔍 Étudie un exemple guidé : un article d\'information'),
+    h('p', {style:'margin:0 0 8px;font-size:15px'}, 'Repère chaque partie. Les mots en surbrillance sont des expressions à réutiliser.'),
+    D.ARTICLE_EXAMPLE.map(([t, x, note, col]) => h('div', {class:'exrow'}, h('div', {class:'extag', style:'background:' + col}, t), h('div', {class:'exbody'}, rich(x), h('small', null, '→ ' + note)))),
+    h('div', {class:'fb info', style:'margin:10px 0 0'}, h('b', null, 'À retrouver dans ton article : '), D.ARTICLE_MUST.map(m => '✔ ' + m).join('   '))));
+  body.append(h('details', {class:'vocab'}, h('summary', null, '📚 Les autres types d\'article : un modèle de chacun'),
+    h('div', {class:'modelgrid'}, D.OTHER_MODELS.map(m => h('div', {class:'modelcard', style:'background:' + m.c}, h('b', {class:'t'}, m.t), rich(m.x), h('small', null, h('b', null, 'Structure : '), m.s))))));
+  body.append(h('div', {class:'box'}, h('h3', null, '🧩 Le plan de ton article selon son type'),
+    h('p', {style:'margin:0 0 6px;font-size:15px'}, h('b', null, 'Titre : '), 'court, avec un verbe d\'action. ', h('b', null, 'Chapeau : '), '1 ou 2 phrases avec au moins 3 W.'),
+    h('table', {class:'scoretbl'}, h('tr', null, D.PLAN_COLS.map(c => h('th', null, c))), D.PLAN_TYPES.map(r => h('tr', null, r.map((c, i) => h(i ? 'td' : 'td', null, i ? c : h('b', null, c)))))),
+    h('p', {style:'margin:8px 0 0;font-size:15px'}, h('b', null, 'Brève : '), 'quoi, quand, où, puis l\'info pratique. Pas de détail inutile.')));
   body.append(quiz(C.allQuestions.find(x => x.id === '7-quiz'), '1. Bon ou mauvais exemple ?', 'Choisis à chaque fois la meilleure phrase.', D.QUIZ_ARTICLE.map(it => ({q:it.q, opts:it.opts, exp:it.opts[it.ans]}))));
   const prior = X('7-article'); const e4 = X('4-subject');
   const title = inp('Un titre clair et accrocheur', prior.title); const chapo = taNode(2, 'Le chapeau : 1 à 2 phrases qui donnent envie de lire (l\'essentiel de l\'info)', prior.chapo);
   const art = taNode(10, 'Écris ton article : les 5W, une citation de la personne interviewée, une conclusion…', prior.article);
-  const answers = taNode(4, 'Copie ici les réponses de la personne interviewée (ou résume ce que tu as appris).', prior.answers);
-  const src = inp('Ex. : interview de Mme Martin par mail le 15 octobre', prior.sources);
-  body.append(h('div', {class:'fb info', style:'margin:0 0 12px'}, 'Tu n\'as pas encore reçu de réponse à ton mail ? Passe à l\'étape 9 (la Une), et reviens ici dès que tu as tes informations.'));
+  const answers = taNode(4, 'Copie ici les réponses de la personne interviewée (ou résume ce que tu as appris).', prior.answers || X('6-temoin').temoins);
+  const src = inp('Ex. : interview de Mme Martin le 15 octobre', prior.sources);
+  body.append(h('div', {class:'fb info', style:'margin:0 0 12px'}, 'Tu n\'as pas encore tes réponses ? Reviens ici dès que tu les as : ce que tu as noté à l\'étape 6 est déjà recopié dans la case des réponses.'));
   body.append(aiCard({ q:C.allQuestions.find(x => x.id === '7-article'), title:'2. Mon article', instruct:'Rédige ton article avec les informations obtenues lors de ton interview.',
     node:h('div', null, fld('Les réponses obtenues (pour chaque personne interrogée : son nom ou sa fonction, puis ce qu\'elle a répondu)', answers), fld('Mon titre', title), fld('Mon chapeau', chapo), fld('Mon article', art), fld('Mes sources', src)),
     getText:() => (!title.value.trim() || !chapo.value.trim() || !art.value.trim() || !src.value.trim()) ? '' : 'TITRE : ' + title.value.trim() + '\nCHAPEAU : ' + chapo.value.trim() + '\nARTICLE :\n' + art.value.trim() + '\nSOURCES : ' + src.value.trim() + '\nRÉPONSES OBTENUES À L\'INTERVIEW : ' + (answers.value.trim() || '(non renseigné)'),
@@ -719,22 +775,42 @@ function viewArticle(body){
     context:() => (e4.subject ? 'Sujet : ' + e4.subject + '. Personnes à interviewer : ' + (e4.who || '?') + '. Rubrique : ' + (e4.rubrique || '?') + '. ' : 'Sujet non précisé. ') + typeCtx('article'),
     rubric:"Article de presse pour le journal d'un lycée, écrit par un élève de 2nde. Critères : sujet en lien avec le lycée ; les 5W présents (Qui, Quoi, Où, Quand, Pourquoi, et si possible Comment) ; titre clair et accrocheur ; chapeau/première phrase qui accroche ; phrases courtes et claires ; au moins une citation d'un témoin, et idéalement des témoignages d'au moins 2 personnes de profils différents (pluralité) : si un seul témoin est cité, ok = false avec un indice sur la pluralité, sauf si la rubrique est Brèves, Créations ou Jeux ; sources indiquées ; le contenu respecte le type de journal (voir « Attendu pour ce type ») ; faits distingués des opinions, ton neutre (pas de « je pense que ») ; conclusion (conséquence ou ouverture) ; orthographe correcte. ok = true si les 5W sont presque tous présents, le titre est clair, au moins une source ou citation est présente et le texte est compréhensible. Dans le feedback, cite 1 point fort et 1 ou 2 points à améliorer parmi ces critères. 'corrected' : l'article corrigé (orthographe, grammaire, ponctuation) en gardant les mêmes parties TITRE, CHAPEAU, ARTICLE, SOURCES.",
     extra:() => ({title:title.value.trim(), chapo:chapo.value.trim(), article:art.value.trim(), sources:src.value.trim(), answers:answers.value.trim()}) }));
+  // ma brève
+  const bPrior = X('7-breve'); const bre = taNode(4, 'Quoi ? Quand ? Où ? Puis l\'information pratique…', bPrior.breve);
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '7-breve'), title:'3. Ma brève', instruct:'Écris une brève d\'environ 60 mots, sans avis, sur une autre information du lycée : une info pratique, un horaire, une réunion… (l\'info hebdo de l\'étape 4 peut t\'aider).',
+    node:fld('Ma brève', bre), getText:() => bre.value.trim(), emptyMsg:'Écris ta brève 🙂',
+    gate:() => { const n = words(bre.value); return n > 110 ? 'Ta brève est un peu longue (' + n + ' mots) : une brève est courte, vise environ 60 mots 🙂' : null; },
+    setDisabled:v => { bre.disabled = v; }, minWords:25, wantCorrected:true,
+    rubric:"Brève de journal de lycée (environ 60 mots ; entre 35 et 90 mots acceptés). Elle donne l'essentiel : quoi, quand, où, puis une information pratique ; elle ne contient aucun avis personnel ; les phrases sont courtes ; le sujet est en lien avec le lycée. ok = true si l'essentiel (quoi, quand, où) est présent et s'il n'y a pas d'avis personnel. Dans le feedback, cite un point fort et un point à améliorer. 'corrected' : la brève corrigée (orthographe, grammaire) sans ajouter d'idée.",
+    extra:() => ({breve:bre.value.trim()}) }));
 }
 
-/* ============ ÉTAPE 8 : relecture + grille d'évaluation ============ */
+/* ============ ÉTAPE 8 : relire, corriger + grille d'évaluation ============ */
 function viewRelecture(body){
+  // 1. repérer les erreurs d'un texte
+  const qt = S('8-texte'); const priorT = X('8-texte');
+  const fam = inp('Le mot familier', priorT.mot); const avis = inp('La phrase qui donne un avis', priorT.avis);
+  const rew = taNode(4, 'Réécris le texte en style journalistique…', priorT.rewrite);
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '8-texte'), title:'1. Repérer et corriger les erreurs d\'un texte', instruct:'Lis ce texte d\'un.e élève, puis réponds aux trois questions.',
+    node:h('div', null, h('div', {class:'corr', style:'margin:0 0 10px;background:#FFF1C9'}, D.TEXT_FIX), fld('a. Un mot trop familier', fam), fld('b. Une phrase qui donne un avis', avis), fld('c. Réécris le texte en style journalistique', rew)),
+    getText:() => (!fam.value.trim() || !avis.value.trim() || !rew.value.trim()) ? '' : 'MOT FAMILIER : ' + fam.value.trim() + '\nPHRASE QUI DONNE UN AVIS : ' + avis.value.trim() + '\nTEXTE RÉÉCRIT :\n' + rew.value.trim(),
+    emptyMsg:'Réponds aux trois questions 🙂', setDisabled:v => { fam.disabled = v; avis.disabled = v; rew.disabled = v; }, minWords:25, wantCorrected:false,
+    context:() => 'TEXTE À CORRIGER : ' + D.TEXT_FIX,
+    rubric:"Exercice sur un texte d'élève trop familier et subjectif (le texte est donné dans le CONTEXTE). Attendus : (a) un mot ou une expression trop familière : « abusé » (« c'est abusé ») ; on accepte aussi « on » (« on a eu ») ou « tout est redevenu normal » seulement si l'élève explique que c'est de l'oral ; (b) la phrase qui donne un avis : « Moi, je trouve que c'est abusé, personne n'a rien expliqué ! » ; (c) une réécriture en style journalistique : sans « on » ni « moi, je », sans avis personnel, avec des phrases courtes et claires, qui garde les faits (alerte au lycée, élèves évacués, police, retour à la normale, absence d'explication) et peut citer un témoin ou une source. ok = true si (a) et (b) sont corrects et si la réécriture supprime l'avis et le registre familier. ok = false sinon : donne un indice sur ce qui manque sans écrire la réponse à sa place.",
+    extra:() => ({mot:fam.value.trim(), avis:avis.value.trim(), rewrite:rew.value.trim()}) }));
+  // 2. grille de relecture
   const q8 = C.allQuestions.find(x => x.id === '8-check'); const st = S('8-check');
   const boxes = D.CHECKLIST.map(l => h('input', {type:'checkbox'}));
   const fb = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
-  const card = h('div', {class:'q' + (qDone('8-check') ? ' done' : ''), id:'q-8-check'}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, qDone('8-check') ? '✓' : '•'), h('div', {class:'q-p'}, '1. Ma grille de relecture', h('small', null, 'Relis ton article (à voix basse, c\'est plus efficace) et coche seulement ce que tu as vraiment vérifié. Tu peux aussi le faire relire par un.e camarade.'))));
-  if(st.done){ card.append(h('div', {class:'corr', style:'margin-left:0'}, h('small', null, 'Ma réponse'), st.answer || '')); }
+  const card = h('div', {class:'q' + (qDone('8-check') ? ' done' : ''), id:'q-8-check'}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, qDone('8-check') ? '✓' : '•'), h('div', {class:'q-p'}, '2. Ma grille de relecture', h('small', null, 'Relis ton article (à voix basse, c\'est plus efficace) et coche seulement ce que tu as vraiment vérifié. Tu peux aussi le faire relire par un.e camarade.'))));
+  if(st.done && !st.editing){ card.append(h('div', {class:'corr', style:'margin-left:0'}, h('small', null, 'Ma réponse'), st.answer || ''), editBtn(() => { st.editing = true; renderStep(8); })); }
   else {
     D.CHECKLIST.forEach((l, i) => card.append(h('label', {class:'chkrow'}, boxes[i], h('span', null, l))));
     const btn = h('button', {class:'btn', type:'button', style:'margin-top:8px'}, 'Ma relecture est faite');
     btn.addEventListener('click', async () => {
       const n = boxes.filter(b => b.checked).length;
       if(n < boxes.length){ fb.className = 'fb warn'; fb.textContent = 'Il te reste ' + (boxes.length - n) + ' point(s) à vérifier. Relis encore ton article, puis coche 🙂'; return; }
-      btn.disabled = true; st.tries++; st.done = true; st.correct = null; st.answer = 'Relecture faite : ' + n + ' / ' + boxes.length + ' points vérifiés'; st.extra = {checked:n};
+      btn.disabled = true; st.tries++; st.done = true; st.editing = false; st.correct = null; st.answer = 'Relecture faite : ' + n + ' / ' + boxes.length + ' points vérifiés'; st.extra = {checked:n};
       await saveAnswer(q8, st.answer, null, false, '', st.extra); renderStep(8);
     });
     card.append(btn, fb);
@@ -746,20 +822,58 @@ function viewRelecture(body){
   const gridInfo = h('details', {class:'vocab'}, h('summary', null, '📊 La grille d\'évaluation de ton article (/20)'), h('table', {class:'scoretbl'}, h('tr', null, h('th', null, 'Critère'), h('th', null, 'Ce qui est attendu'), h('th', null, 'Points')), D.GRID.map(g => h('tr', null, h('td', null, h('b', null, g.name)), h('td', null, g.desc), h('td', {class:'pts'}, '/' + g.max))), h('tr', {class:'tot'}, h('td', null, 'TOTAL'), h('td', null), h('td', {class:'pts'}, '/20'))));
   body.append(gridInfo);
   const gridKeys = D.GRID.map(g => '"' + g.id + '":{"pts":0,"note":"..."}').join(',');
-  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '8-eval'), title:'2. Mon article final et la grille d\'évaluation', instruct:'Colle (ou corrige) la version finale de ton article : tu vois où tu en es avec la grille, critère par critère.',
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '8-eval'), title:'3. Mon article final et la grille d\'évaluation', instruct:'Colle (ou corrige) la version finale de ton article : tu vois où tu en es avec la grille, critère par critère.',
     node:h('div', null, fld('Mon article final', ta)), getText:() => ta.value.trim(), emptyMsg:'Écris ou colle ton article 🙂', setDisabled:v => { ta.disabled = v; }, minWords:50, wantCorrected:false, btnLabel:'Voir ma grille',
     context:() => { const e = X('7-article'); const e4 = X('4-subject'); return (e4.subject ? 'Sujet : ' + e4.subject + '. ' : '') + (e.sources ? 'Sources déclarées : ' + e.sources + '. ' : '') + (e.answers ? 'Réponses obtenues à l\'interview : ' + e.answers : ''); },
     rubric:"Évalue l'article final avec la grille suivante (total /20), de façon indulgente mais honnête : " + D.GRID.map(g => g.id + ' = ' + g.name + ' (/' + g.max + ') : ' + g.desc).join(' ; ') + ". Ajoute \"scores\" au format exact : {" + gridKeys + "} où pts est un entier entre 0 et le maximum du critère et note est un conseil de 15 mots maximum (pour le critère enquete, valorise la pluralité des témoignages : plusieurs personnes de profils variés), adressé à l'élève (tutoiement). ok = true si le total est d'au moins 12 sur 20 ; sinon ok = false avec un indice sur le critère le plus faible. Dans le feedback, ne répète pas les notes.",
     after:scoreTable, extra:() => ({final:ta.value.trim()}) }));
 }
 
-/* ============ ÉTAPE 9 : la Une et le style graphique ============ */
+/* ============ envoi d'une image (maquette de la Une, journal terminé) ============ */
+function uploadCard(qid, title, instruct, prefix, key, doneMsg, stepN){
+  const st = S(qid); const q = C.allQuestions.find(x => x.id === qid);
+  const card = h('div', {class:'q' + (st.done ? ' done' : ''), id:'q-' + qid}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, st.done ? '✓' : '•'), h('div', {class:'q-p'}, title, h('small', null, instruct))));
+  if(st.done && !st.editing){ card.append(h('div', {class:'fb ok', style:'margin-left:0'}, '✔ ' + doneMsg), editBtn(() => { st.editing = true; renderStep(stepN); }, '📤 Envoyer une autre image')); }
+  else {
+    const file = h('input', {type:'file', accept:'image/*'}); const prev = h('img', {class:'preview hidden', alt:''}); const status = h('div', {class:'fb info hidden', style:'margin:10px 0 0'});
+    let pick = null; const btn = h('button', {class:'btn', type:'button', disabled:true, style:'margin-top:8px'}, '📤 Envoyer');
+    file.addEventListener('change', async () => { const f = file.files[0]; if(!f) return; try{ pick = await blobToJpeg(f, 1600, 0.85); prev.src = pick.preview; prev.classList.remove('hidden'); btn.disabled = false; }catch(e){ status.className = 'fb warn'; status.textContent = 'Cette image ne peut pas être lue. Essaie une photo au format JPG ou PNG.'; } });
+    btn.addEventListener('click', async () => {
+      btn.disabled = true; status.className = 'fb info'; status.textContent = 'Envoi en cours…';
+      const path = 'journal/' + slug(ID.classe) + '/' + slug(ID.name) + '/' + prefix + '-' + Date.now() + '.jpg';
+      try{ if(!TEST_MODE){ const r = await supa.storage.from(BUCKET).upload(path, pick.blob, {contentType:'image/jpeg'}); if(r.error) throw r.error; } }
+      catch(e){ btn.disabled = false; status.className = 'fb warn'; status.textContent = "L'envoi n'a pas marché (connexion ?). Réessaie dans un instant."; return; }
+      st.tries++; st.done = true; st.editing = false; st.correct = null; st.answer = doneMsg; st.extra = {[key]:path};
+      await saveAnswer(q, st.answer, null, false, doneMsg, st.extra); renderStep(stepN);
+    });
+    card.append(file, prev, h('div', null, btn), status);
+  }
+  return card;
+}
+
+/* ============ ÉTAPE 9 : la Une, le classement, les images ============ */
 function viewUne(body){
   const T = D.TYPES, e3 = X('3-rub');
   body.append(h('div', {class:'box warm'}, h('h3', null, 'La Une, c\'est quoi ?'), h('div', {style:'font-size:15.5px'}, h('p', {style:'margin:0 0 6px'}, 'La ', h('b', null, 'Une'), ' est la première page du journal : celle qui donne envie de l\'ouvrir. Elle contient :'),
     h('ul', {style:'margin:0 0 8px;padding-left:20px'}, h('li', null, h('b', null, 'le titre du journal'), ' (son nom, avec son logo) ;'), h('li', null, h('b', null, 'la date et le numéro'), ' ;'), h('li', null, h('b', null, 'le gros titre'), ' : l\'article le plus important, avec une photo ou une illustration et sa ', h('b', null, 'légende'), ' ;'), h('li', null, h('b', null, 'les accroches'), ' : de petites phrases qui donnent envie de lire les autres articles.')),
     h('p', {style:'margin:0'}, h('b', null, 'Le style graphique'), ' est l\'identité visuelle du journal : ses couleurs, sa police, son logo, sa mise en page. Trois règles : 2 ou 3 couleurs maximum ; 2 polices maximum ; tout doit rester lisible et plaire à tes lecteurs (les élèves du lycée).'))));
   body.append(quiz(C.allQuestions.find(x => x.id === '9-quiz'), '1. Les éléments d\'une Une', 'Associe chaque description au bon élément.', D.UNE_QUIZ.map(([q, a]) => ({q, opts:D.UNE_OPTS, exp:a}))));
+  // hiérarchie de l'information
+  body.append(h('div', {class:'box'}, h('h3', null, 'La hiérarchie de l\'information'),
+    h('div', {style:'display:flex;flex-direction:column;gap:8px;align-items:center;margin:6px 0 10px'},
+      h('div', {style:'background:#FBD9DE;border-radius:14px;padding:8px 18px;text-align:center;width:60%;min-width:210px'}, h('b', null, 'À la Une'), h('div', {style:'font-size:14.5px'}, 'l\'info la plus importante')),
+      h('div', {style:'background:#FDEBC4;border-radius:14px;padding:8px 18px;text-align:center;width:80%;min-width:230px'}, h('b', null, 'Page intérieure'), h('div', {style:'font-size:14.5px'}, 'les articles importants')),
+      h('div', {style:'background:#BEEBD9;border-radius:14px;padding:8px 18px;text-align:center;width:100%'}, h('b', null, 'Brèves et rubriques'), h('div', {style:'font-size:14.5px'}, 'les infos courtes'))),
+    h('p', {style:'margin:0 0 4px;font-weight:600'}, 'Je me demande :'), D.PLACE_ASK.map(a => h('p', {style:'margin:0 0 2px;font-size:15.5px'}, '• ' + a))));
+  const selP = D.PLACE_ITEMS.map(() => mkSelect(D.PLACE_OPTS)); const priorC = X('9-classement'); if(priorC.places) selP.forEach((s, i) => { if(priorC.places[i]) s.value = priorC.places[i]; });
+  const whyC = taNode(2, 'L\'information placée à la Une est la plus importante parce que…', priorC.why);
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-classement'), title:'2. Où placer chaque information ?', instruct:'Pour chaque information, choisis où elle va : à la Une, en page intérieure ou en brève. Puis explique ton choix pour la Une.',
+    node:h('div', null, D.PLACE_ITEMS.map((t, i) => h('div', {class:'placeline'}, h('b', null, String.fromCharCode(97 + i) + '. ' + t), h('br'), selP[i])), fld('Pourquoi as-tu mis cette information à la Une ? (1 phrase)', whyC)),
+    getText:() => (selP.some(s => !s.value) || !whyC.value.trim()) ? '' : D.PLACE_ITEMS.map((t, i) => String.fromCharCode(97 + i) + '. ' + t + ' → ' + selP[i].value).join('\n') + '\nPOURQUOI À LA UNE : ' + whyC.value.trim(),
+    emptyMsg:'Choisis un emplacement pour les 6 informations et explique ton choix 🙂', setDisabled:v => { selP.forEach(s => s.disabled = v); whyC.disabled = v; }, minWords:20, wantCorrected:false,
+    rubric:"Classement de 6 informations d'un lycée : a. alerte incendie qui a fait évacuer 600 élèves ; b. menu de la semaine au self ; c. un élève a gagné un concours régional de robotique ; d. horaires du CDI qui changent la semaine prochaine ; e. gymnase fermé deux mois pour travaux ; f. interview d'un nouveau professeur. Critères de hiérarchie : nombre de personnes concernées, caractère récent, importance pour les lecteurs, côté surprenant ou utile. Attendu : l'alerte incendie (a) à la Une ; le menu du self (b) et les horaires du CDI (d) en brève ; les trois autres (c, e, f) en page intérieure, ou exceptionnellement à la Une si c'est justifié. ok = true si (a) est à la Une, si (b) et (d) sont en brève ou en page intérieure, et si la justification s'appuie sur au moins un critère. ok = false sinon : indice sur le critère à utiliser, sans donner le classement.",
+    extra:() => ({places:selP.map(s => s.value), why:whyC.value.trim()}) }));
+  // plan de la Une
   const prior = X('9-plan');
   const jt = inp('Titre du journal', prior.journal || e3.title); const big = inp('Le gros titre de la Une (l\'article principal)', prior.gros);
   const photo = inp('Ex. : photo des élèves pendant la collecte, avec la légende…', prior.photo);
@@ -767,7 +881,7 @@ function viewUne(body){
   const col = inp('Ex. : bleu marine, jaune, blanc', prior.couleurs); const font = mkSelect(D.FONTS); if(prior.police) font.value = prior.police;
   const logo = inp('Ex. : une plume stylisée, la silhouette du lycée…', prior.logo);
   const why = taNode(3, 'Nous avons choisi ces couleurs et cette police parce que…', '');
-  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-plan'), title:'2. Le plan de ma Une', instruct:'Avec ton équipe, décris la Une de ton journal et ton style graphique.',
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-plan'), title:'3. Le plan de ma Une', instruct:'Avec ton équipe, décris la Une de ton journal et ton style graphique.',
     node:h('div', null, fld('Nom du journal', jt), fld('Gros titre', big), fld('Photo ou illustration principale (et sa légende)', photo), acc.map((a, i) => fld('Accroche ' + (i + 1), a)), fld('Couleurs choisies (2 ou 3)', col), fld('Police (style des lettres)', font), fld('Logo (idée)', logo), fld('Pourquoi ces choix conviennent à tes lecteurs ? (2 phrases)', why)),
     getText:() => (!jt.value.trim() || !big.value.trim() || !photo.value.trim() || acc.some(a => !a.value.trim()) || !col.value.trim() || !font.value || !logo.value.trim() || !why.value.trim()) ? '' :
       'NOM DU JOURNAL : ' + jt.value.trim() + '\nGROS TITRE : ' + big.value.trim() + '\nPHOTO : ' + photo.value.trim() + '\nACCROCHES : ' + acc.map(a => a.value.trim()).join(' / ') + '\nCOULEURS : ' + col.value.trim() + '\nPOLICE : ' + font.value + '\nLOGO : ' + logo.value.trim() + '\nPOURQUOI : ' + why.value.trim(),
@@ -775,26 +889,79 @@ function viewUne(body){
     context:() => 'Type de journal : ' + ((T[e3.type] || {}).name || X('2-type').typeName || '?') + '. Rubriques : ' + ((e3.rubriques || []).join(' ; ') || '?') + '.',
     rubric:"Plan de la Une d'un journal de lycée et choix graphiques. ok = true si au moins 5 de ces 6 critères sont remplis : (1) le gros titre est précis et donne envie de lire ; (2) la photo ou illustration est cohérente avec le gros titre ; (3) les 3 accroches renvoient à de vrais articles ou rubriques et donnent envie ; (4) 2 ou 3 couleurs seulement ; (5) la police est cohérente avec le type de journal et les lecteurs ; (6) la justification explique avec au moins une raison le choix des couleurs et de la police. Dans le feedback, cite 1 point fort et le critère à améliorer.",
     extra:() => ({journal:jt.value.trim(), gros:big.value.trim(), photo:photo.value.trim(), accroches:acc.map(a => a.value.trim()), couleurs:col.value.trim(), police:font.value, logo:logo.value.trim()}) }));
-  // maquette (facultatif)
-  const st = S('9-maquette'); const q9 = C.allQuestions.find(x => x.id === '9-maquette');
-  const card = h('div', {class:'q' + (st.done ? ' done' : ''), id:'q-9-maquette'}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, st.done ? '✓' : '•'), h('div', {class:'q-p'}, '3. Ma maquette de la Une (facultatif)', h('small', null, 'Tu as dessiné ou réalisé ta Une (sur papier, Canva…) ? Envoie une photo ou une capture à ta prof.'))));
-  if(st.done) card.append(h('div', {class:'fb ok', style:'margin-left:0'}, '✔ Ta maquette a bien été envoyée à ta prof.'));
-  else {
-    const file = h('input', {type:'file', accept:'image/*'}); const prev = h('img', {class:'preview hidden', alt:''}); const status = h('div', {class:'fb info hidden', style:'margin:10px 0 0'});
-    let pick = null; const btn = h('button', {class:'btn', type:'button', disabled:true, style:'margin-top:8px'}, '📤 Envoyer ma maquette');
-    file.addEventListener('change', async () => { const f = file.files[0]; if(!f) return; try{ pick = await blobToJpeg(f, 1600, 0.85); prev.src = pick.preview; prev.classList.remove('hidden'); btn.disabled = false; }catch(e){ status.className = 'fb warn'; status.textContent = 'Cette image ne peut pas être lue. Essaie une photo au format JPG ou PNG.'; } });
-    btn.addEventListener('click', async () => {
-      btn.disabled = true; status.className = 'fb info'; status.textContent = 'Envoi en cours…';
-      const path = 'journal/' + slug(ID.classe) + '/' + slug(ID.name) + '/une-' + Date.now() + '.jpg';
-      try{ if(!TEST_MODE){ const r = await supa.storage.from(BUCKET).upload(path, pick.blob, {contentType:'image/jpeg'}); if(r.error) throw r.error; } }
-      catch(e){ btn.disabled = false; status.className = 'fb warn'; status.textContent = "L'envoi n'a pas marché (connexion ?). Réessaie dans un instant."; return; }
-      st.tries++; st.done = true; st.correct = null; st.answer = 'Maquette de la Une envoyée'; st.extra = {une:path};
-      await saveAnswer(q9, st.answer, null, false, 'Maquette envoyée', st.extra); renderStep(9);
-    });
-    card.append(file, prev, h('div', null, btn), status);
-  }
-  body.append(card);
+  // images et légende
+  body.append(h('div', {class:'box'}, h('h3', null, 'Une bonne image est…'), D.IMG_QUALITIES.map(([a, b]) => h('p', {style:'margin:0 0 4px;font-size:15.5px'}, h('b', null, a + ' : '), b)),
+    h('div', {class:'fb info', style:'margin:8px 0 0'}, h('b', null, 'Rappel · une légende : '), 'une phrase avec les W (qui, quoi, où, quand). Exemple : « Les élèves rejoignent la cour, mardi 12 novembre. » (Photo : rédaction)')));
+  const priorI = X('9-images'); const imgU = inp('Ex. : photo des élèves dans la cour, prise par l\'équipe', priorI.une); const imgP = inp('Ex. : portrait du professeur interviewé', priorI.page2);
+  const leg = taNode(2, 'Ma légende : une phrase avec qui, quoi, où, quand, puis la source (Photo : …)', priorI.legende);
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-images'), title:'4. Mes images et leur légende', instruct:'Choisis une image pour la Une et une pour ta page 2, puis écris la légende de l\'image de la Une.',
+    node:h('div', null, fld('Image de la Une', imgU), fld('Image de ma page 2', imgP), fld('Légende de l\'image de la Une', leg)),
+    getText:() => (!imgU.value.trim() || !imgP.value.trim() || !leg.value.trim()) ? '' : 'IMAGE DE LA UNE : ' + imgU.value.trim() + '\nIMAGE DE LA PAGE 2 : ' + imgP.value.trim() + '\nLÉGENDE : ' + leg.value.trim(),
+    emptyMsg:'Décris tes deux images et écris la légende 🙂', setDisabled:v => { imgU.disabled = v; imgP.disabled = v; leg.disabled = v; }, minWords:14, wantCorrected:false,
+    context:() => { const e = X('9-plan'); return e.gros ? 'Gros titre de la Une : ' + e.gros + '. ' : ''; },
+    rubric:"Choix d'images et légende pour la Une d'un journal de lycée. Critères : les deux images sont utiles (elles illustrent l'information, elles ne décorent pas) et autorisées (ses propres photos ou images libres de droits ; pas d'élève reconnaissable sans autorisation) ; la légende est une phrase qui répond à au moins 3 des 4 questions Qui / Quoi / Où / Quand, et indique la source (Photo : …). ok = true si la légende répond à au moins 3 des 4 questions et si les images sont cohérentes avec le sujet. ok = false sinon : indice sur ce qui manque dans la légende, sans l'écrire à sa place.",
+    extra:() => ({une:imgU.value.trim(), page2:imgP.value.trim(), legende:leg.value.trim()}) }));
+  body.append(uploadCard('9-maquette', '5. Ma maquette de la Une (facultatif)', 'Tu as dessiné ou réalisé ta Une (sur papier, Canva…) ? Envoie une photo ou une capture à ta prof.', 'une', 'une', 'Maquette de la Une envoyée', 9));
 }
+
+/* ============ ÉTAPE 10 : réaliser mon journal sur Canva ============ */
+function viewCanva(body){
+  const e9 = X('9-plan');
+  body.append(h('div', {class:'box warm'}, h('h3', null, 'Mes règles de mise en page'), D.LAYOUT_RULES.map(([a, b]) => h('p', {style:'margin:0 0 4px;font-size:15.5px'}, h('b', null, a + ' : '), b))));
+  // 1. chemin de fer
+  const pC = X('10-chemin');
+  const pg1 = taNode(3, 'Page 1, la Une : où je place le titre du journal, la date, le gros titre, l\'image, les accroches…', pC.page1);
+  const pg2 = taNode(3, 'Page 2, l\'intérieur : où je place mon article, ma brève, mon image et sa légende…', pC.page2);
+  const f2 = inp('Mes 2 polices', pC.polices || (e9.police || '')); const c3 = inp('Mes 3 couleurs', pC.couleurs || e9.couleurs);
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '10-chemin'), title:'1. Mon chemin de fer', instruct:'Dessine d\'abord ton chemin de fer sur une feuille : une page pour la Une, une page pour l\'intérieur, avec les titres, les images, les textes et les brèves. Puis décris-le ici.',
+    node:h('div', null, fld('Page 1 : la Une', pg1), fld('Page 2 : l\'intérieur', pg2), fld('Mes 2 polices', f2), fld('Mes 3 couleurs', c3)),
+    getText:() => (!pg1.value.trim() || !pg2.value.trim() || !f2.value.trim() || !c3.value.trim()) ? '' : 'PAGE 1 (LA UNE) : ' + pg1.value.trim() + '\nPAGE 2 (L\'INTÉRIEUR) : ' + pg2.value.trim() + '\nPOLICES : ' + f2.value.trim() + '\nCOULEURS : ' + c3.value.trim(),
+    emptyMsg:'Décris tes deux pages, tes polices et tes couleurs 🙂', setDisabled:v => { pg1.disabled = v; pg2.disabled = v; f2.disabled = v; c3.disabled = v; }, minWords:30, wantCorrected:false,
+    context:() => 'Plan de la Une déjà préparé : ' + (e9.gros ? 'gros titre « ' + e9.gros + ' », ' : '') + 'accroches : ' + ((e9.accroches || []).join(' / ') || '?') + '.',
+    rubric:"Chemin de fer d'un journal de lycée de 2 pages décrit par un élève. ok = true si : la page 1 (la Une) place au moins le titre du journal, le gros titre, une image et des accroches ; la page 2 place l'article, la brève et une image avec sa légende ; l'élève indique 2 polices (au maximum) et 2 ou 3 couleurs ; l'organisation est claire (une hiérarchie : le gros titre est le plus gros). ok = false si un élément essentiel manque ou si plus de 3 couleurs ou plus de 2 polices sont annoncées : indice sur ce qui manque ou à réduire, sans réécrire à sa place.",
+    extra:() => ({page1:pg1.value.trim(), page2:pg2.value.trim(), polices:f2.value.trim(), couleurs:c3.value.trim()}) }));
+  // 2. Canva
+  const qC = C.allQuestions.find(x => x.id === '10-canva'); const stC = S('10-canva');
+  const cardC = h('div', {class:'q' + (stC.done ? ' done' : ''), id:'q-10-canva'}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, stC.done ? '✓' : '•'), h('div', {class:'q-p'}, '2. Je réalise mon journal sur Canva', h('small', null, 'Suis les étapes dans l\'ordre et coche chacune quand elle est faite.'))));
+  if(stC.done && !stC.editing){ cardC.append(h('div', {class:'corr', style:'margin-left:0'}, h('small', null, 'Ma réponse'), stC.answer || ''), editBtn(() => { stC.editing = true; renderStep(10); })); }
+  else {
+    const cb = D.CANVA_STEPS.map(() => h('input', {type:'checkbox'})); const fbC = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
+    D.CANVA_STEPS.forEach((t, i) => cardC.append(h('label', {class:'canva-step'}, cb[i], h('span', {class:'no'}, String(i + 1)), h('span', null, t))));
+    cardC.append(h('div', {class:'fb info', style:'margin:8px 0 0'}, h('b', null, 'Astuces Canva : '), D.CANVA_TIPS.join(' ')));
+    const btnC = h('button', {class:'btn', type:'button', style:'margin-top:10px'}, 'Mon journal est réalisé sur Canva');
+    btnC.addEventListener('click', async () => {
+      const n = cb.filter(b => b.checked).length;
+      if(n < cb.length){ fbC.className = 'fb warn'; fbC.textContent = 'Il te reste ' + (cb.length - n) + ' étape(s) à faire ou à cocher 🙂'; return; }
+      btnC.disabled = true; stC.tries++; stC.done = true; stC.editing = false; stC.correct = null; stC.answer = 'Journal réalisé sur Canva : ' + n + ' / ' + cb.length + ' étapes faites'; stC.extra = {steps:n};
+      await saveAnswer(qC, stC.answer, null, false, '', stC.extra); renderStep(10);
+    });
+    cardC.append(btnC, fbC);
+  }
+  body.append(cardC);
+  // 3. bilan
+  const qB = C.allQuestions.find(x => x.id === '10-bilan'); const stB = S('10-bilan');
+  const cardB = h('div', {class:'q' + (stB.done ? ' done' : ''), id:'q-10-bilan'}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, stB.done ? '✓' : '•'), h('div', {class:'q-p'}, '3. Le bilan de mon journal', h('small', null, 'Coche ce qui est vrai pour ton journal, puis note-toi sur 20 avec la grille. Sois honnête : c\'est ta prof qui met la note.'))));
+  if(stB.done && !stB.editing){ cardB.append(h('div', {class:'corr', style:'margin-left:0'}, h('small', null, 'Ma réponse'), stB.answer || ''), editBtn(() => { stB.editing = true; renderStep(10); })); }
+  else {
+    const rc = D.READY_CHECK.map(() => h('input', {type:'checkbox'})); const fbB = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
+    cardB.append(h('div', {style:'font-weight:700;margin:0 0 6px'}, 'Mon journal est prêt si…'), ...D.READY_CHECK.map((t, i) => h('label', {class:'chkrow'}, rc[i], h('span', null, t))));
+    const sel = D.GRID_FINAL.map(g => h('select', null, h('option', {value:''}, '…'), Array.from({length:g.max + 1}, (_, k) => h('option', {value:String(k)}, String(k)))));
+    cardB.append(h('table', {class:'scoretbl gridself'}, h('tr', null, h('th', null, 'Critères'), h('th', null, 'Points'), h('th', null, 'Moi')), D.GRID_FINAL.map((g, i) => h('tr', null, h('td', null, h('b', null, g.name)), h('td', {class:'pts'}, '/' + g.max), h('td', null, sel[i]))), h('tr', {class:'tot'}, h('td', null, 'TOTAL'), h('td', {class:'pts'}, '/20'), h('td', null, ''))));
+    const btnB = h('button', {class:'btn', type:'button', style:'margin-top:10px'}, 'Valider mon bilan');
+    btnB.addEventListener('click', async () => {
+      const n = rc.filter(b => b.checked).length;
+      if(n < rc.length){ fbB.className = 'fb warn'; fbB.textContent = 'Il te reste ' + (rc.length - n) + ' point(s) à vérifier avant de dire que ton journal est prêt 🙂'; return; }
+      if(sel.some(x => !x.value)){ fbB.className = 'fb warn'; fbB.textContent = 'Note-toi sur chaque critère de la grille 🙂'; return; }
+      const sc = Object.fromEntries(D.GRID_FINAL.map((g, i) => [g.id, Number(sel[i].value)])); const tot = Object.values(sc).reduce((a, b) => a + b, 0);
+      btnB.disabled = true; stB.tries++; stB.done = true; stB.editing = false; stB.correct = null; stB.answer = 'Bilan : journal prêt. Auto-évaluation : ' + tot + ' / 20'; stB.extra = {bilan:sc, total:tot};
+      await saveAnswer(qB, stB.answer, null, false, '', stB.extra); renderStep(10);
+    });
+    cardB.append(btnB, fbB);
+  }
+  body.append(cardB);
+  body.append(uploadCard('10-rendu', '4. Mon journal terminé (facultatif)', 'Envoie une capture d\'écran de ta Une (ou de tes deux pages). Rends aussi ton PDF comme ta prof te l\'a demandé.', 'journal', 'rendu', 'Capture du journal terminé envoyée', 10));
+}
+
 function blobToJpeg(blob, maxSide, q){
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(blob); const img = new Image();
@@ -816,6 +983,7 @@ function blobToJpeg(blob, maxSide, q){
     app.replaceChildren(TEST_MODE ? h('div', {class:'test-banner'}, '🧪 Mode test : rien n\'est enregistré') : null, h('div', {class:'id-card'}, h('div', {class:'body'},
       h('h1', null, 'Re-bonjour ' + saved.first + ' !'), h('p', {class:'sub'}, saved.classe + " — on reprend là où tu t'étais arrêté.e ?"),
       h('button', {class:'btn block', type:'button', onclick:() => renderHome()}, 'Reprendre'),
+      C.steps.some(s => stepStarted(s.n)) ? h('button', {class:'btn ghost block', type:'button', style:'margin-top:10px', onclick:() => { REDO = true; renderStep(1); }}, '🔄 Refaire depuis le début (je garde mes réponses)') : null,
       h('button', {class:'btn ghost block', type:'button', style:'margin-top:10px', onclick:() => renderIdentify()}, "Ce n'est pas moi"))));
   } else renderIdentify();
 })();
