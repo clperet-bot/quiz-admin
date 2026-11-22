@@ -232,6 +232,13 @@
   .org{border-left:6px solid var(--violet);background:rgba(123,77,214,.08);border-radius:10px;padding:12px 16px;margin:0 0 14px;line-height:1.7;}
   .or-sep{text-align:center;font-weight:700;color:var(--ink-soft);margin:18px 0 8px;}
   .speak-small{font-size:14px;padding:7px 14px;}
+  .bignum{font-family:'Baloo 2','Poppins',sans-serif;font-size:56px;font-weight:700;color:var(--violet);text-align:center;line-height:1.1;margin:6px 0 2px;}
+  .qlab{text-align:center;font-weight:600;color:var(--ink-soft);margin:0 0 16px;}
+  .listen-big{display:block;width:100%;font-size:21px;padding:22px 16px;margin:0 0 12px;}
+  .texts-bar{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:18px 0 6px;}
+  .texts-bar p{margin:0 0 8px;font-weight:600;color:var(--violet);}
+  .texts-bar .row{display:flex;gap:10px;flex-wrap:wrap;}
+  .texts-bar .btn{flex:1;min-width:140px;}
 </style>
 </head>
 <body>
@@ -265,7 +272,7 @@
         <div class="badge b4">🎤</div>
         <span class="q-label" style="color:var(--pink)">Micro (facultatif)</span>
       </div>
-      <p style="margin:0 0 10px">Tu veux répondre à l'oral ? Teste ton micro : appuie sur le bouton, autorise le micro, puis dis quelques mots. Tu peux aussi ne pas l'utiliser et écrire tes réponses.</p>
+      <p style="margin:0 0 10px">Tu veux répondre à l'oral ? Teste ton micro : appuie sur le bouton, autorise le micro, puis dis quelques mots. Tu peux aussi ne pas l'utiliser : tes réponses s'écrivent sur ta feuille.</p>
       <button class="btn pink" id="mic-test-btn">Tester mon micro</button>
       <div class="meter" id="mic-test-meter-wrap" hidden><div id="mic-test-meter"></div></div>
       <p class="status" id="mic-test-status"></p>
@@ -278,9 +285,9 @@
 
   <!-- ===================== LES TEXTES ===================== -->
   <div id="screen-texts" hidden>
-    <p class="prompt" style="text-align:center">Lis les deux textes de Daniel Pennac, ou écoute-les.</p>
+    <p class="prompt" style="text-align:center">Les textes sont sur ta feuille. Appuie pour les écouter.</p>
     <div id="texts-full"></div>
-    <div class="nav-row"><button class="btn green" id="go-questions">J'ai lu : voir les questions →</button></div>
+    <div class="nav-row"><button class="btn green" id="go-questions">Voir les questions →</button></div>
   </div>
 
   <!-- ===================== QUESTIONS ===================== -->
@@ -288,25 +295,14 @@
     <div class="progress" id="progress"></div>
 
     <section class="frame">
-      <span class="part-tag" id="q-part"></span><span class="pts" id="q-pts"></span>
-      <div class="q-ribbon">
-        <div class="badge" id="q-num">1</div>
-        <span class="q-label" id="q-label"></span>
-      </div>
-      <p class="prompt" id="q-prompt"></p>
-      <div id="q-points-wrap" hidden>
-        <span class="points-title" id="q-points-title"></span>
-        <ul class="points" id="q-points"></ul>
-      </div>
-      <div id="q-org" class="org" hidden></div>
-      <button class="btn ghost speak-small" id="speak-btn" hidden>🔊 Écouter la consigne</button>
+      <div class="bignum" id="q-num">1</div>
+      <p class="qlab" id="q-label"></p>
+      <span id="q-part" hidden></span><span id="q-pts" hidden></span>
+      <p class="prompt" id="q-prompt" style="display:none"></p>
+      <button class="btn violet listen-big" id="speak-btn" hidden>🔊 Écouter la consigne</button>
     </section>
 
-    <details class="reread"><summary>📖 Relire ou écouter les textes</summary><div id="texts-mini"></div></details>
-
-    <div id="answer-area"></div>
-
-    <div class="or-sep" id="or-sep">— ou réponds à l'oral —</div>
+    <div class="or-sep" id="or-sep">Réponds à l'oral si tu veux (sinon, écris sur ta feuille)</div>
 
     <section class="recorder" id="recorder">
 
@@ -343,8 +339,9 @@
       <button class="btn green" id="next-btn" disabled>Question suivante →</button>
     </div>
     <div style="text-align:center">
-      <button class="link-btn" id="skip-btn">Je ne peux pas répondre à cette question</button>
+      <button class="link-btn" id="skip-btn" style="display:none">.</button>
     </div>
+    <div class="texts-bar"><p>Réécouter un texte</p><div class="row" id="texts-mini"></div></div>
   </div>
 
   <!-- ===================== FIN ===================== -->
@@ -375,12 +372,12 @@ const QUIZ = {
   footer: "Lycée Godefroy de Bouillon — Devenir soi : écritures autobiographiques",
   maxSeconds: 240,
   intro: [
-    "Tu lis (ou tu écoutes) <strong>deux textes</strong> de Daniel Pennac, puis tu réponds à <strong>8 questions</strong>.",
-    "Tu peux <strong>écrire</strong> tes réponses, ou répondre <strong>à l'oral</strong> avec le micro, ou faire les deux.",
-    "Tu peux <strong>écouter</strong> chaque consigne et chaque texte avec le bouton 🔊.",
+    "Tu as ta <strong>feuille de contrôle</strong> devant toi : les textes, les questions et tes réponses écrites sont <strong>sur la feuille</strong>.",
+    "Sur cette page, tu peux <strong>écouter</strong> les textes et les consignes avec le bouton 🔊.",
+    "Si tu veux, tu peux aussi <strong>répondre à l'oral</strong> avec le micro.",
     "Tu ne peux pas quitter cette page pendant le contrôle."
   ],
-  notice: "⏱ Durée conseillée : 1 heure. Réponds avec des phrases.",
+  notice: "⏱ Durée : 1 heure.",
   texts: [
     { id: "A", title: "Texte A", sub: "Pennac raconte son enfance",
       paras: [
@@ -680,21 +677,15 @@ const sessionId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
 
 function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function textsHtml(withSpeak){
-  return QUIZ.texts.map((t, i) => `
-    <div class="text-head">
-      <span class="text-label ${i ? 'b' : ''}">${t.title}</span>
-      <span style="font-weight:600;color:var(--ink-soft)">${t.sub}</span>
-      ${withSpeak ? `<button class="btn ghost speak-small" data-speak-text="${i}">🔊 Écouter le ${t.title.toLowerCase()}</button>` : ''}
-    </div>
-    <div class="textblock ${i ? 'b' : ''}">${t.paras.map(p => `<p>${esc(p)}</p>`).join('')}</div>
-    <p class="gloss">${esc(t.gloss)}</p>`).join('');
+function textsHtml(big){
+  return QUIZ.texts.map((t, i) =>
+    `<button class="btn ${i ? 'pink' : 'green'} ${big ? 'listen-big' : ''}" data-speak-text="${i}">🔊 Écouter le ${t.title}</button>`).join('');
 }
 function wireTextSpeakButtons(root){
   root.querySelectorAll('[data-speak-text]').forEach(b => {
     b.addEventListener('click', () => {
       const t = QUIZ.texts[parseInt(b.dataset.speakText)];
-      speak(t.title + '. ' + t.paras.join(' '), b);
+      speak(t.title + '. ' + t.paras.join(' ') + ' ' + t.gloss.replace(/^Mots : /, 'Mots difficiles : '), b);
     });
   });
 }
@@ -706,7 +697,7 @@ async function startQuiz(){
   $('screen-texts').hidden = false;
   $('texts-full').innerHTML = textsHtml(true);
   wireTextSpeakButtons($('texts-full'));
-  $('texts-mini').innerHTML = textsHtml(true);
+  $('texts-mini').innerHTML = textsHtml(false);
   wireTextSpeakButtons($('texts-mini'));
   $('cheat-banner').hidden = false;
   cheatArmed = true;
@@ -721,30 +712,7 @@ function renderProgress(){
   }).join('');
 }
 
-function hasTyped(qi){
-  const q = QUIZ.questions[qi], s = state[qi];
-  if(q.type === 'table') return s.cells.some(c => c.a.trim() || c.b.trim());
-  return s.text.trim().length > 0;
-}
-
-function renderAnswerArea(i){
-  const q = QUIZ.questions[i], s = state[i];
-  const area = $('answer-area');
-  if(q.type === 'table'){
-    area.innerHTML = '<div class="tbl">' + q.rows.map((r, ri) => `
-      <div class="tbl-row"><b>${esc(r)}</b>
-        <label class="cell-lab" for="c${ri}a">Texte A</label><textarea class="cell" id="c${ri}a" data-r="${ri}" data-k="a">${esc(s.cells[ri].a)}</textarea>
-        <label class="cell-lab" for="c${ri}b">Texte B</label><textarea class="cell" id="c${ri}b" data-r="${ri}" data-k="b">${esc(s.cells[ri].b)}</textarea>
-      </div>`).join('') + '</div>';
-    area.querySelectorAll('textarea.cell').forEach(el => el.addEventListener('input', () => {
-      state[current].cells[+el.dataset.r][el.dataset.k] = el.value;
-      refreshNext();
-    }));
-  } else {
-    area.innerHTML = `<textarea class="ans ${q.long ? 'long' : ''}" id="ans" placeholder="Écris ta réponse ici…">${esc(s.text)}</textarea>`;
-    $('ans').addEventListener('input', e => { state[current].text = e.target.value; refreshNext(); });
-  }
-}
+function hasTyped(qi){ return false; }
 
 function showQuestion(i){
   current = i;
@@ -755,26 +723,11 @@ function showQuestion(i){
   $('q-pts').textContent = q.pts + (q.pts > 1 ? ' points' : ' point');
   $('q-label').textContent = q.label;
   $('q-prompt').textContent = q.prompt;
-  if(q.points && q.points.length){
-    $('q-points-title').textContent = q.pointsTitle || 'Aide';
-    $('q-points').innerHTML = q.points.map(p => `<li>${p}</li>`).join('');
-    $('q-points-wrap').hidden = false;
-  } else {
-    $('q-points-wrap').hidden = true;
-  }
-  if(q.org){
-    $('q-org').innerHTML = '<strong style="color:var(--violet)">Comment organiser ma réponse :</strong><br>' + q.org.join('<br>');
-    $('q-org').hidden = false;
-  } else {
-    $('q-org').hidden = true;
-  }
   stopSpeaking();
   try{ $('review-audio').pause(); } catch(e){}
   $('speak-btn').hidden = !('speechSynthesis' in window);
   $('speak-btn').textContent = '🔊 Écouter la consigne';
   $('next-btn').textContent = (i === QUIZ.questions.length - 1) ? 'Terminer mon contrôle ✓' : 'Question suivante →';
-  $('skip-btn').hidden = false;
-  renderAnswerArea(i);
   resetRecorderUI();
   refreshNext();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -785,8 +738,7 @@ function anyUploading(qi){ return state[qi].takes.some(t => t.status === 'upload
 
 function refreshNext(){
   const s = state[current];
-  const answered = hasTyped(current) || okTakes(current).length > 0 || s.skipped;
-  const ready = answered && !anyUploading(current) && recState === 'idle-or-review';
+  const ready = !anyUploading(current) && recState === 'idle-or-review';
   $('next-btn').disabled = !ready;
 }
 
@@ -802,7 +754,7 @@ function pickFrenchVoice(){
 function resetSpeakLabels(){
   document.querySelectorAll('[data-speak-text]').forEach(b => {
     const i = parseInt(b.dataset.speakText);
-    b.textContent = '🔊 Écouter le ' + QUIZ.texts[i].title.toLowerCase();
+    b.textContent = '🔊 Écouter le ' + QUIZ.texts[i].title;
   });
   const b = $('speak-btn');
   if(b) b.textContent = '🔊 Écouter la consigne';
@@ -833,7 +785,8 @@ function speak(text, btn){
 }
 function speakCurrent(){
   const q = QUIZ.questions[current];
-  let text = q.prompt;
+  let text = 'Question ' + (current + 1) + '. ' + q.prompt;
+  if(q.rows) text += ' Les lignes du tableau : ' + q.rows.join(', ') + '.';
   if(q.points && q.points.length) text += ' ' + (q.pointsTitle || 'Aide') + ' : ' + q.points.join(', ') + '.';
   if(q.org) text += ' Comment organiser ma réponse : ' + q.org.join(' ').replace(/<[^>]+>/g, '').replace(/[①②③④]/g, '');
   speak(text, $('speak-btn'));
@@ -1131,7 +1084,7 @@ function buildSummaryText(){
   return QUIZ.questions.map((q, i) => {
     const n = okTakes(i).length;
     const typed = typedAnswerOf(i);
-    return `${i + 1}. ${q.label} : ` + (typed ? typed : '(pas de réponse écrite)') + (n ? ` [+ ${n} enregistrement(s) audio]` : '');
+    return `${i + 1}. ${q.label} : ` + (n ? `${n} enregistrement(s) audio` : 'réponse sur la feuille papier');
   }).join('\n');
 }
 
