@@ -308,9 +308,15 @@ async function flushPending(){
   for(const p of batch){ try{ const { error } = await supa.rpc('save_course_answer_v2', p); if(error) throw error; } catch(e){ PENDING.push(p); } }
   persistPending();
 }
+let GATE = null; // étape maximale ouverte par la prof pour cette classe (null = pas de limite)
+async function loadGate(){
+  if(TEST_MODE || isTeacher()) return false;
+  try{ const { data, error } = await supa.rpc('get_course_gate', { p_course:C.id, p_classe:ID.classe }); if(error) throw error; const g = (typeof data === 'number') ? data : null; const changed = g !== GATE; GATE = g; return changed; }catch(e){ return false; }
+}
 async function loadProgress(){
   Object.keys(STATE).forEach(k => delete STATE[k]);
   if(TEST_MODE) return;
+  await loadGate();
   await flushPending();
   const { data } = await supa.rpc('get_course_progress_v2', { p_course:C.id, p_classe:ID.classe, p_norm:ID.norm });
   (data || []).forEach(r => {
@@ -474,8 +480,10 @@ function levelupReminder(step){
 }
 function isTeacher(){ if(TEST_MODE) return true; if(!ID) return false; const t = String(ID.norm || ID.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z]+/).filter(Boolean); return t.includes('clemence') && (t.includes('peret') || t.includes('perret')); }
 // Étapes verrouillées dans l'ordre (retour en arrière toujours possible) ; la prof (ou ?test=1) a tout ouvert
-function stepUnlocked(n){ if(isTeacher() || n === 1 || stepStarted(n)) return true; for(let m = 1; m < n; m++){ if(!stepDone(m)) return false; } return true; }
+const gated = n => !isTeacher() && GATE !== null && n > GATE;
+function stepUnlocked(n){ if(isTeacher()) return true; if(gated(n)) return false; if(n === 1 || stepStarted(n)) return true; for(let m = 1; m < n; m++){ if(!stepDone(m)) return false; } return true; }
 function stepPill(s){
+  if(gated(s.n)) return h('span', {class:'pill'}, '🔒 pas encore ouverte');
   if(!stepUnlocked(s.n)) return h('span', {class:'pill'}, '🔒 à débloquer');
   if(stepDone(s.n)) return h('span', {class:'pill ok'}, '✅ validée');
   if(stepStarted(s.n)) return h('span', {class:'pill prog'}, 'en cours');
@@ -483,6 +491,7 @@ function stepPill(s){
 }
 function renderHome(){
   setTop(true);
+  loadGate().then(ch => { if(ch && document.getElementById('app') && !document.querySelector('.taskbox')) renderHome(); });
   const next = C.steps.find(s => !stepDone(s.n) && stepUnlocked(s.n));
   const rows = C.steps.map(s => {
     const ok = stepDone(s.n), un = stepUnlocked(s.n);
@@ -535,7 +544,8 @@ function updateChrome(){
   const prev = n > 1 ? h('button', {class:'btn ghost', type:'button', onclick:() => renderStep(n - 1)}, '← Étape ' + (n - 1)) : h('span');
   let nxt;
   if(n < C.steps.length){
-    if(stepUnlocked(n + 1)) nxt = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', onclick:() => renderStep(n + 1)}, 'Étape ' + (n + 1) + ' →');
+    if(gated(n + 1)) nxt = h('button', {class:'btn locked-btn', type:'button', onclick:async e => { const b = e.currentTarget; b.textContent = '…'; await loadGate(); if(stepUnlocked(n + 1)) renderStep(n + 1); else b.textContent = '🔒 Étape ' + (n + 1) + ' : ta prof l\'ouvrira bientôt'; }}, '🔒 Étape ' + (n + 1));
+    else if(stepUnlocked(n + 1)) nxt = h('button', {class:'btn' + (done ? ' green' : ''), type:'button', onclick:() => renderStep(n + 1)}, 'Étape ' + (n + 1) + ' →');
     else nxt = h('button', {class:'btn locked-btn', type:'button', 'aria-disabled':'true', onclick:() => { const b = document.getElementById('todo-box'); if(b){ b.scrollIntoView({behavior:'smooth', block:'center'}); b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 2200); } }}, '🔒 Étape ' + (n + 1));
   }
   else nxt = done ? h('button', {class:'btn green', type:'button', onclick:() => renderHome()}, 'Terminer 🎉') : h('span');

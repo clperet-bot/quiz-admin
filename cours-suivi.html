@@ -141,6 +141,7 @@
       <span class="stamp" id="stamp"></span>
     </div>
 
+    <div id="gatebox" style="display:none;background:#fff;border:2px solid #c9b8f5;border-radius:14px;padding:12px 14px;margin:10px 0"></div>
     <div class="stats" id="stats"></div>
 
     <div id="bilan"></div>
@@ -243,8 +244,27 @@ function ago(iso){
 }
 const isDone = r => r.is_correct === true || r.revealed === true || (r.is_correct === null && !!r.answer);
 
+async function renderGate(fClass){
+  const box = document.getElementById('gatebox');
+  if(CK !== 'journal' || !fClass || !C.steps || C.steps.length < 2){ box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  let cur = null;
+  try{ const r = await supa.from('course_gates').select('max_step').eq('course', C.id).eq('classe', fClass).maybeSingle(); if(r.data) cur = r.data.max_step; }catch(e){}
+  const N = C.steps.length;
+  const btn = (label, v, on) => `<button type="button" data-v="${v}" style="margin:3px;padding:7px 12px;border-radius:10px;border:2px solid ${on ? '#6d3fd6' : '#d9d2f0'};background:${on ? '#6d3fd6' : '#fff'};color:${on ? '#fff' : '#3b2a78'};font-weight:700;cursor:pointer">${label}</button>`;
+  box.innerHTML = `<b>🔓 Étapes ouvertes pour ${esc(fClass)}</b> <span style="color:#6b6486;font-size:14px">${cur === null ? '(aucune limite : les élèves avancent librement)' : '(les élèves peuvent aller jusqu\'à l\'étape ' + cur + ')'}</span><div style="margin-top:6px">`
+    + Array.from({length:N}, (_, i) => btn('Étape ' + (i + 1), i + 1, cur === i + 1)).join('') + btn('Tout ouvrir', 'all', cur === null) + '</div>';
+  box.querySelectorAll('button').forEach(b => b.addEventListener('click', async () => {
+    const v = b.dataset.v; b.disabled = true;
+    const q = v === 'all' ? await supa.from('course_gates').delete().eq('course', C.id).eq('classe', fClass)
+      : await supa.from('course_gates').upsert({course:C.id, classe:fClass, max_step:Number(v), updated_at:new Date().toISOString()}, {onConflict:'course,classe'});
+    if(q.error) alert('Erreur : ' + q.error.message);
+    renderGate(fClass);
+  }));
+}
 function render(){
   const fClass = document.getElementById('f-class').value;
+  if(fClass !== window._gc){ window._gc = fClass; renderGate(fClass); }
   const rows = ROWS.filter(r => !fClass || r.classe === fClass);
 
   // --- regroupement par élève (nom normalisé + classe)
