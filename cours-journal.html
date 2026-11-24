@@ -481,7 +481,7 @@ function levelupReminder(step){
 function isTeacher(){ if(TEST_MODE) return true; if(!ID) return false; const t = String(ID.norm || ID.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z]+/).filter(Boolean); return t.includes('clemence') && (t.includes('peret') || t.includes('perret')); }
 // Étapes verrouillées dans l'ordre (retour en arrière toujours possible) ; la prof (ou ?test=1) a tout ouvert
 const gated = n => !isTeacher() && GATE !== null && n > GATE;
-function stepUnlocked(n){ if(isTeacher()) return true; if(gated(n)) return false; if(n === 1 || stepStarted(n)) return true; for(let m = 1; m < n; m++){ if(!stepDone(m)) return false; } return true; }
+function stepUnlocked(n){ if(isTeacher()) return true; if(gated(n)) return false; if(GATE !== null) return true; if(n === 1 || stepStarted(n)) return true; for(let m = 1; m < n; m++){ if(!stepDone(m)) return false; } return true; }
 function stepPill(s){
   if(gated(s.n)) return h('span', {class:'pill'}, '🔒 pas encore ouverte');
   if(!stepUnlocked(s.n)) return h('span', {class:'pill'}, '🔒 à débloquer');
