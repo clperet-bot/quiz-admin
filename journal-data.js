@@ -5,25 +5,27 @@
 (function(){
 
 const ROLES = [
-  ['🕵️ Enquêteur','Tu cherches des infos fiables sur le terrain ou sur Internet.'],
-  ['📸 Photographe','Tu prends ou choisis des images pour illustrer les articles.'],
-  ['🧠 Fact-checker','Tu vérifies que les infos sont vraies et bien expliquées.'],
-  ['🎨 Designer','Tu rends le journal beau, clair et agréable à lire.'],
-  ['📣 Chargé de communication','Tu présentes le projet à l\'extérieur (professeurs, élèves, affiches…).'],
-  ['✍️ Chroniqueur','Tu écris un article d\'opinion, une critique ou une chronique régulière.'],
-  ['🪶 Correcteur','Tu relis les articles, corriges les fautes et aides à reformuler si besoin.']
+  ['Rédacteur.rice en chef','Tu décides, tu répartis les sujets, tu choisis la Une.'],
+  ['Chef.fe de rubrique','Tu suis une rubrique du journal.'],
+  ['Journaliste','Tu enquêtes et tu écris les articles.'],
+  ['Photographe','Tu choisis ou tu prends les images.'],
+  ['Fact-checker','Tu vérifies que les infos sont vraies.'],
+  ['Correcteur.rice','Tu relis et tu corriges les textes.'],
+  ['Maquettiste','Tu mets le journal en page sur Canva.']
 ];
+const ROLE_ALONE = 'Et si je suis seul.e ? Je porte plusieurs casquettes, à tour de rôle.';
+const ROLE_RULES = ['Je respecte la date de bouclage (le rendu).', 'Je vérifie avant de publier.', 'Je sépare les faits et les avis.', 'Je cite mes sources et mes témoins.', 'Je respecte les personnes (pas d\'insulte, droit à l\'image).'];
 
 const TYPES = {
   actu:{ name:'Journal d\'actualité du lycée', icon:'📰',
     desc:'On écrit sur ce qui vient de se passer dans le lycée : une sortie, un tournoi sportif, une fête, une intervention…',
-    rubriques:['Événements récents (sorties, compétitions, fêtes, interventions d\'invités…)','Actualité du lycée (projets, travaux, nouveautés, changements dans l\'établissement)','Brèves (petites infos rapides du quotidien)','Interviews (d\'élèves, de professeurs, de la direction, d\'intervenants)','Reportage photo (images d\'un événement important)'] },
+    rubriques:['Événements récents','Actualité du lycée','Brèves','Interviews','Reportage photo'] },
   mag:{ name:'Magazine thématique', icon:'📘',
     desc:'On choisit un seul grand thème et on écrit uniquement dessus (par exemple : le sport au lycée, la culture, l\'écologie, la vie des élèves…).',
-    rubriques:['Portraits (d\'élèves sportifs, d\'artistes, de passionnés…)','Interview (prof, élève, intervenant extérieur)','Reportage (sur un projet ou une activité en lien avec le thème)','Dossier spécial (ex. : pourquoi l\'écologie est importante au lycée, ou l\'histoire d\'un club sportif)','Conseils / astuces (comment s\'entraîner, s\'organiser, progresser dans le thème choisi)','Témoignages (avis d\'élèves, expériences personnelles)'] },
+    rubriques:['Portraits','Interview','Reportage','Dossier spécial','Conseils et astuces'] },
   gen:{ name:'Journal scolaire général', icon:'🗞️',
     desc:'On mélange plusieurs rubriques : actualité du lycée, sport, culture, interviews, avis d\'élèves…',
-    rubriques:['Actualité du lycée (sorties, événements, projets, nouveautés)','Vie culturelle (spectacles, cinéma, lecture, expos, événements culturels locaux)','Sport (compétitions, portraits de sportifs, résultats)','Vie des élèves (témoignages, débats, sondages, coups de cœur / coups de gueule)','Interviews (professeurs, élèves, personnels du lycée, parents d\'élèves)','Créations (poèmes, dessins, petites nouvelles écrites par les élèves)','Jeux / détente (mots croisés, quiz, BD, blagues)','Tribune libre (espace d\'expression : opinions, débats, critiques)'] }
+    rubriques:['Actualité du lycée','Vie culturelle et sport','Vie des élèves','Créations et jeux','Tribune libre'] }
 };
 
 // Quiz (menus déroulants corrigés automatiquement)
@@ -227,27 +229,92 @@ const PLACE_ITEMS = [
 const PLACE_ASK = ['Combien de personnes sont concernées ?', 'Est-ce récent ?', 'Est-ce important pour les lecteurs ?', 'Est-ce surprenant ou utile ?'];
 const IMG_QUALITIES = [['Utile', 'elle illustre l\'info, elle ne décore pas.'], ['Nette', 'bien cadrée, ni floue ni trop sombre.'], ['Autorisée', 'tes photos ou des images libres de droits ; pas d\'élève reconnaissable sans autorisation.'], ['Légendée', 'une phrase : qui, quoi, où, et la source.']];
 
+// Étape 9 : choisir son format, styles, recettes de titres, JT
+const FORMATS = [
+  { id:'une', name:'La Une d\'un journal', icon:'📰', txt:'Tu crées la première page d\'un vrai journal, sur Canva. Tu rends 2 pages en PDF. Tu vas aimer : la mise en page, les images, le gros titre qui accroche.' },
+  { id:'jt', name:'Le JT : les grands titres', icon:'📺', txt:'Tu crées une courte vidéo de journal télévisé, sur Canva. Tu rends une vidéo MP4 d\'environ 30 secondes. Tu vas aimer : le rythme, les animations, la musique.' }
+];
+const UNE_STYLES = [
+  ['La Une classique', 'Un gros titre + une image. Idéale pour une information importante.'],
+  ['L\'édition spéciale', 'Un bandeau rouge + un titre. Idéale pour un événement exceptionnel.'],
+  ['La Une magazine', 'Une grande image + des titres courts. Idéale pour un portrait ou un dossier.']
+];
+const TITLE_RECIPES = [
+  ['Un chiffre + un verbe d\'action', '« 600 élèves évacuent le lycée en 5 minutes »'],
+  ['Une question', '« Le self ouvrira-t-il plus tôt ? »'],
+  ['Un mot choc + deux-points', '« ÉDITION SPÉCIALE : la finale a basculé »']
+];
+const JT_PARTS = [['Le nom du JT', 'en haut'], ['La pastille « en direct »', 'elle donne le rythme'], ['Le gros titre', 'l\'information principale'], ['L\'image', 'elle illustre le titre'], ['Le bandeau', 'les titres courts, en bas'], ['La date et l\'heure', 'qui dit quand']];
+const JT_SCENES = ['Le nom du JT', 'Le gros titre', 'Le titre 2', 'Le titre 3', 'Au revoir'];
+const JT_STYLES = [
+  ['Le JT classique', 'Un ton sérieux, des titres courts. Idéal pour une information importante.'],
+  ['L\'édition spéciale', 'Un seul événement, un bandeau rouge. Idéale pour un événement exceptionnel.'],
+  ['Le flash info', 'Trois infos très courtes, un rythme rapide. Idéal pour résumer la semaine.']
+];
+
 // Étape 10 : la mise en page sur Canva
 const LAYOUT_RULES = [['Une grille', 'je range titres, images et textes en colonnes.'], ['2 polices', 'une pour les titres, une pour le texte.'], ['3 couleurs', 'pas plus, toujours les mêmes.'], ['Des titres hiérarchisés', 'le gros titre est le plus gros.'], ['De l\'espace blanc', 'je laisse respirer la page.']];
-const CANVA_STEPS = [
-  'Sur Canva, clique sur « Créer un design » et choisis un format A4.',
-  'Ajoute une 2e page : ton journal = la Une + la page 2.',
-  'Applique tes 2 polices et tes 3 couleurs.',
-  'Page 1 : place le titre du journal, la date, le gros titre, l\'image et les accroches.',
-  'Page 2 : place ton article, ta brève, ton image et sa légende.',
-  'Importe tes images (« Importer ») ou cherche des images libres dans Canva.',
-  'Vérifie : alignements, texte lisible, titres plus gros que le texte, aucune faute.',
-  'Télécharge en PDF (« Partager », puis « Télécharger ») et rends ton fichier.'
+const CANVA_UNE = [
+  { h:'Partie 1 · Je me connecte et je choisis mon modèle', steps:[
+    'Ouvre ton navigateur et va sur canva.com.',
+    'Clique sur « Se connecter » (en haut à droite).',
+    'Clique sur « Continuer avec Google » ou écris ton adresse e-mail. Si Canva envoie un code : copie-le depuis ta boîte mail et colle-le dans Canva.',
+    'Sur la page « Accueil », écris « journal » dans la barre de recherche, puis appuie sur Entrée.',
+    'Choisis un modèle sans couronne (les modèles avec une couronne sont payants), puis clique sur « Personnaliser ce modèle ».'] },
+  { h:'Partie 2 · Je personnalise ma Une', steps:[
+    'Double-clique sur un texte du modèle et écris le titre de ton journal, la date et ton gros titre.',
+    'Clique sur un texte, puis ouvre le menu des polices en haut et choisis l\'une de tes 2 polices.',
+    'Pour une couleur : clique sur l\'élément, puis sur le carré de couleur en haut, et choisis l\'une de tes 3 couleurs.',
+    'Pour ajouter ta photo : « Importer » (menu à gauche), « Importer des fichiers », puis clique sur ta photo. Sans photo : « Photos » et un mot-clé.',
+    'Pour remplacer l\'image du modèle, fais glisser ta photo dessus.',
+    'Page 2 : sous la page, clique sur « Ajouter une page ». Écris ton article, ta brève, ton image et sa légende.'] },
+  { h:'Partie 3 · Je vérifie et je télécharge ma Une', steps:[
+    'Je vérifie : tout est aligné, le texte se lit facilement, les titres sont plus gros que le texte, chaque image a sa légende, aucune faute, 2 polices et 3 couleurs seulement.',
+    'Clique sur « Partager » (en haut à droite), puis sur « Télécharger ».',
+    'Type de fichier : « PDF (standard) », pages : « Toutes les pages ». Clique sur « Télécharger » et rends ton fichier.'] }
+];
+const CANVA_JT = [
+  { h:'Partie 1 · Je me connecte et je choisis mon modèle', steps:[
+    'Ouvre ton navigateur et va sur canva.com, puis clique sur « Se connecter » (en haut à droite).',
+    'Clique sur « Continuer avec Google » ou écris ton adresse e-mail. Si Canva envoie un code : copie-le depuis ta boîte mail et colle-le dans Canva.',
+    'Sur la page « Accueil », clique sur « Créer », puis sur « Vidéo ».',
+    'Dans le menu de gauche, clique sur « Modèles » et écris « breaking news » ou « journal télévisé » (ou « flash info », « actualités », « édition spéciale »).',
+    'Choisis un modèle sans couronne (les modèles avec une couronne sont payants) et clique dessus. Si Canva demande, applique toutes les pages du modèle.'] },
+  { h:'Partie 2 · Je repère mon écran Canva', steps:[
+    'Je repère les scènes : une vignette = une scène (en bas).',
+    'Je repère le « + » (ajouter une scène), la piste audio (la musique) et les barres colorées (la durée de chaque texte).',
+    'Je repère « Importer » (mes images), « Photos » (images libres de droits), « Aperçu » (voir la vidéo en entier) et « Partager » (télécharger).'] },
+  { h:'Partie 3 · Je personnalise mes scènes', steps:[
+    'Clique sur la 1re scène, double-clique sur un texte, efface-le et écris le nom de ton JT.',
+    'Clique sur la scène suivante : écris ton gros titre, puis ton titre 2 et ton titre 3.',
+    'Pour ajouter une scène : « + » à droite des vignettes. Pour copier une scène : clic droit, puis « Dupliquer la page ».',
+    'Pour changer la durée : tire le bord droit de la vignette (plus long vers la droite, plus court vers la gauche).',
+    'Pour ta photo : « Importer », « Importer des fichiers », puis fais-la glisser sur l\'image du modèle.',
+    'Écris ta phrase dans le bandeau du bas (double-clique sur le texte du bandeau).'] },
+  { h:'Partie 4 · J\'anime, je vérifie et je télécharge', steps:[
+    'Clique sur un texte, puis sur « Animer » (en haut) et choisis un effet simple.',
+    'Pour la musique : « Ajouter une piste audio » (sous la frise), écris « news » et choisis un son sans couronne.',
+    'Clique sur « Aperçu » et regarde toute ta vidéo. Je vérifie : les textes se lisent facilement, les titres sont très courts, aucune faute, la vidéo dure environ 30 secondes, aucun.e élève n\'est reconnaissable sans autorisation.',
+    'Clique sur « Partager », puis « Télécharger ». Type de fichier : « MP4 ». Clique sur « Télécharger » et rends ta vidéo.'] }
 ];
 const CANVA_TIPS = ['Utilise « Annuler » si tu te trompes.', 'Garde les mêmes polices partout.', 'Enregistre souvent.'];
-const READY_CHECK = ['Mon article respecte les 5 W.', 'Mon article est relu et corrigé.', 'Ma Une a un gros titre et une image.', 'Mes images ont une légende.', 'J\'utilise 2 polices et 3 couleurs.', 'Mon PDF est exporté.'];
+const READY_UNE = ['Mon article respecte les 5 W.', 'Mon article est relu et corrigé.', 'Ma Une a un gros titre et une image.', 'Mes images ont une légende.', 'J\'utilise 2 polices et 3 couleurs.', 'Mon PDF est téléchargé.'];
 // Grille de bilan du journal complet (/20)
+const READY_JT = ['Mon gros titre répond aux W.', 'Mon article est relu et corrigé.', 'Mes titres sont courts.', 'Mes 5 scènes sont dans l\'ordre.', 'J\'ai mis de la musique ou des animations.', 'Ma vidéo MP4 est téléchargée.'];
+const GRID_JT = [
+  { id:'j_faits', name:'Faits et 5 W dans le gros titre', max:4 },
+  { id:'j_titres', name:'Titres courts et clairs', max:3 },
+  { id:'j_hier', name:'Hiérarchie : le plus important en premier', max:3 },
+  { id:'j_img', name:'Images utiles et autorisées', max:3 },
+  { id:'j_montage', name:'Montage : scènes, durée, texte lisible', max:4 },
+  { id:'j_ortho', name:'Orthographe', max:3 }
+];
 const GRID_FINAL = [
   { id:'f_struct', name:'Structure journalistique (5 W)', max:4 },
   { id:'f_style', name:'Style journalistique', max:3 },
   { id:'f_titre', name:'Titre et chapeau', max:2 },
   { id:'f_ortho', name:'Orthographe et grammaire', max:2 },
-  { id:'f_hier', name:'Hiérarchie et Une', max:3 },
+  { id:'f_hier', name:'Une : gros titre, hiérarchie, style choisi', max:3 },
   { id:'f_img', name:'Images et légendes', max:3 },
   { id:'f_page', name:'Mise en page', max:3 }
 ];
@@ -298,24 +365,27 @@ const course = {
       acts:['Je repère les erreurs d\'un texte','Je relis mon article avec la grille','Je vois où j\'en suis avec la grille sur 20'],
       goal:'Objectif : relire ton article avec la grille de relecture, puis voir où tu en es avec la grille d\'évaluation.',
       qs:[{id:'8-texte', prompt:'Repérer les erreurs d\'un texte'},{id:'8-check', prompt:'Grille de relecture'},{id:'8-eval', prompt:'Article final (grille d\'évaluation)'}] },
-    { n:9, title:'La Une et les images', skill:'Compréhension et expression écrites', lu:'Écrire : concevoir la Une d\'un journal',
-      task:'construire la Une de mon journal : classer les informations, choisir le gros titre et les images.',
-      acts:['Je classe 6 informations','Je compose ma Une','Je choisis et je légende mes images'],
-      goal:'Objectif : classer les informations, imaginer la Une de ton journal, choisir un style graphique et des images légendées.',
-      qs:[{id:'9-quiz', prompt:'Les éléments d\'une Une'},{id:'9-classement', prompt:'Classer 6 informations'},{id:'9-plan', prompt:'Le plan de ma Une'},{id:'9-images', prompt:'Mes images et leur légende'},{id:'9-maquette', prompt:'Maquette de ma Une (facultatif)'}] },
-    { n:10, title:'Je réalise mon journal', skill:'Compétence numérique', lu:'Réaliser un journal avec un outil numérique (Canva)',
-      task:'mettre en page mon journal de 2 pages et le réaliser sur Canva.',
-      acts:['Je dessine mon chemin de fer','Je réalise mon journal sur Canva','Je fais le bilan'],
-      goal:'Objectif : mettre en page ton journal de 2 pages, le réaliser sur Canva puis faire le bilan.',
-      qs:[{id:'10-chemin', prompt:'Mon chemin de fer'},{id:'10-canva', prompt:'Ma réalisation sur Canva'},{id:'10-bilan', prompt:'Le bilan de mon journal'},{id:'10-rendu', prompt:'Mon journal terminé (facultatif)'}] }
+    { n:9, title:'Je construis ma Une ou mon JT', skill:'Compréhension et expression écrites', lu:'Écrire : concevoir la Une d\'un journal ou un journal télévisé',
+      task:'construire la Une de mon journal ou mon JT : classer les informations, choisir mon format, le gros titre et les images.',
+      acts:['Je classe 6 informations','Je choisis mon format : la Une ou le JT','Je compose ma Une ou mon JT','Je choisis et je légende mes images'],
+      goal:'Objectif : classer les informations, choisir ton format (la Une ou le JT), puis préparer le gros titre, les images et la mise en page.',
+      qs:[{id:'9-classement', prompt:'Classer 6 informations'},{id:'9-format', prompt:'Mon format : la Une ou le JT'},{id:'9-quiz', prompt:'Les éléments d\'une Une'},{id:'9-plan', prompt:'Le plan de ma Une'},{id:'9-images', prompt:'Mes images et leur légende'},{id:'9-maquette', prompt:'Maquette de ma Une (facultatif)'},{id:'9-jt-style', prompt:'Mon JT : style et nom'},{id:'9-jt-titres', prompt:'Mon JT : mes grands titres'},{id:'9-jt-scenes', prompt:'Mon JT : mes 5 scènes'}] },
+    { n:10, title:'Je réalise ma Une ou mon JT', skill:'Compétence numérique', lu:'Réaliser un journal ou un JT avec un outil numérique (Canva)',
+      task:'réaliser ma Une (2 pages) ou mon JT (vidéo de 30 secondes) sur Canva, puis faire le bilan.',
+      acts:['Je dessine mon plan (Une) ou je prépare mes scènes (JT)','Je réalise ma Une ou mon JT sur Canva','Je fais le bilan'],
+      goal:'Objectif : réaliser ta Une ou ton JT sur Canva, le télécharger puis faire le bilan.',
+      qs:[{id:'10-chemin', prompt:'Mon chemin de fer'},{id:'10-canva', prompt:'Ma Une sur Canva'},{id:'10-jt-canva', prompt:'Mon JT sur Canva'},{id:'10-bilan', prompt:'Le bilan de ma Une ou de mon JT'},{id:'10-rendu', prompt:'Mon travail terminé (facultatif)'}] }
   ]
 };
 course.allQuestions = [];
 course.steps.forEach(s => (s.qs || []).forEach((q, i) => { q.step = s.n; q.level = '—'; q.index = i; course.allQuestions.push(q); }));
 // questions facultatives (ne bloquent pas la validation de l'étape)
+// questions propres à un parcours (Une ou JT) : elles ne comptent que si l'élève a choisi ce parcours à l'étape 9
+course.pathOf = { '9-quiz':'une', '9-plan':'une', '9-images':'une', '9-maquette':'une', '10-chemin':'une', '10-canva':'une', '9-jt-style':'jt', '9-jt-titres':'jt', '9-jt-scenes':'jt', '10-jt-canva':'jt' };
+course.inPath = (id, fmt) => { const p = course.pathOf[id]; return !p || p === fmt; };
 course.optional = ['6-temoin', '6-quiz', '6-mail', '9-maquette', '10-rendu'];
 
 window.JOURNAL_COURSE = course;
 window.JOURNAL_DATA = { ROLES, TYPES, QUIZ_TYPES, QUIZ_RUB, QUIZ_OPEN, OPEN_OPTS, QUIZ_MAIL, MAIL_MODEL, G_NOW, QUIZ_ARTICLE, QUIZ_PLURAL, PROFILES, TYPE_GUIDE, EVENTS, TIPS, CHECKLIST, GRID, UNE_QUIZ, UNE_OPTS, FONTS, HEBDO,
-  INFO_OR_NOT, ANECDOTE, STATUS_OPTS, ARTICLE_EXAMPLE, ARTICLE_MUST, OTHER_MODELS, PLAN_COLS, PLAN_TYPES, TEXT_FIX, PLACE_OPTS, PLACE_ITEMS, PLACE_ASK, IMG_QUALITIES, LAYOUT_RULES, CANVA_STEPS, CANVA_TIPS, READY_CHECK, GRID_FINAL };
+  INFO_OR_NOT, ANECDOTE, STATUS_OPTS, ARTICLE_EXAMPLE, ARTICLE_MUST, OTHER_MODELS, PLAN_COLS, PLAN_TYPES, TEXT_FIX, ROLE_ALONE, ROLE_RULES, FORMATS, UNE_STYLES, TITLE_RECIPES, JT_PARTS, JT_SCENES, JT_STYLES, CANVA_UNE, CANVA_JT, READY_UNE, READY_JT, GRID_JT, PLACE_OPTS, PLACE_ITEMS, PLACE_ASK, IMG_QUALITIES, LAYOUT_RULES, CANVA_TIPS, GRID_FINAL };
 })();

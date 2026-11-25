@@ -224,6 +224,10 @@
   @media (max-width:640px){ .mailmodel .part{grid-template-columns:1fr;gap:2px;} }
   textarea{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid var(--line);border-radius:12px;font:inherit;font-size:16px;line-height:1.5;background:#fff;resize:vertical;}
   .hl{background:linear-gradient(transparent 55%,#FFE97F 55%);font-weight:700;padding:0 2px;}
+.fmtgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 10px}
+.fmtcard{text-align:left;background:#fff;border:2px solid var(--line,#ddd);border-radius:14px;padding:12px 14px;cursor:pointer;font:inherit;color:inherit}
+.fmtcard.on{border-color:#6d3fd6;background:#f1ebfd}
+@media (max-width:640px){.fmtgrid{grid-template-columns:1fr}}
 </style></head>
 <body>
 
@@ -328,7 +332,8 @@ const S = id => STATE[id] || (STATE[id] = {tries:0});
 const qDone = id => !!(STATE[id] && STATE[id].done);
 
 /* ============ progression (navigation libre) ============ */
-const reqIds = s => s.qs.map(q => q.id).filter(id => !(C.optional || []).includes(id));
+const FMT = () => ((STATE['9-format'] && STATE['9-format'].done && STATE['9-format'].extra) || {}).fmt || null;
+const reqIds = s => s.qs.map(q => q.id).filter(id => !(C.optional || []).includes(id) && C.inPath(id, FMT()));
 const stepDone = n => reqIds(C.steps[n-1]).every(qDone);
 const stepStarted = n => C.steps[n-1].qs.some(q => qDone(q.id));
 
@@ -561,10 +566,10 @@ function viewTeam(body){
   const fb = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
   const btn = h('button', {class:'btn', type:'button', style:'margin-top:6px'}, st.done ? 'Mettre à jour' : 'Enregistrer mon équipe');
   btn.addEventListener('click', async () => {
-    if(!team.value.trim() || !members.value.trim() || !role.value){ fb.className = 'fb warn'; fb.textContent = 'Remplis le nom de ton équipe, les membres et ta spécialité 🙂'; return; }
+    if(!team.value.trim() || !members.value.trim() || !role.value){ fb.className = 'fb warn'; fb.textContent = 'Remplis le nom de ta rédaction, les membres et ton rôle 🙂'; return; }
     btn.disabled = true;
     const e = {team:team.value.trim(), members:members.value.trim(), role:role.value};
-    st.tries++; st.done = true; st.correct = null; st.answer = 'Équipe « ' + e.team + ' » · membres : ' + e.members + ' · spécialité : ' + e.role; st.extra = e; st.feedback = '';
+    st.tries++; st.done = true; st.correct = null; st.answer = 'Équipe « ' + e.team + ' » · membres : ' + e.members + ' · rôle : ' + e.role; st.extra = e; st.feedback = '';
     await saveAnswer(q, st.answer, null, false, '', e);
     setTop(true); btn.disabled = false; btn.textContent = 'Mettre à jour';
     fb.className = 'fb ok'; fb.textContent = '✔ C\'est noté ! Ton équipe s\'appelle « ' + e.team + ' ». Tu peux passer à l\'étape 2.'; updateChrome();
@@ -572,9 +577,9 @@ function viewTeam(body){
   body.append(
     h('div', {class:'box'}, h('h3', null, 'Bienvenue à la rédaction !'), h('p', {style:'margin:0 0 6px'}, "Tu es journaliste-rédacteur.rice du journal du lycée. Tu travailles en équipe : écris le même nom d'équipe que tes camarades pour que ta prof retrouve votre groupe."),
       h('div', {style:'font-size:14.5px;color:var(--ink-soft)'}, 'Chacun.e travaille sur son propre écran, mais l\'équipe se met d\'accord ensemble pour les choix du journal (étapes 2 et 3).')),
-    h('div', {class:'box'}, h('h3', null, 'Ton équipe'), fld('Nom de mon équipe', team), fld('Les membres de mon équipe (prénoms)', members)),
-    h('div', {class:'box'}, h('h3', null, 'Ta spécialité'), h('p', {style:'margin:0 0 6px'}, 'Tu choisis une spécialité. Tu pourras en changer au fil du projet, selon ton avancement ou ton envie.'),
-      h('div', {class:'rolegrid'}, D.ROLES.map(r => h('div', {class:'rolecard'}, h('b', null, r[0]), r[1]))), fld('Ma spécialité', role), btn, fb));
+    h('div', {class:'box'}, h('h3', null, 'Ton équipe'), fld('Nom de ma rédaction (ou de mon équipe imaginaire)', team), fld('Les membres (prénoms) — seul.e ? écris ton prénom', members)),
+    h('div', {class:'box'}, h('h3', null, 'Ton rôle'), h('p', {style:'margin:0 0 6px'}, 'Un journal n\'est pas écrit par une seule personne : c\'est le travail d\'une rédaction. Tu choisis ton rôle principal. ' + D.ROLE_ALONE),
+      h('div', {class:'rolegrid'}, D.ROLES.map(r => h('div', {class:'rolecard'}, h('b', null, r[0]), r[1]))), h('div', {class:'box', style:'margin:10px 0'}, h('h4', {style:'margin:0 0 4px'}, 'Les règles d\'une rédaction'), D.ROLE_RULES.map(t => h('p', {style:'margin:0 0 2px;font-size:15px'}, '• ' + t))), fld('Mon rôle', role), btn, fb));
 }
 
 /* ============ ÉTAPE 2 : type de journal ============ */
@@ -864,10 +869,6 @@ function uploadCard(qid, title, instruct, prefix, key, doneMsg, stepN){
 /* ============ ÉTAPE 9 : la Une, le classement, les images ============ */
 function viewUne(body){
   const T = D.TYPES, e3 = X('3-rub');
-  body.append(h('div', {class:'box warm'}, h('h3', null, 'La Une, c\'est quoi ?'), h('div', {style:'font-size:15.5px'}, h('p', {style:'margin:0 0 6px'}, 'La ', h('b', null, 'Une'), ' est la première page du journal : celle qui donne envie de l\'ouvrir. Elle contient :'),
-    h('ul', {style:'margin:0 0 8px;padding-left:20px'}, h('li', null, h('b', null, 'le titre du journal'), ' (son nom, avec son logo) ;'), h('li', null, h('b', null, 'la date et le numéro'), ' ;'), h('li', null, h('b', null, 'le gros titre'), ' : l\'article le plus important, avec une photo ou une illustration et sa ', h('b', null, 'légende'), ' ;'), h('li', null, h('b', null, 'les accroches'), ' : de petites phrases qui donnent envie de lire les autres articles.')),
-    h('p', {style:'margin:0'}, h('b', null, 'Le style graphique'), ' est l\'identité visuelle du journal : ses couleurs, sa police, son logo, sa mise en page. Trois règles : 2 ou 3 couleurs maximum ; 2 polices maximum ; tout doit rester lisible et plaire à tes lecteurs (les élèves du lycée).'))));
-  body.append(quiz(C.allQuestions.find(x => x.id === '9-quiz'), '1. Les éléments d\'une Une', 'Associe chaque description au bon élément.', D.UNE_QUIZ.map(([q, a]) => ({q, opts:D.UNE_OPTS, exp:a}))));
   // hiérarchie de l'information
   body.append(h('div', {class:'box'}, h('h3', null, 'La hiérarchie de l\'information'),
     h('div', {style:'display:flex;flex-direction:column;gap:8px;align-items:center;margin:6px 0 10px'},
@@ -877,12 +878,20 @@ function viewUne(body){
     h('p', {style:'margin:0 0 4px;font-weight:600'}, 'Je me demande :'), D.PLACE_ASK.map(a => h('p', {style:'margin:0 0 2px;font-size:15.5px'}, '• ' + a))));
   const selP = D.PLACE_ITEMS.map(() => mkSelect(D.PLACE_OPTS)); const priorC = X('9-classement'); if(priorC.places) selP.forEach((s, i) => { if(priorC.places[i]) s.value = priorC.places[i]; });
   const whyC = taNode(2, 'L\'information placée à la Une est la plus importante parce que…', priorC.why);
-  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-classement'), title:'2. Où placer chaque information ?', instruct:'Pour chaque information, choisis où elle va : à la Une, en page intérieure ou en brève. Puis explique ton choix pour la Une.',
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-classement'), title:'1. Où placer chaque information ?', instruct:'Pour chaque information, choisis où elle va : à la Une, en page intérieure ou en brève. Puis explique ton choix pour la Une.',
     node:h('div', null, D.PLACE_ITEMS.map((t, i) => h('div', {class:'placeline'}, h('b', null, String.fromCharCode(97 + i) + '. ' + t), h('br'), selP[i])), fld('Pourquoi as-tu mis cette information à la Une ? (1 phrase)', whyC)),
     getText:() => (selP.some(s => !s.value) || !whyC.value.trim()) ? '' : D.PLACE_ITEMS.map((t, i) => String.fromCharCode(97 + i) + '. ' + t + ' → ' + selP[i].value).join('\n') + '\nPOURQUOI À LA UNE : ' + whyC.value.trim(),
     emptyMsg:'Choisis un emplacement pour les 6 informations et explique ton choix 🙂', setDisabled:v => { selP.forEach(s => s.disabled = v); whyC.disabled = v; }, minWords:20, wantCorrected:false,
     rubric:"Classement de 6 informations d'un lycée : a. alerte incendie qui a fait évacuer 600 élèves ; b. menu de la semaine au self ; c. un élève a gagné un concours régional de robotique ; d. horaires du CDI qui changent la semaine prochaine ; e. gymnase fermé deux mois pour travaux ; f. interview d'un nouveau professeur. Critères de hiérarchie : nombre de personnes concernées, caractère récent, importance pour les lecteurs, côté surprenant ou utile. Attendu : l'alerte incendie (a) à la Une ; le menu du self (b) et les horaires du CDI (d) en brève ; les trois autres (c, e, f) en page intérieure, ou exceptionnellement à la Une si c'est justifié. ok = true si (a) est à la Une, si (b) et (d) sont en brève ou en page intérieure, et si la justification s'appuie sur au moins un critère. ok = false sinon : indice sur le critère à utiliser, sans donner le classement.",
     extra:() => ({places:selP.map(s => s.value), why:whyC.value.trim()}) }));
+  formatCard(body);
+  const fmt = FMT(); if(fmt === 'jt'){ viewJT(body); return; } if(!fmt) return;
+  body.append(h('div', {class:'box warm'}, h('h3', null, 'La Une, c\'est quoi ?'), h('div', {style:'font-size:15.5px'}, h('p', {style:'margin:0 0 6px'}, 'La ', h('b', null, 'Une'), ' est la première page du journal : celle qui donne envie de l\'ouvrir. Elle contient :'),
+    h('ul', {style:'margin:0 0 8px;padding-left:20px'}, h('li', null, h('b', null, 'le titre du journal'), ' (son nom, avec son logo) ;'), h('li', null, h('b', null, 'la date et le numéro'), ' ;'), h('li', null, h('b', null, 'le gros titre'), ' : l\'article le plus important, avec une photo ou une illustration et sa ', h('b', null, 'légende'), ' ;'), h('li', null, h('b', null, 'les accroches'), ' : de petites phrases qui donnent envie de lire les autres articles.')),
+    h('p', {style:'margin:0'}, h('b', null, 'Le style graphique'), ' est l\'identité visuelle du journal : ses couleurs, sa police, son logo, sa mise en page. Trois règles : 2 ou 3 couleurs maximum ; 2 polices maximum ; tout doit rester lisible et plaire à tes lecteurs (les élèves du lycée).'))));
+  body.append(quiz(C.allQuestions.find(x => x.id === '9-quiz'), '3. Les éléments d\'une Une', 'Associe chaque description au bon élément.', D.UNE_QUIZ.map(([q, a]) => ({q, opts:D.UNE_OPTS, exp:a}))));
+  body.append(h('div', {class:'box'}, h('h3', null, 'Trois styles de Une'), D.UNE_STYLES.map(([a, b2], k) => h('p', {style:'margin:0 0 4px;font-size:15.5px'}, h('b', null, (k + 1) + ' · ' + a + ' : '), b2))));
+  body.append(recipesBox());
   // plan de la Une
   const prior = X('9-plan');
   const jt = inp('Titre du journal', prior.journal || e3.title); const big = inp('Le gros titre de la Une (l\'article principal)', prior.gros);
@@ -890,59 +899,123 @@ function viewUne(body){
   const acc = [0,1,2].map(i => inp('Accroche n°' + (i + 1) + ' (une rubrique ou un article à lire)', (prior.accroches || [])[i]));
   const col = inp('Ex. : bleu marine, jaune, blanc', prior.couleurs); const font = mkSelect(D.FONTS); if(prior.police) font.value = prior.police;
   const logo = inp('Ex. : une plume stylisée, la silhouette du lycée…', prior.logo);
+  const sty = mkSelect(D.UNE_STYLES.map(x => x[0])); if(prior.style) sty.value = prior.style;
   const why = taNode(3, 'Nous avons choisi ces couleurs et cette police parce que…', '');
-  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-plan'), title:'3. Le plan de ma Une', instruct:'Avec ton équipe, décris la Une de ton journal et ton style graphique.',
-    node:h('div', null, fld('Nom du journal', jt), fld('Gros titre', big), fld('Photo ou illustration principale (et sa légende)', photo), acc.map((a, i) => fld('Accroche ' + (i + 1), a)), fld('Couleurs choisies (2 ou 3)', col), fld('Police (style des lettres)', font), fld('Logo (idée)', logo), fld('Pourquoi ces choix conviennent à tes lecteurs ? (2 phrases)', why)),
-    getText:() => (!jt.value.trim() || !big.value.trim() || !photo.value.trim() || acc.some(a => !a.value.trim()) || !col.value.trim() || !font.value || !logo.value.trim() || !why.value.trim()) ? '' :
-      'NOM DU JOURNAL : ' + jt.value.trim() + '\nGROS TITRE : ' + big.value.trim() + '\nPHOTO : ' + photo.value.trim() + '\nACCROCHES : ' + acc.map(a => a.value.trim()).join(' / ') + '\nCOULEURS : ' + col.value.trim() + '\nPOLICE : ' + font.value + '\nLOGO : ' + logo.value.trim() + '\nPOURQUOI : ' + why.value.trim(),
-    emptyMsg:'Remplis tous les champs de la Une 🙂', setDisabled:v => { [jt, big, photo, col, font, logo, why].concat(acc).forEach(x => x.disabled = v); }, minWords:30, wantCorrected:false,
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-plan'), title:'4. Le plan de ma Une', instruct:'Avec ton équipe, décris la Une de ton journal et ton style graphique.',
+    node:h('div', null, fld('Style de ma Une', sty), fld('Nom du journal', jt), fld('Gros titre', big), fld('Photo ou illustration principale (et sa légende)', photo), acc.map((a, i) => fld('Accroche ' + (i + 1), a)), fld('Couleurs choisies (2 ou 3)', col), fld('Police (style des lettres)', font), fld('Logo (idée)', logo), fld('Pourquoi ces choix conviennent à tes lecteurs ? (2 phrases)', why)),
+    getText:() => (!sty.value || !jt.value.trim() || !big.value.trim() || !photo.value.trim() || acc.some(a => !a.value.trim()) || !col.value.trim() || !font.value || !logo.value.trim() || !why.value.trim()) ? '' :
+      'STYLE DE LA UNE : ' + sty.value + '\nNOM DU JOURNAL : ' + jt.value.trim() + '\nGROS TITRE : ' + big.value.trim() + '\nPHOTO : ' + photo.value.trim() + '\nACCROCHES : ' + acc.map(a => a.value.trim()).join(' / ') + '\nCOULEURS : ' + col.value.trim() + '\nPOLICE : ' + font.value + '\nLOGO : ' + logo.value.trim() + '\nPOURQUOI : ' + why.value.trim(),
+    emptyMsg:'Remplis tous les champs de la Une 🙂', setDisabled:v => { [sty, jt, big, photo, col, font, logo, why].concat(acc).forEach(x => x.disabled = v); }, minWords:30, wantCorrected:false,
     context:() => 'Type de journal : ' + ((T[e3.type] || {}).name || X('2-type').typeName || '?') + '. Rubriques : ' + ((e3.rubriques || []).join(' ; ') || '?') + '.',
     rubric:"Plan de la Une d'un journal de lycée et choix graphiques. ok = true si au moins 5 de ces 6 critères sont remplis : (1) le gros titre est précis et donne envie de lire ; (2) la photo ou illustration est cohérente avec le gros titre ; (3) les 3 accroches renvoient à de vrais articles ou rubriques et donnent envie ; (4) 2 ou 3 couleurs seulement ; (5) la police est cohérente avec le type de journal et les lecteurs ; (6) la justification explique avec au moins une raison le choix des couleurs et de la police. Dans le feedback, cite 1 point fort et le critère à améliorer.",
-    extra:() => ({journal:jt.value.trim(), gros:big.value.trim(), photo:photo.value.trim(), accroches:acc.map(a => a.value.trim()), couleurs:col.value.trim(), police:font.value, logo:logo.value.trim()}) }));
+    extra:() => ({style:sty.value, journal:jt.value.trim(), gros:big.value.trim(), photo:photo.value.trim(), accroches:acc.map(a => a.value.trim()), couleurs:col.value.trim(), police:font.value, logo:logo.value.trim()}) }));
   // images et légende
   body.append(h('div', {class:'box'}, h('h3', null, 'Une bonne image est…'), D.IMG_QUALITIES.map(([a, b]) => h('p', {style:'margin:0 0 4px;font-size:15.5px'}, h('b', null, a + ' : '), b)),
     h('div', {class:'fb info', style:'margin:8px 0 0'}, h('b', null, 'Rappel · une légende : '), 'une phrase avec les W (qui, quoi, où, quand). Exemple : « Les élèves rejoignent la cour, mardi 12 novembre. » (Photo : rédaction)')));
   const priorI = X('9-images'); const imgU = inp('Ex. : photo des élèves dans la cour, prise par l\'équipe', priorI.une); const imgP = inp('Ex. : portrait du professeur interviewé', priorI.page2);
   const leg = taNode(2, 'Ma légende : une phrase avec qui, quoi, où, quand, puis la source (Photo : …)', priorI.legende);
-  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-images'), title:'4. Mes images et leur légende', instruct:'Choisis une image pour la Une et une pour ta page 2, puis écris la légende de l\'image de la Une.',
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-images'), title:'5. Mes images et leur légende', instruct:'Choisis une image pour la Une et une pour ta page 2, puis écris la légende de l\'image de la Une.',
     node:h('div', null, fld('Image de la Une', imgU), fld('Image de ma page 2', imgP), fld('Légende de l\'image de la Une', leg)),
     getText:() => (!imgU.value.trim() || !imgP.value.trim() || !leg.value.trim()) ? '' : 'IMAGE DE LA UNE : ' + imgU.value.trim() + '\nIMAGE DE LA PAGE 2 : ' + imgP.value.trim() + '\nLÉGENDE : ' + leg.value.trim(),
     emptyMsg:'Décris tes deux images et écris la légende 🙂', setDisabled:v => { imgU.disabled = v; imgP.disabled = v; leg.disabled = v; }, minWords:14, wantCorrected:false,
     context:() => { const e = X('9-plan'); return e.gros ? 'Gros titre de la Une : ' + e.gros + '. ' : ''; },
     rubric:"Choix d'images et légende pour la Une d'un journal de lycée. Critères : les deux images sont utiles (elles illustrent l'information, elles ne décorent pas) et autorisées (ses propres photos ou images libres de droits ; pas d'élève reconnaissable sans autorisation) ; la légende est une phrase qui répond à au moins 3 des 4 questions Qui / Quoi / Où / Quand, et indique la source (Photo : …). ok = true si la légende répond à au moins 3 des 4 questions et si les images sont cohérentes avec le sujet. ok = false sinon : indice sur ce qui manque dans la légende, sans l'écrire à sa place.",
     extra:() => ({une:imgU.value.trim(), page2:imgP.value.trim(), legende:leg.value.trim()}) }));
-  body.append(uploadCard('9-maquette', '5. Ma maquette de la Une (facultatif)', 'Tu as dessiné ou réalisé ta Une (sur papier, Canva…) ? Envoie une photo ou une capture à ta prof.', 'une', 'une', 'Maquette de la Une envoyée', 9));
+  body.append(uploadCard('9-maquette', '6. Ma maquette de la Une (facultatif)', 'Tu as dessiné ou réalisé ta Une (sur papier, Canva…) ? Envoie une photo ou une capture à ta prof.', 'une', 'une', 'Maquette de la Une envoyée', 9));
+}
+
+
+const recipesBox = () => h('div', {class:'box'}, h('h3', null, '3 recettes pour un gros titre qui accroche'), D.TITLE_RECIPES.map(([a, b2], k) => h('p', {style:'margin:0 0 4px;font-size:15.5px'}, h('b', null, (k + 1) + ' · ' + a + ' : '), b2)));
+function formatCard(body){
+  const q = C.allQuestions.find(x => x.id === '9-format'), st = S('9-format'), ex = st.extra || {};
+  const card = h('div', {class:'q' + (st.done ? ' done' : ''), id:'q-9-format'}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, st.done ? '✓' : '•'), h('div', {class:'q-p'}, '2. Quel format choisis-tu pour ton journal ?', h('small', null, 'Dans les deux cas, tu gardes ton article de l\'étape 7 : il fait partie de ton travail rendu.'))));
+  if(st.done && !st.editing){ card.append(h('div', {class:'corr', style:'margin-left:0'}, h('small', null, 'Ma réponse'), st.answer || ''), editBtn(() => { st.editing = true; renderStep(9); })); body.append(card); return; }
+  let fmt = ex.fmt || '';
+  const cards = D.FORMATS.map(f => { const b = h('button', {type:'button', class:'fmtcard' + (fmt === f.id ? ' on' : '')}, h('div', {style:'font-size:30px'}, f.icon), h('b', null, f.name), h('div', {style:'font-size:14.5px;margin-top:4px'}, f.txt)); b.addEventListener('click', () => { fmt = f.id; cards.forEach((c, k) => c.classList.toggle('on', D.FORMATS[k].id === fmt)); }); return b; });
+  const why = taNode(2, 'Idées : ce que j\'aime faire ; ce que je suis sûr.e de réussir ; ce que je voudrais essayer', ex.why);
+  const fb = h('div', {class:'fb hidden', style:'margin:10px 0 0'}); const btn = h('button', {class:'btn', type:'button', style:'margin-top:10px'}, 'Je choisis ce format');
+  btn.addEventListener('click', async () => {
+    if(!fmt || why.value.trim().length < 8){ fb.className = 'fb warn'; fb.textContent = 'Choisis un format et explique pourquoi il te convient 🙂'; return; }
+    btn.disabled = true; const f = D.FORMATS.find(x => x.id === fmt);
+    st.tries++; st.done = true; st.editing = false; st.correct = null; st.extra = {fmt, why:why.value.trim()}; st.answer = 'FORMAT : ' + f.name + '\nPOURQUOI : ' + why.value.trim();
+    await saveAnswer(q, st.answer, null, false, '', st.extra); renderStep(9);
+  });
+  card.append(h('div', {class:'fmtgrid'}, cards), fld('Pourquoi ce choix me convient ?', why), btn, fb); body.append(card);
+}
+
+/* ---- parcours JT (étape 9) ---- */
+function viewJT(body){
+  body.append(h('div', {class:'box warm'}, h('h3', null, 'Un journal télévisé (JT), c\'est quoi ?'),
+    h('p', {style:'margin:0 0 6px;font-size:15.5px'}, 'Un JT est une courte vidéo d\'information. À l\'écran, on lit en 2 secondes : tout est très court.'),
+    D.JT_PARTS.map(([a, b2], k) => h('p', {style:'margin:0 0 3px;font-size:15.5px'}, h('b', null, (k + 1) + '. ' + a + ' : '), b2)),
+    h('p', {style:'margin:8px 0 2px;font-weight:600'}, 'Mon JT de 30 secondes = 5 scènes'), h('div', {style:'display:flex;flex-wrap:wrap;gap:6px'}, D.JT_SCENES.map((t, k) => h('span', {class:'pill'}, (k + 1) + ' · ' + t)))));
+  const p1 = X('9-jt-style');
+  const sty = mkSelect(D.JT_STYLES.map(x => x[0])); if(p1.style) sty.value = p1.style;
+  const nom = inp('Ex. : Le 20 h du lycée', p1.nom); const diff = taNode(3, 'Une Une de journal et l\'écran d\'un JT : quelle différence ? Pense : le support, le temps, ce qui bouge.', p1.diff);
+  body.append(h('div', {class:'box'}, h('h3', null, 'Trois styles de JT'), D.JT_STYLES.map(([a, b2], k) => h('p', {style:'margin:0 0 4px;font-size:15.5px'}, h('b', null, (k + 1) + ' · ' + a + ' : '), b2))));
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-jt-style'), title:'3. Le style et le nom de mon JT', instruct:'Choisis le style de ton JT, donne-lui un nom (idées : un moment de la journée, le nom du lycée, un mot qui évoque l\'information) et explique la différence avec une Une de journal.',
+    node:h('div', null, fld('Style de mon JT', sty), fld('Nom de mon JT', nom), fld('Une Une de journal ou un JT : quelle différence ?', diff)),
+    getText:() => (!sty.value || !nom.value.trim() || !diff.value.trim()) ? '' : 'STYLE : ' + sty.value + '\nNOM DU JT : ' + nom.value.trim() + '\nDIFFÉRENCE UNE / JT : ' + diff.value.trim(),
+    emptyMsg:'Choisis un style, un nom, et explique la différence 🙂', setDisabled:v => { sty.disabled = v; nom.disabled = v; diff.disabled = v; }, minWords:12, wantCorrected:false,
+    rubric:"Choix du style et du nom d'un JT (journal télévisé) de lycée par un élève de 2nde. ok = true si : le style est choisi ; le nom du JT est cohérent avec un journal de lycée ; l'élève explique au moins UNE vraie différence entre une Une de journal papier et l'écran d'un JT (le support papier/écran, le temps ou la durée courte, ce qui bouge : animations, musique, voix, scènes qui s'enchaînent). Sois bienveillant et simple.",
+    extra:() => ({style:sty.value, nom:nom.value.trim(), diff:diff.value.trim()}) }));
+  body.append(recipesBox());
+  const p2 = X('9-jt-titres');
+  const gt = inp('Mon gros titre (8 mots maximum)', p2.gros), bd = inp('Mon bandeau : une info pratique en une phrase', p2.bandeau), dt = inp('La date de mon JT', p2.date), t2 = inp('Mon titre 2 (6 mots maximum)', p2.t2), t3 = inp('Mon titre 3 (6 mots maximum)', p2.t3);
+  const nbw = v => v.trim().split(/\s+/).filter(Boolean).length;
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-jt-titres'), title:'4. J\'écris mes grands titres', instruct:'À l\'écran, on lit en 2 secondes : tes titres doivent être très courts. Pour t\'aider, reprends le titre de ton article et rends-le plus fort.',
+    node:h('div', null, fld('Mon gros titre (8 mots maximum)', gt), fld('Mon titre 2 (6 mots maximum)', t2), fld('Mon titre 3 (6 mots maximum)', t3), fld('Mon bandeau (une info pratique en une phrase)', bd), fld('La date de mon JT', dt)),
+    getText:() => (!gt.value.trim() || !t2.value.trim() || !t3.value.trim() || !bd.value.trim() || !dt.value.trim()) ? '' : 'GROS TITRE : ' + gt.value.trim() + '\nTITRE 2 : ' + t2.value.trim() + '\nTITRE 3 : ' + t3.value.trim() + '\nBANDEAU : ' + bd.value.trim() + '\nDATE : ' + dt.value.trim(),
+    emptyMsg:'Écris tes trois titres, ton bandeau et la date 🙂', setDisabled:v => { [gt, t2, t3, bd, dt].forEach(x => x.disabled = v); }, minWords:10, wantCorrected:false,
+    gate:() => (nbw(gt.value) > 8 || nbw(t2.value) > 6 || nbw(t3.value) > 6) ? 'Raccourcis : 8 mots maximum pour le gros titre, 6 mots maximum pour les titres 2 et 3 🙂' : '',
+    context:() => { const a = X('7-article'); return a.titre ? 'Titre de son article : ' + a.titre + '. ' : ''; },
+    rubric:"Grands titres d'un JT de lycée. ok = true si : le gros titre fait 8 mots maximum, donne un fait (qui, quoi, où ou quand) et pas un avis ; les titres 2 et 3 font 6 mots maximum, très courts et clairs ; le bandeau est une info pratique en une phrase ; les titres sont différents les uns des autres (hiérarchie : le plus important en premier). Si un titre est trop long, donne-le raccourci en exemple. Sois bienveillant et simple.",
+    extra:() => ({gros:gt.value.trim(), t2:t2.value.trim(), t3:t3.value.trim(), bandeau:bd.value.trim(), date:dt.value.trim()}) }));
+  body.append(h('div', {class:'box'}, h('h3', null, 'Une bonne image est…'), D.IMG_QUALITIES.map(([a, b2]) => h('p', {style:'margin:0 0 4px;font-size:15.5px'}, h('b', null, a + ' : '), b2))));
+  const p3 = X('9-jt-scenes'); const imgs = D.JT_SCENES.map((t, k) => inp('Image de la scène ' + (k + 1) + ' (ex. : photo du self vu de dos)', (p3.images || [])[k]));
+  const durs = D.JT_SCENES.map((t, k) => { const sl = mkSelect(['3 secondes', '5 secondes', '6 secondes', '8 secondes', '10 secondes']); if((p3.durees || [])[k]) sl.value = p3.durees[k]; return sl; });
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '9-jt-scenes'), title:'5. Je prépare mes 5 scènes', instruct:'Pour chaque scène, décris l\'image que tu vas utiliser et choisis sa durée. Ton JT doit durer environ 30 secondes.',
+    node:h('div', null, D.JT_SCENES.map((t, k) => h('div', {class:'placeline'}, h('b', null, 'Scène ' + (k + 1) + ' · ' + t), imgs[k], durs[k]))),
+    getText:() => (imgs.some(x => !x.value.trim()) || durs.some(x => !x.value)) ? '' : D.JT_SCENES.map((t, k) => 'SCÈNE ' + (k + 1) + ' (' + t + ') : image = ' + imgs[k].value.trim() + ' ; durée = ' + durs[k].value).join('\n'),
+    emptyMsg:'Décris l\'image et choisis la durée des 5 scènes 🙂', setDisabled:v => { imgs.concat(durs).forEach(x => x.disabled = v); }, minWords:15, wantCorrected:false,
+    gate:() => { const tot = durs.reduce((a, d) => a + (parseInt(d.value, 10) || 0), 0); return (tot < 20 || tot > 40) ? 'Ton JT dure ' + tot + ' secondes : vise environ 30 secondes (entre 20 et 40) en changeant les durées 🙂' : ''; },
+    rubric:"Plan des 5 scènes d'un JT de lycée (nom du JT, gros titre, titre 2, titre 3, au revoir). ok = true si : chaque scène a une image décrite précisément ; les images sont utiles (elles illustrent le titre), réalistes à trouver et autorisées (ses propres photos ou images libres de droits, aucun.e élève reconnaissable sans autorisation) ; les durées sont cohérentes (environ 30 secondes au total). Sois bienveillant et simple.",
+    extra:() => ({images:imgs.map(x => x.value.trim()), durees:durs.map(x => x.value)}) }));
 }
 
 /* ============ ÉTAPE 10 : réaliser mon journal sur Canva ============ */
 function viewCanva(body){
+  const fmt = FMT() || 'une', jt = fmt === 'jt'; let nn = 0; const num = () => (++nn) + '. ';
   const e9 = X('9-plan');
-  body.append(h('div', {class:'box warm'}, h('h3', null, 'Mes règles de mise en page'), D.LAYOUT_RULES.map(([a, b]) => h('p', {style:'margin:0 0 4px;font-size:15.5px'}, h('b', null, a + ' : '), b))));
-  // 1. chemin de fer
+  if(!jt) body.append(h('div', {class:'box warm'}, h('h3', null, 'Mes règles de mise en page'), D.LAYOUT_RULES.map(([a, b]) => h('p', {style:'margin:0 0 4px;font-size:15.5px'}, h('b', null, a + ' : '), b))));
+  // 1. chemin de fer (Une)
+  if(!jt){
   const pC = X('10-chemin');
   const pg1 = taNode(3, 'Page 1, la Une : où je place le titre du journal, la date, le gros titre, l\'image, les accroches…', pC.page1);
   const pg2 = taNode(3, 'Page 2, l\'intérieur : où je place mon article, ma brève, mon image et sa légende…', pC.page2);
   const f2 = inp('Mes 2 polices', pC.polices || (e9.police || '')); const c3 = inp('Mes 3 couleurs', pC.couleurs || e9.couleurs);
-  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '10-chemin'), title:'1. Mon chemin de fer', instruct:'Dessine d\'abord ton chemin de fer sur une feuille : une page pour la Une, une page pour l\'intérieur, avec les titres, les images, les textes et les brèves. Puis décris-le ici.',
+  body.append(aiCard({ q:C.allQuestions.find(x => x.id === '10-chemin'), title:num() + 'Mon chemin de fer', instruct:'Dessine d\'abord ton chemin de fer sur une feuille : une page pour la Une, une page pour l\'intérieur, avec les titres, les images, les textes et les brèves. Puis décris-le ici.',
     node:h('div', null, fld('Page 1 : la Une', pg1), fld('Page 2 : l\'intérieur', pg2), fld('Mes 2 polices', f2), fld('Mes 3 couleurs', c3)),
     getText:() => (!pg1.value.trim() || !pg2.value.trim() || !f2.value.trim() || !c3.value.trim()) ? '' : 'PAGE 1 (LA UNE) : ' + pg1.value.trim() + '\nPAGE 2 (L\'INTÉRIEUR) : ' + pg2.value.trim() + '\nPOLICES : ' + f2.value.trim() + '\nCOULEURS : ' + c3.value.trim(),
     emptyMsg:'Décris tes deux pages, tes polices et tes couleurs 🙂', setDisabled:v => { pg1.disabled = v; pg2.disabled = v; f2.disabled = v; c3.disabled = v; }, minWords:30, wantCorrected:false,
     context:() => 'Plan de la Une déjà préparé : ' + (e9.gros ? 'gros titre « ' + e9.gros + ' », ' : '') + 'accroches : ' + ((e9.accroches || []).join(' / ') || '?') + '.',
     rubric:"Chemin de fer d'un journal de lycée de 2 pages décrit par un élève. ok = true si : la page 1 (la Une) place au moins le titre du journal, le gros titre, une image et des accroches ; la page 2 place l'article, la brève et une image avec sa légende ; l'élève indique 2 polices (au maximum) et 2 ou 3 couleurs ; l'organisation est claire (une hiérarchie : le gros titre est le plus gros). ok = false si un élément essentiel manque ou si plus de 3 couleurs ou plus de 2 polices sont annoncées : indice sur ce qui manque ou à réduire, sans réécrire à sa place.",
     extra:() => ({page1:pg1.value.trim(), page2:pg2.value.trim(), polices:f2.value.trim(), couleurs:c3.value.trim()}) }));
+  }
   // 2. Canva
-  const qC = C.allQuestions.find(x => x.id === '10-canva'); const stC = S('10-canva');
-  const cardC = h('div', {class:'q' + (stC.done ? ' done' : ''), id:'q-10-canva'}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, stC.done ? '✓' : '•'), h('div', {class:'q-p'}, '2. Je réalise mon journal sur Canva', h('small', null, 'Suis les étapes dans l\'ordre et coche chacune quand elle est faite.'))));
+  const parts = jt ? D.CANVA_JT : D.CANVA_UNE, flat = parts.flatMap(p => p.steps), qidC = jt ? '10-jt-canva' : '10-canva';
+  const qC = C.allQuestions.find(x => x.id === qidC); const stC = S(qidC);
+  const cardC = h('div', {class:'q' + (stC.done ? ' done' : ''), id:'q-' + qidC}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, stC.done ? '✓' : '•'), h('div', {class:'q-p'}, num() + (jt ? 'Je réalise mon JT sur Canva' : 'Je réalise ma Une sur Canva'), h('small', null, 'Suis les étapes dans l\'ordre et coche chacune quand elle est faite.'))));
   if(stC.done && !stC.editing){ cardC.append(h('div', {class:'corr', style:'margin-left:0'}, h('small', null, 'Ma réponse'), stC.answer || ''), editBtn(() => { stC.editing = true; renderStep(10); })); }
   else {
-    const cb = D.CANVA_STEPS.map(() => h('input', {type:'checkbox'})); const fbC = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
-    D.CANVA_STEPS.forEach((t, i) => cardC.append(h('label', {class:'canva-step'}, cb[i], h('span', {class:'no'}, String(i + 1)), h('span', null, t))));
+    const cb = flat.map(() => h('input', {type:'checkbox'})); const fbC = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
+    let ci = 0; parts.forEach(p => { cardC.append(h('div', {style:'font-weight:700;margin:10px 0 4px'}, p.h)); p.steps.forEach(t => { const i = ci++; cardC.append(h('label', {class:'canva-step'}, cb[i], h('span', {class:'no'}, String(i + 1)), h('span', null, t))); }); });
     cardC.append(h('div', {class:'fb info', style:'margin:8px 0 0'}, h('b', null, 'Astuces Canva : '), D.CANVA_TIPS.join(' ')));
-    const btnC = h('button', {class:'btn', type:'button', style:'margin-top:10px'}, 'Mon journal est réalisé sur Canva');
+    const btnC = h('button', {class:'btn', type:'button', style:'margin-top:10px'}, jt ? 'Mon JT est réalisé sur Canva' : 'Ma Une est réalisée sur Canva');
     btnC.addEventListener('click', async () => {
       const n = cb.filter(b => b.checked).length;
       if(n < cb.length){ fbC.className = 'fb warn'; fbC.textContent = 'Il te reste ' + (cb.length - n) + ' étape(s) à faire ou à cocher 🙂'; return; }
-      btnC.disabled = true; stC.tries++; stC.done = true; stC.editing = false; stC.correct = null; stC.answer = 'Journal réalisé sur Canva : ' + n + ' / ' + cb.length + ' étapes faites'; stC.extra = {steps:n};
+      btnC.disabled = true; stC.tries++; stC.done = true; stC.editing = false; stC.correct = null; stC.answer = (jt ? 'JT réalisé sur Canva : ' : 'Une réalisée sur Canva : ') + n + ' / ' + cb.length + ' étapes faites'; stC.extra = {steps:n};
       await saveAnswer(qC, stC.answer, null, false, '', stC.extra); renderStep(10);
     });
     cardC.append(btnC, fbC);
@@ -950,26 +1023,27 @@ function viewCanva(body){
   body.append(cardC);
   // 3. bilan
   const qB = C.allQuestions.find(x => x.id === '10-bilan'); const stB = S('10-bilan');
-  const cardB = h('div', {class:'q' + (stB.done ? ' done' : ''), id:'q-10-bilan'}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, stB.done ? '✓' : '•'), h('div', {class:'q-p'}, '3. Le bilan de mon journal', h('small', null, 'Coche ce qui est vrai pour ton journal, puis note-toi sur 20 avec la grille. Sois honnête : c\'est ta prof qui met la note.'))));
+  const cardB = h('div', {class:'q' + (stB.done ? ' done' : ''), id:'q-10-bilan'}, h('div', {class:'q-head'}, h('div', {class:'q-n'}, stB.done ? '✓' : '•'), h('div', {class:'q-p'}, num() + (jt ? 'Le bilan de mon JT' : 'Le bilan de ma Une'), h('small', null, 'Coche ce qui est vrai pour ton journal, puis note-toi sur 20 avec la grille. Sois honnête : c\'est ta prof qui met la note.'))));
   if(stB.done && !stB.editing){ cardB.append(h('div', {class:'corr', style:'margin-left:0'}, h('small', null, 'Ma réponse'), stB.answer || ''), editBtn(() => { stB.editing = true; renderStep(10); })); }
   else {
-    const rc = D.READY_CHECK.map(() => h('input', {type:'checkbox'})); const fbB = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
-    cardB.append(h('div', {style:'font-weight:700;margin:0 0 6px'}, 'Mon journal est prêt si…'), ...D.READY_CHECK.map((t, i) => h('label', {class:'chkrow'}, rc[i], h('span', null, t))));
-    const sel = D.GRID_FINAL.map(g => h('select', null, h('option', {value:''}, '…'), Array.from({length:g.max + 1}, (_, k) => h('option', {value:String(k)}, String(k)))));
-    cardB.append(h('table', {class:'scoretbl gridself'}, h('tr', null, h('th', null, 'Critères'), h('th', null, 'Points'), h('th', null, 'Moi')), D.GRID_FINAL.map((g, i) => h('tr', null, h('td', null, h('b', null, g.name)), h('td', {class:'pts'}, '/' + g.max), h('td', null, sel[i]))), h('tr', {class:'tot'}, h('td', null, 'TOTAL'), h('td', {class:'pts'}, '/20'), h('td', null, ''))));
+    const READY = jt ? D.READY_JT : D.READY_UNE, GRID = jt ? D.GRID_JT : D.GRID_FINAL;
+    const rc = READY.map(() => h('input', {type:'checkbox'})); const fbB = h('div', {class:'fb hidden', style:'margin:10px 0 0'});
+    cardB.append(h('div', {style:'font-weight:700;margin:0 0 6px'}, jt ? 'Mon JT est prêt si…' : 'Ma Une est prête si…'), ...READY.map((t, i) => h('label', {class:'chkrow'}, rc[i], h('span', null, t))));
+    const sel = GRID.map(g => h('select', null, h('option', {value:''}, '…'), Array.from({length:g.max + 1}, (_, k) => h('option', {value:String(k)}, String(k)))));
+    cardB.append(h('table', {class:'scoretbl gridself'}, h('tr', null, h('th', null, 'Critères'), h('th', null, 'Points'), h('th', null, 'Moi')), GRID.map((g, i) => h('tr', null, h('td', null, h('b', null, g.name)), h('td', {class:'pts'}, '/' + g.max), h('td', null, sel[i]))), h('tr', {class:'tot'}, h('td', null, 'TOTAL'), h('td', {class:'pts'}, '/20'), h('td', null, ''))));
     const btnB = h('button', {class:'btn', type:'button', style:'margin-top:10px'}, 'Valider mon bilan');
     btnB.addEventListener('click', async () => {
       const n = rc.filter(b => b.checked).length;
       if(n < rc.length){ fbB.className = 'fb warn'; fbB.textContent = 'Il te reste ' + (rc.length - n) + ' point(s) à vérifier avant de dire que ton journal est prêt 🙂'; return; }
       if(sel.some(x => !x.value)){ fbB.className = 'fb warn'; fbB.textContent = 'Note-toi sur chaque critère de la grille 🙂'; return; }
-      const sc = Object.fromEntries(D.GRID_FINAL.map((g, i) => [g.id, Number(sel[i].value)])); const tot = Object.values(sc).reduce((a, b) => a + b, 0);
-      btnB.disabled = true; stB.tries++; stB.done = true; stB.editing = false; stB.correct = null; stB.answer = 'Bilan : journal prêt. Auto-évaluation : ' + tot + ' / 20'; stB.extra = {bilan:sc, total:tot};
+      const sc = Object.fromEntries(GRID.map((g, i) => [g.id, Number(sel[i].value)])); const tot = Object.values(sc).reduce((a, b) => a + b, 0);
+      btnB.disabled = true; stB.tries++; stB.done = true; stB.editing = false; stB.correct = null; stB.answer = 'Bilan : ' + (jt ? 'JT' : 'Une') + ' prêt.e. Auto-évaluation : ' + tot + ' / 20'; stB.extra = {bilan:sc, total:tot, fmt};
       await saveAnswer(qB, stB.answer, null, false, '', stB.extra); renderStep(10);
     });
     cardB.append(btnB, fbB);
   }
   body.append(cardB);
-  body.append(uploadCard('10-rendu', '4. Mon journal terminé (facultatif)', 'Envoie une capture d\'écran de ta Une (ou de tes deux pages). Rends aussi ton PDF comme ta prof te l\'a demandé.', 'journal', 'rendu', 'Capture du journal terminé envoyée', 10));
+  body.append(uploadCard('10-rendu', num() + 'Mon travail terminé (facultatif)', jt ? 'Envoie une capture d\'écran de ton JT. Rends aussi ta vidéo MP4 comme ta prof te l\'a demandé.' : 'Envoie une capture d\'écran de ta Une (ou de tes deux pages). Rends aussi ton PDF comme ta prof te l\'a demandé.', 'journal', 'rendu', 'Capture du journal terminé envoyée', 10));
 }
 
 function blobToJpeg(blob, maxSide, q){
