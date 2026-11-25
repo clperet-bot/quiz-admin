@@ -248,7 +248,7 @@ const isDone = r => r.is_correct === true || r.revealed === true || (r.is_correc
 
 async function renderGate(fClass){
   const box = document.getElementById('gatebox');
-  if(CK !== 'journal-lycee' || !fClass || !C.steps || C.steps.length < 2){ box.style.display = 'none'; return; }
+  if(!['journal-lycee','survival-challenge'].includes(CK) || !fClass || !C.steps || C.steps.length < 2){ box.style.display = 'none'; return; }
   box.style.display = 'block';
   let cur = null;
   try{ const r = await supa.from('course_gates').select('max_step').eq('course', C.id).eq('classe', fClass).maybeSingle(); if(r.data) cur = r.data.max_step; }catch(e){}
