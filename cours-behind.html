@@ -706,6 +706,15 @@ function viewStep(n, body){
   draw();
 }
 
+/* déblocage par la prof : la page se met à jour toute seule (toutes les 15 s, et au retour sur l'onglet) */
+async function refreshGate(){
+  if(document.hidden || !ID || TEST_MODE) return;
+  const ch = await loadGate(); if(!ch) return;
+  if(document.querySelector('.roadmap')) renderHome(); else if(chrome && chrome.s) updateChrome();
+}
+setInterval(refreshGate, 15000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden) refreshGate(); });
+
 (async function init(){
   const saved = loadId();
   if(saved){

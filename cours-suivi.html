@@ -254,13 +254,15 @@ async function renderGate(fClass){
   try{ const r = await supa.from('course_gates').select('max_step').eq('course', C.id).eq('classe', fClass).maybeSingle(); if(r.data) cur = r.data.max_step; }catch(e){}
   const N = C.steps.length;
   const btn = (label, v, on) => `<button type="button" data-v="${v}" style="margin:3px;padding:7px 12px;border-radius:10px;border:2px solid ${on ? '#6d3fd6' : '#d9d2f0'};background:${on ? '#6d3fd6' : '#fff'};color:${on ? '#fff' : '#3b2a78'};font-weight:700;cursor:pointer">${label}</button>`;
-  box.innerHTML = `<b>🔓 Jusqu'où les élèves de ${esc(fClass)} peuvent aller</b> <span style="color:#6b6486;font-size:14px">${cur === null ? '(aucun blocage de ta part : une étape s\'ouvre quand l\'élève a validé la précédente)' : '(les élèves avancent étape par étape, mais s\'arrêtent à l\'étape ' + cur + ' : les suivantes restent fermées)'}</span><div style="margin-top:6px">`
-    + Array.from({length:N}, (_, i) => btn('Jusqu\'à l\'étape ' + (i + 1), i + 1, cur === i + 1)).join('') + btn('Pas d\'arrêt (automatique)', 'all', cur === null) + '</div>';
+  box.innerHTML = `<b>🔓 Débloquer des étapes pour ${esc(fClass)}</b> <span style="color:#6b6486;font-size:14px">${cur === null ? '(réglage de base : tu n\'as rien débloqué à la main, donc chaque élève doit valider une étape pour ouvrir la suivante)' : '(les élèves peuvent aller jusqu\'à l\'étape ' + cur + ', en validant chaque étape ; les suivantes restent fermées tant que tu ne les débloques pas)'}</span><div style="margin-top:6px">`
+    + Array.from({length:N}, (_, i) => btn('Débloquer jusqu\'à l\'étape ' + (i + 1), i + 1, cur === i + 1)).join('') + btn('Réglage de base (ils valident seuls)', 'all', cur === null) + '</div>'
+    + '<div style="margin-top:6px;font-size:13.5px;color:#6b6486">' + (window._gateSaved ? '<b style="color:#1d7a46">✓ Enregistré.</b> ' : '') + 'Chaque clic s\'enregistre tout de suite (pas de bouton Enregistrer). Les élèves le voient en moins de 15 secondes, sans recharger la page.</div>';
+  window._gateSaved = false;
   box.querySelectorAll('button').forEach(b => b.addEventListener('click', async () => {
     const v = b.dataset.v; b.disabled = true;
     const q = v === 'all' ? await supa.from('course_gates').delete().eq('course', C.id).eq('classe', fClass)
       : await supa.from('course_gates').upsert({course:C.id, classe:fClass, max_step:Number(v), updated_at:new Date().toISOString()}, {onConflict:'course,classe'});
-    if(q.error) alert('Erreur : ' + q.error.message);
+    if(q.error) alert('Erreur : ' + q.error.message); else window._gateSaved = true;
     renderGate(fClass);
   }));
 }
