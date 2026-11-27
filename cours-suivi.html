@@ -13,7 +13,6 @@
 <script src="electrician-data.js"></script>
 <script src="oral-data.js"></script>
 <script src="artad-data.js"></script>
-<script src="film-data.js"></script>
 <script src="journal-data.js"></script>
 <script src="travel-data.js"></script>
 <script src="movie-data.js"></script>
@@ -23,6 +22,8 @@
 <script src="grammar-data.js"></script>
 <script src="francais-data.js"></script>
 <script src="city-data.js"></script>
+<script src="survival-data.js"></script>
+<script src="behind-data.js"></script>
 <style>
   :root{
     --ink:#1B1F2A; --ink-soft:#5A6072; --line:#E4E0F3; --paper:#F4F2FB; --white:#fff;
@@ -133,7 +134,7 @@
     </div>
 
     <div class="toolbar">
-      <select id="f-course" title="Cours"><option value="electricians-guide">⚡ Electrician's Guide</option><option value="oral-bakery-sign">🎤 Préparer mon oral</option><option value="art-to-ad">🎨 From Art to Ad</option><option value="behind-the-screen">🎬 Behind the Screen</option><option value="journal-lycee">📰 Journal du lycée (français)</option><option value="travel-survival">✈️ Travel Survival Guide</option><option value="movie-night-pitch">🍿 Movie Night Pitch</option><option value="internship-report">💼 Internship Report (1ère)</option><option value="year-in-pictures">📸 My Year in Pictures</option><option value="music-and-me">🎧 Music &amp; Me</option><option value="survive-the-city">🚇 Survive the City</option><option value="grammar-boost">💪 Grammar Boost</option><option value="francais-boost">💬 Dis-le bien (français)</option></select>
+      <select id="f-course" title="Cours"><option value="electricians-guide">⚡ Electrician's Guide</option><option value="oral-bakery-sign">🎤 Préparer mon oral</option><option value="art-to-ad">🎨 From Art to Ad</option><option value="behind-spiderman">🎬 Behind the Screen</option><option value="journal-lycee">📰 Journal du lycée (français)</option><option value="travel-survival">✈️ Travel Survival Guide</option><option value="movie-night-pitch">🍿 Movie Night Pitch</option><option value="internship-report">💼 Internship Report (1ère)</option><option value="year-in-pictures">📸 My Year in Pictures</option><option value="music-and-me">🎧 Music &amp; Me</option><option value="survive-the-city">🚇 Survive the City</option><option value="survival-challenge">☣️ Survival Challenge</option><option value="grammar-boost">💪 Grammar Boost</option><option value="francais-boost">💬 Dis-le bien (français)</option></select>
       <input type="search" id="f-search" placeholder="🔍 Rechercher un élève…" autocomplete="off" aria-label="Rechercher un élève">
       <select id="f-class"><option value="">Toutes les classes</option></select>
       <button class="btn small ghost" id="refresh" type="button">Actualiser</button>
@@ -164,7 +165,6 @@ const COURSES = {
   'electricians-guide': { data: window.ELEC_COURSE, page:'cours-electrician.html', icon:'⚡', label:"Electrician's Guide", target:/tne/ },
   'oral-bakery-sign':   { data: window.ORAL_COURSE, page:'cours-oral.html', icon:'🎤', label:'Préparer mon oral (Bakery sign)' },
   'art-to-ad':          { data: window.ARTAD_COURSE, page:'cours-art-ad.html', icon:'🎨', label:'From Art to Ad (2nde MES)', target:/^(2|seconde).*mes/ },
-  'behind-the-screen':  { data: window.FILM_COURSE, page:'cours-film.html', icon:'🎬', label:'Behind the Screen — My opinion', mandatory:true },
   'journal-lycee':      { data: window.JOURNAL_COURSE, page:'cours-journal.html', icon:'📰', label:'Journal du lycée (français 2nde)', target:/tne/ },
   'travel-survival':    { data: window.TRAVEL_COURSE, page:'cours-travel.html', icon:'✈️', label:'Travel Survival Guide (anglais, en avance)', mandatory:true },
   'movie-night-pitch':  { data: window.MOVIE_COURSE, page:'cours-movie.html', icon:'🍿', label:'Movie Night Pitch (anglais)', mandatory:true },
@@ -172,11 +172,13 @@ const COURSES = {
   'year-in-pictures':   { data: window.YEAR_COURSE, page:'cours-year.html', icon:'📸', label:'My Year in Pictures (anglais)', mandatory:true },
   'music-and-me':       { data: window.MUSIC_COURSE, page:'cours-music.html', icon:'🎧', label:'Music & Me (anglais)', mandatory:true },
   'survive-the-city':   { data: window.CITY_COURSE, page:'cours-city.html', icon:'🚇', label:'Survive the City (anglais)', mandatory:true },
+  'behind-spiderman':   { data: window.BEHIND_COURSE, page:'cours-behind.html', icon:'🕷️', label:'Behind the Screen — My opinion (anglais)', mandatory:true },
+  'survival-challenge': { data: window.SURVIVAL_COURSE, page:'cours-survival.html', icon:'☣️', label:'Video Game: Survival Challenge (anglais)', mandatory:true },
   'grammar-boost':      { data: window.GRAMMAR_COURSE, page:'cours-grammar.html', icon:'💪', label:'Grammar Boost (anglais)' },
   'francais-boost':     { data: window.FRANCAIS_COURSE, page:'cours-francais.html', icon:'💬', label:'Dis-le bien (français)' }
 };
 const QP = (new URLSearchParams(location.search).get('course') || '').toLowerCase();
-const CK = ({oral:'oral-bakery-sign','oral-bakery-sign':'oral-bakery-sign', art:'art-to-ad','art-to-ad':'art-to-ad', artad:'art-to-ad', film:'behind-the-screen', spider:'behind-the-screen', spiderman:'behind-the-screen', behind:'behind-the-screen','behind-the-screen':'behind-the-screen', journal:'journal-lycee','journal-lycee':'journal-lycee', travel:'travel-survival','travel-survival':'travel-survival', movie:'movie-night-pitch','movie-night-pitch':'movie-night-pitch', stage:'internship-report', year:'year-in-pictures','year-in-pictures':'year-in-pictures', music:'music-and-me','music-and-me':'music-and-me', city:'survive-the-city','survive-the-city':'survive-the-city', grammar:'grammar-boost','grammar-boost':'grammar-boost', francais:'francais-boost','francais-boost':'francais-boost','internship-report':'internship-report'})[QP] || 'electricians-guide';
+const CK = ({oral:'oral-bakery-sign','oral-bakery-sign':'oral-bakery-sign', art:'art-to-ad','art-to-ad':'art-to-ad', artad:'art-to-ad', film:'behind-spiderman','behind-the-screen':'behind-spiderman', spider:'behind-spiderman','behind-spiderman':'behind-spiderman', journal:'journal-lycee','journal-lycee':'journal-lycee', travel:'travel-survival','travel-survival':'travel-survival', movie:'movie-night-pitch','movie-night-pitch':'movie-night-pitch', stage:'internship-report', year:'year-in-pictures','year-in-pictures':'year-in-pictures', music:'music-and-me','music-and-me':'music-and-me', city:'survive-the-city','survive-the-city':'survive-the-city', survival:'survival-challenge','survival-challenge':'survival-challenge', grammar:'grammar-boost','grammar-boost':'grammar-boost', francais:'francais-boost','francais-boost':'francais-boost','internship-report':'internship-report'})[QP] || 'electricians-guide';
 const C = COURSES[CK].data;
 document.getElementById('course-title').innerHTML = COURSES[CK].icon + ' ' + COURSES[CK].label + ' <small>Suivi en direct — qui a répondu quoi</small>';
 document.title = 'Suivi · ' + COURSES[CK].label;
@@ -220,7 +222,7 @@ document.getElementById('f-search').addEventListener('input', render);
 const _words = t => String(t == null ? '' : t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z0-9]+/).filter(Boolean);
 const nameMatches = (name, q) => { const toks = _words(q); if(!toks.length) return true; const ws = _words(name); return toks.every(t => ws.some(w => w.startsWith(t))); };
 document.getElementById('f-course').value = CK;
-document.getElementById('f-course').addEventListener('change', e => { location.search = '?course=' + ({'oral-bakery-sign':'oral','art-to-ad':'art','behind-the-screen':'film','journal-lycee':'journal','travel-survival':'travel','movie-night-pitch':'movie','internship-report':'stage','year-in-pictures':'year','music-and-me':'music','survive-the-city':'city','grammar-boost':'grammar','francais-boost':'francais'}[e.target.value] || 'elec'); });
+document.getElementById('f-course').addEventListener('change', e => { location.search = '?course=' + ({'oral-bakery-sign':'oral','art-to-ad':'art','journal-lycee':'journal','travel-survival':'travel','movie-night-pitch':'movie','internship-report':'stage','year-in-pictures':'year','music-and-me':'music','survive-the-city':'city','survival-challenge':'survival','behind-spiderman':'spider','grammar-boost':'grammar','francais-boost':'francais'}[e.target.value] || 'elec'); });
 
 async function load(){
   const { data, error } = await supa.from('course_answers').select('*').eq('course', C.id).order('updated_at', { ascending:false }).limit(5000);
@@ -246,19 +248,21 @@ const isDone = r => r.is_correct === true || r.revealed === true || (r.is_correc
 
 async function renderGate(fClass){
   const box = document.getElementById('gatebox');
-  if(CK !== 'journal-lycee' || !fClass || !C.steps || C.steps.length < 2){ box.style.display = 'none'; return; }
+  if(!['journal-lycee','survival-challenge','behind-spiderman'].includes(CK) || !fClass || !C.steps || C.steps.length < 2){ box.style.display = 'none'; return; }
   box.style.display = 'block';
   let cur = null;
   try{ const r = await supa.from('course_gates').select('max_step').eq('course', C.id).eq('classe', fClass).maybeSingle(); if(r.data) cur = r.data.max_step; }catch(e){}
   const N = C.steps.length;
   const btn = (label, v, on) => `<button type="button" data-v="${v}" style="margin:3px;padding:7px 12px;border-radius:10px;border:2px solid ${on ? '#6d3fd6' : '#d9d2f0'};background:${on ? '#6d3fd6' : '#fff'};color:${on ? '#fff' : '#3b2a78'};font-weight:700;cursor:pointer">${label}</button>`;
-  box.innerHTML = `<b>🔓 Étapes ouvertes pour ${esc(fClass)}</b> <span style="color:#6b6486;font-size:14px">${cur === null ? '(rien de forcé : les élèves avancent étape par étape en validant chacune)' : '(les étapes 1 à ' + cur + ' sont ouvertes pour les élèves, les suivantes sont fermées)'}</span><div style="margin-top:6px">`
-    + Array.from({length:N}, (_, i) => btn('Étape ' + (i + 1), i + 1, cur === i + 1)).join('') + btn('Pas de limite', 'all', cur === null) + '</div>';
+  box.innerHTML = `<b>🔓 Débloquer des étapes pour ${esc(fClass)}</b> <span style="color:#6b6486;font-size:14px">${cur === null ? '(réglage de base : tu n\'as rien débloqué à la main, donc chaque élève doit valider une étape pour ouvrir la suivante)' : '(les élèves peuvent aller jusqu\'à l\'étape ' + cur + ', en validant chaque étape ; les suivantes restent fermées tant que tu ne les débloques pas)'}</span><div style="margin-top:6px">`
+    + Array.from({length:N}, (_, i) => btn('Débloquer jusqu\'à l\'étape ' + (i + 1), i + 1, cur === i + 1)).join('') + btn('Réglage de base (ils valident seuls)', 'all', cur === null) + '</div>'
+    + '<div style="margin-top:6px;font-size:13.5px;color:#6b6486">' + (window._gateSaved ? '<b style="color:#1d7a46">✓ Enregistré.</b> ' : '') + 'Chaque clic s\'enregistre tout de suite (pas de bouton Enregistrer). Les élèves le voient en moins de 15 secondes, sans recharger la page.</div>';
+  window._gateSaved = false;
   box.querySelectorAll('button').forEach(b => b.addEventListener('click', async () => {
     const v = b.dataset.v; b.disabled = true;
     const q = v === 'all' ? await supa.from('course_gates').delete().eq('course', C.id).eq('classe', fClass)
       : await supa.from('course_gates').upsert({course:C.id, classe:fClass, max_step:Number(v), updated_at:new Date().toISOString()}, {onConflict:'course,classe'});
-    if(q.error) alert('Erreur : ' + q.error.message);
+    if(q.error) alert('Erreur : ' + q.error.message); else window._gateSaved = true;
     renderGate(fClass);
   }));
 }
@@ -315,10 +319,9 @@ function render(){
           const sk = done[st.n + '-skip'];
           if(sk && sk.answer && sk.answer !== 'Annulé') return `<div class="sc done" title="Étape ${st.n} — déjà faite (déclaré par l'élève)">${st.n}<small>déjà fait</small></div>`;
           if(!st.levels){
-            const fmtS = ((done['9-format'] || {}).extra || {}).fmt || null;
-            const ids = st.endId ? [st.endId] : (st.qs || []).map(q => q.id).filter(id => !(C.optional || []).includes(id) && (!C.inPath || C.inPath(id, fmtS)));
+            const ids = st.endId ? [st.endId] : (st.qs || []).map(q => q.id).filter(id => !(C.optional || []).includes(id));
             const d = ids.filter(id => done[id] && isDone(done[id])).length;
-            const started = s.rows.some(r => parseInt(r.qid, 10) === st.n);
+            const started = s.rows.some(r => String(r.qid).charAt(0) === String(st.n));
             if(!started) return `<div class="sc" title="Étape ${st.n} — pas commencée">${st.n}<small>—</small></div>`;
             const full = d === ids.length;
             return `<div class="sc ${full ? 'done' : 'prog'}" title="Étape ${st.n} : ${d}/${ids.length}">${st.n}<small>${d}/${ids.length}</small></div>`;
@@ -447,8 +450,7 @@ async function renderTeams(students){
     const themeTxt = (rb && rb.extra && rb.extra.theme) ? ' — ' + rb.extra.theme : '';
     const ex = rb && rb.extra || {};
     const mem = g.members.map(mb => {
-      const fmtM = ((mb.m['9-format'] || {}).extra || {}).fmt || null;
-      const done = C.steps.filter(st => st.qs.map(q => q.id).filter(id => !(C.optional || []).includes(id) && (!C.inPath || C.inPath(id, fmtM))).every(id => mb.m[id] && isDone(mb.m[id]))).length;
+      const done = C.steps.filter(st => st.qs.map(q => q.id).filter(id => !(C.optional || []).includes(id)).every(id => mb.m[id] && isDone(mb.m[id]))).length;
       const u = mb.m['9-maquette'] && mb.m['9-maquette'].extra && mb.m['9-maquette'].extra.une;
       return `<div style="margin:2px 0"><b>${esc(mb.name)}</b>${mb.role ? ' <span style="color:var(--ink-soft)">· ' + esc(mb.role) + '</span>' : ''} <span class="mark ${done === total ? 'ok' : 'na'}">${done}/${total} étapes</span>${u && urls[u] ? ` <a href="${esc(urls[u])}" target="_blank" rel="noopener"><img src="${esc(urls[u])}" alt="Une" style="height:36px;border-radius:6px;vertical-align:middle"></a>` : ''}</div>`;
     }).join('');
