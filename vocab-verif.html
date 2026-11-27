@@ -65,7 +65,7 @@ async function apply(decisions){
       if(!dec) return d;
       changed = true;
       const yes = dec === 'accepted';
-      return Object.assign({}, d, { status:dec, correct:yes, score:yes ? 2 : 0, comment:yes ? 'Accepté par toi' : 'Refusé par toi' });
+      return Object.assign({}, d, { status:dec, correct:yes, score:yes ? (d.points || 2) : 0, comment:yes ? 'Accepté par toi' : 'Refusé par toi' });
     });
     if(!changed) continue;
     const score = detail.reduce((n, d) => n + (d.score || 0), 0);
