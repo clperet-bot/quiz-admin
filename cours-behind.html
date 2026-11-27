@@ -341,12 +341,13 @@ const taNode = (rows, ph, val) => { const ta = h('textarea', {rows:rows, placeho
 // exercice corrigé automatiquement (menus déroulants) : 2 essais, puis correction affichée
 function detCard(q, title, instruct, build, expected, describe, onDone){
   const st = S(q.id); const box = cardShell(q, title, instruct);
+  const expFlat = expected.map(e => [].concat(e)[0]);
   if(st.done && (st.restored || st.frozen)){
     box.append(h('div', {class:'corr', style:'margin-left:0'}, h('small', null, 'Ma réponse'), st.answer || ''), st.feedback ? h('div', {class:'fb ' + (st.correct === false ? 'ko' : 'ok'), style:'margin-left:0'}, st.feedback) : null);
     if(st.revealed) box.append(h('div', {class:'corr', style:'margin-left:0;background:var(--green-bg)'}, h('small', null, 'Correction à retenir'), describe(expFlat)));
     box.classList.add('done'); return box;
   }
-  const expFlat = expected.map(e => [].concat(e)[0]); const selects = []; box.append(build(selects));
+  const selects = []; box.append(build(selects));
   const fb = h('div', {class:'fb hidden', style:'margin:10px 0 0'}); const btn = h('button', {class:'btn', type:'button', style:'margin-top:10px'}, 'Vérifier');
   const setFb = (k, t) => { fb.className = 'fb ' + k; fb.textContent = t; };
   btn.addEventListener('click', () => {
@@ -463,7 +464,7 @@ function isTeacher(){ if(TEST_MODE) return true; if(!ID) return false; const t =
 const FR_MISSION = D.FR_MISSION, FR_LEARN = D.FR_LEARN;
 // Étapes verrouillées dans l'ordre (retour en arrière toujours possible) ; la prof (ou ?test=1) a tout ouvert
 const gated = n => !isTeacher() && GATE !== null && n > GATE;
-function stepUnlocked(n){ if(isTeacher()) return true; if(gated(n)) return false; if(n === 1) return true; for(let m = 1; m < n; m++){ if(!stepDone(m)) return false; } return true; }
+function stepUnlocked(n){ if(isTeacher()) return true; if(gated(n)) return false; if(GATE !== null && n <= GATE) return true; if(n === 1) return true; for(let m = 1; m < n; m++){ if(!stepDone(m)) return false; } return true; }
 // Bouton « Traduire en français » : affiche / cache un bloc français
 function trBtn(block, label){
   block.style.display = 'none';
