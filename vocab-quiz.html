@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vocabulary quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="vocab-data.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F1EDFC;color:#1A1D23;font-family:'Poppins',sans-serif;font-size:16px}
+#cheat-banner{display:none;position:sticky;top:0;z-index:9;background:#C0392B;color:#fff;text-align:center;padding:10px;font-size:14px}
+#cheat-banner.show{display:block}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{background:#6B4FD6;color:#fff;border-radius:14px;padding:14px 16px;font-size:20px;margin:0 0 14px}
+.card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.row{display:flex;gap:10px;align-items:center;font-weight:600;margin-bottom:10px}
+.num{flex:0 0 30px;height:30px;border-radius:50%;background:#3B82C4;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px}
+input{width:100%;padding:12px;border:2px solid #D9D2F2;border-radius:10px;font-family:inherit;font-size:17px}
+input:focus{outline:none;border-color:#6B4FD6}
+button{width:100%;padding:15px;border:0;border-radius:12px;background:#2E8B57;color:#fff;font-family:inherit;font-weight:700;font-size:17px;cursor:pointer}
+button:disabled{opacity:.6}
+.fr{color:#5B6270;font-size:14px}
+.big{font-size:34px;font-weight:700;color:#6B4FD6;text-align:center;margin:6px 0}
+.tag{font-weight:700}.ok{color:#2E8B57}.review{color:#B7791F}.no{color:#C0392B}
+</style>
+</head>
+<body>
+<div id="cheat-banner">⚠ Si tu quittes cette page, ta prof sera notifiée et tes réponses seront effacées.</div>
+<main id="app"></main>
+<script>
+const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const params = new URLSearchParams(location.search);
+const studentName = params.get('student');
+const classId = params.get('class_id');
+const quizId = params.get('quiz_id');
+const setKey = params.get('liste');
+const set = VOCAB_SETS[setKey];
+const app = document.getElementById('app');
+let finished = false;
+
+function normalizeName(s){
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clean = s => s.replace(/[<>&"]/g,'').trim().slice(0,60);
+
+// Réponses telles qu'elles sont saisies (aussi enregistrées si la tentative est annulée)
+function collect(){
+  return set.words.map((w, i) => {
+    const el = document.getElementById('w' + i);
+    const answer = clean(el ? el.value : '');
+    const status = vocabGrade(answer, w.en);
+    return { type:'vocab', set:setKey, idx:i, label:w.fr, answer, correct_answer:w.en[0], status,
+             correct: status === 'ok', score: status === 'ok' ? 2 : 0,
+             comment: status === 'review' ? 'À vérifier (une faute d\'écart)' : '' };
+  });
+}
+let answersDetail = [];
+
+function attemptRow(extra){
+  return Object.assign({ quiz_id:quizId, class_id:classId, student_name_raw:studentName,
+    student_name_normalized:normalizeName(studentName) }, extra);
+}
+
+// ============ EMPÊCHE LA MISE EN VEILLE DE L'ÉCRAN PENDANT LE QUIZ ============
+// (une mise en veille déclenche le même événement qu'un changement d'onglet et
+// pouvait à tort annuler la tentative d'un élève — voir anti-triche ci-dessous)
+let wakeLock = null;
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e){ /* pas supporté ou refusé : tant pis, le reste du système reste fonctionnel */ }
+}
+if(studentName && classId && quizId && set){
+  requestWakeLock();
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible' && !wakeLock) requestWakeLock();
+  });
+}
+
+let cheatTriggered = false;
+let awayTimer = null;
+document.addEventListener('visibilitychange', () => {
+  if(cheatTriggered || finished || !set) return;
+  windowBlurTimer = null; // un changement de visibilité remplace tout blur en cours (évite un double décompte)
+  if(document.hidden){
+    awayTimer = Date.now();
+  } else if(awayTimer){
+    const awaySeconds = (Date.now() - awayTimer) / 1000;
+    awayTimer = null;
+    if(awaySeconds > 5){
+      cheatTriggered = true;
+      cancelAttempt();
+    } else {
+      document.getElementById('cheat-banner').textContent = "⚠ Tu es sorti(e) du quiz. Si tu recommences, tes réponses seront effacées et ta prof sera notifiée.";
+    }
+  }
+});
+
+// Détection complémentaire : en écran partagé (deux fenêtres/apps côte à côte), la page du
+// quiz reste "visible" au sens de visibilitychange même quand l'élève clique dans l'autre
+// fenêtre pour taper/chercher quelque chose — seul le focus de la fenêtre change. On surveille
+// donc aussi blur/focus de la fenêtre, avec la même règle (plus de 5 secondes ailleurs = annulée).
+// Sur téléphone (iPhone/Android) il n'y a pas d'écran partagé : les événements blur/focus de la fenêtre y sont
+// déclenchés à tort (clavier, correcteur, menu copier-coller, centre de notifications...) et sont parfois perdus
+// au retour, ce qui annulait des copies sans que l'élève soit sorti. Sur téléphone on ne garde donc que
+// visibilitychange (changement d'appli ou d'onglet, verrouillage de l'écran).
+const IS_PHONE = /iPhone|iPod|Android.*Mobile/i.test(navigator.userAgent || '');
+let windowBlurTimer = null;
+window.addEventListener('blur', () => {
+  if(IS_PHONE || finished || cheatTriggered || document.hidden) return;
+  windowBlurTimer = Date.now();
+});
+window.addEventListener('focus', () => {
+  if(IS_PHONE || finished || cheatTriggered || !windowBlurTimer) return;
+  const awaySeconds = (Date.now() - windowBlurTimer) / 1000;
+  windowBlurTimer = null;
+  if(awaySeconds > 5){
+    cheatTriggered = true;
+    cancelAttempt();
+  } else {
+    document.getElementById('cheat-banner').textContent = "⚠ Tu as quitté la fenêtre du quiz (écran partagé/autre appli). Si tu recommences, tes réponses seront effacées et ta prof sera notifiée.";
+  }
+});
+
+async function cancelAttempt(){
+  if(finished) return;
+  finished = true;
+  answersDetail = collect();
+  app.innerHTML = '<div class="card">Tentative annulée : tu as quitté le quiz. Ta prof a été notifiée. Reviens demain pour réessayer.</div>';
+  try{ await supa.from('attempts').insert(attemptRow({ score:null, total:null, cancelled:true, answers_detail:answersDetail })); } catch(e){}
+}
+
+function render(){
+  app.innerHTML = '<h1>' + esc(set.title) + '</h1>' +
+    '<div class="card">Write the English words.<div class="fr">Écris les mots en anglais.</div></div>' +
+    set.words.map((w, i) => '<div class="card"><label class="row" for="w' + i + '"><span class="num">' + (i+1) + '</span>' + esc(w.fr) + '</label>' +
+      '<input id="w' + i + '" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" lang="en"></div>').join('') +
+    '<button id="send">Envoyer mes réponses</button><p id="msg" class="fr"></p>';
+  const btn = document.getElementById('send');
+  const msg = document.getElementById('msg');
+  let confirmedEmpty = false;
+  btn.addEventListener('click', async () => {
+    if(finished) return;
+    answersDetail = collect();
+    const empty = answersDetail.filter(a => !a.answer).length;
+    if(empty && !confirmedEmpty){
+      confirmedEmpty = true;
+      msg.textContent = 'Il reste ' + empty + ' réponse(s) vide(s). Appuie encore une fois pour envoyer quand même.';
+      return;
+    }
+    btn.disabled = true; msg.textContent = 'Envoi...';
+    const score = answersDetail.reduce((n, a) => n + a.score, 0);
+    let saved = false, hidden = true;
+    try{
+      const { error } = await supa.from('attempts').insert(attemptRow({ score, total:20, cancelled:false, answers_detail:answersDetail }));
+      saved = !error;
+    } catch(e){}
+    if(!saved){ btn.disabled = false; msg.textContent = "L'envoi a échoué. Vérifie ta connexion et appuie encore."; return; }
+    finished = true;
+    document.getElementById('cheat-banner').classList.remove('show');
+    try{
+      const { data } = await supa.from('classes').select('slug').eq('id', classId).maybeSingle();
+      hidden = !data || data.slug === '2ndeTNE';
+    } catch(e){}
+    showResult(score, hidden);
+    window.scrollTo(0, 0);
+  });
+}
+
+// Les bonnes réponses ne sont pas affichées : le quiz peut être refait un autre jour.
+function showResult(score, hidden){
+  if(hidden){
+    app.innerHTML = '<h1>' + esc(set.title) + '</h1><div class="card">Réponses envoyées. Ta note est en attente de validation.</div>';
+    return;
+  }
+  const pending = answersDetail.some(a => a.status === 'review');
+  const names = { ok:'Juste', review:'À vérifier', no:'Faux' };
+  app.innerHTML = '<h1>' + esc(set.title) + '</h1><div class="card"><div class="big">' + score + ' / 20</div>' +
+    (pending ? '<div class="fr">Note provisoire : ta prof doit vérifier certaines réponses.</div>' : '') + '</div>' +
+    answersDetail.map(a => '<div class="card"><div class="row"><span class="num">' + (a.idx+1) + '</span>' + esc(a.label) + '</div>' +
+      (esc(a.answer) || '<span class="fr">(vide)</span>') + ' — <span class="tag ' + a.status + '">' + names[a.status] + '</span></div>').join('');
+}
+
+if(!studentName || !classId || !quizId || !set){
+  app.innerHTML = '<div class="card">Accède à ce quiz avec le QR code de ta classe.</div>';
+} else {
+  document.getElementById('cheat-banner').classList.add('show');
+  render();
+}
+</script>
+</body>
+</html>

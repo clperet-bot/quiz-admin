@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vocabulaire — à vérifier</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F1EDFC;color:#1A1D23;font-family:'Poppins',sans-serif;font-size:16px}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{background:#6B4FD6;color:#fff;border-radius:14px;padding:14px 16px;font-size:20px;margin:0 0 14px}
+.card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.fr{color:#5B6270;font-size:14px}
+.ans{font-size:22px;font-weight:700;margin:6px 0 10px}
+.btns{display:flex;gap:10px}
+input{width:100%;padding:12px;border:2px solid #D9D2F2;border-radius:10px;font-family:inherit;font-size:16px;margin-bottom:10px}
+button{flex:1;width:100%;padding:13px;border:0;border-radius:10px;color:#fff;font-family:inherit;font-weight:700;font-size:16px;cursor:pointer}
+button:disabled{opacity:.6}
+.yes{background:#2E8B57}.nope{background:#C0392B}.main{background:#6B4FD6}
+a{color:#6B4FD6}
+</style>
+</head>
+<body>
+<main><h1>Réponses à vérifier</h1><div id="app"></div><p><a href="admin.html#results">← Retour à mon admin</a></p></main>
+<script>
+const SUPABASE_URL = "https://eyfqryrwivjwwaftehdc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZnFyeXJ3aXZqd3dhZnRlaGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDU2NjIsImV4cCI6MjEwMjkyMTY2Mn0.i9YiNL45rILlxyckLMl3SJVIIib8P40DSIaiNkm89tc";
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+const isVocab = a => !a.cancelled && Array.isArray(a.answers_detail) && a.answers_detail.some(d => d && d.type === 'vocab');
+const keyOf = d => d.set + '|' + d.idx + '|' + norm(d.answer);
+let attempts = [];
+
+function loginForm(error){
+  app.innerHTML = '<div class="card"><input id="email" type="email" placeholder="E-mail" autocomplete="username">' +
+    '<input id="pwd" type="password" placeholder="Mot de passe" autocomplete="current-password">' +
+    '<button class="main" id="go">Me connecter</button><p class="fr">' + esc(error || '') + '</p></div>';
+  document.getElementById('go').onclick = async () => {
+    const { error } = await supa.auth.signInWithPassword({ email:document.getElementById('email').value.trim(), password:document.getElementById('pwd').value });
+    if(error) loginForm('Connexion impossible.'); else load();
+  };
+}
+
+async function fetchAll(){
+  const all = [];
+  for(let from = 0; ; from += 1000){
+    const { data, error } = await supa.from('attempts').select('id, student_name_raw, answers_detail, cancelled, created_at')
+      .contains('answers_detail', JSON.stringify([{ type:'vocab' }])).order('created_at').order('id').range(from, from + 999);
+    if(error) throw error;
+    all.push(...data);
+    if(data.length < 1000) return all.filter(isVocab);
+  }
+}
+
+// Applique des décisions { clé : 'accepted' | 'refused' } à toutes les copies en attente
+async function apply(decisions){
+  for(const a of attempts){
+    let changed = false;
+    const detail = a.answers_detail.map(d => {
+      const dec = d.status === 'review' && decisions[keyOf(d)];
+      if(!dec) return d;
+      changed = true;
+      const yes = dec === 'accepted';
+      return Object.assign({}, d, { status:dec, correct:yes, score:yes ? 2 : 0, comment:yes ? 'Accepté par toi' : 'Refusé par toi' });
+    });
+    if(!changed) continue;
+    const score = detail.reduce((n, d) => n + (d.score || 0), 0);
+    const { data, error } = await supa.from('attempts').update({ answers_detail:detail, score }).eq('id', a.id).select('id');
+    if(error || !data.length) throw new Error('enregistrement refusé');
+    a.answers_detail = detail;
+  }
+}
+
+function render(){
+  const groups = {};
+  attempts.forEach(a => a.answers_detail.forEach(d => {
+    if(d.status !== 'review') return;
+    const g = groups[keyOf(d)] || (groups[keyOf(d)] = { d, names:new Set() });
+    g.names.add(a.student_name_raw);
+  }));
+  const keys = Object.keys(groups);
+  if(!keys.length){ app.innerHTML = '<div class="card">Aucune réponse à vérifier.</div>'; return; }
+  app.innerHTML = keys.map((k, i) => {
+    const g = groups[k];
+    return '<div class="card"><div class="fr">' + esc(g.d.label) + ' — attendu : <b>' + esc(g.d.correct_answer) + '</b></div>' +
+      '<div class="ans">' + esc(g.d.answer) + '</div><div class="fr">' + esc([...g.names].join(', ')) + '</div><br>' +
+      '<div class="btns"><button class="yes" data-i="' + i + '" data-dec="accepted">Accepter</button>' +
+      '<button class="nope" data-i="' + i + '" data-dec="refused">Refuser</button></div></div>';
+  }).join('');
+  app.querySelectorAll('button[data-dec]').forEach(b => b.onclick = async () => {
+    app.querySelectorAll('button').forEach(x => x.disabled = true);
+    try{ await apply({ [keys[b.dataset.i]]: b.dataset.dec }); render(); }
+    catch(e){ alert('Échec de l\'enregistrement. Recharge la page.'); }
+  });
+}
+
+async function load(){
+  app.innerHTML = '<div class="card">Chargement...</div>';
+  try{
+    attempts = await fetchAll();
+    // Une faute déjà jugée garde la même décision pour les nouvelles copies
+    const known = {};
+    attempts.forEach(a => a.answers_detail.forEach(d => { if(d.status === 'accepted' || d.status === 'refused') known[keyOf(d)] = d.status; }));
+    await apply(known);
+    render();
+  } catch(e){ app.innerHTML = '<div class="card">Erreur de chargement : ' + esc(e.message) + '</div>'; }
+}
+
+supa.auth.getSession().then(({ data }) => data.session ? load() : loginForm());
+</script>
+</body>
+</html>
