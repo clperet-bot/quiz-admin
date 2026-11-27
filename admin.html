@@ -816,7 +816,8 @@ const svg = (name, size) => `<svg width="${size || 17}" height="${size || 17}" v
 const GROUPS = [
   { id:'eval',    label:'Évaluation',    icon:'eval',    hint:'Quiz notés : classes, QR code, résultats, copies',
     items:[ { view:'dashboard', label:'Mes classes · QR code', sub:'activer un quiz, afficher le QR', icon:'qr' },
-            { view:'results',   label:'Résultats',            sub:'notes, copies, impressions',       icon:'chart' } ] },
+            { view:'results',   label:'Résultats',            sub:'notes, copies, impressions',       icon:'chart' },
+            { href:'vocab-verif.html', label:'Réponses à vérifier', sub:'quiz de vocabulaire : accepter ou refuser', icon:'eval' } ] },
   { id:'train',   label:'Entraînement',  icon:'train',   hint:'Quiz non notés pour réviser',
     items:[ { view:'practice-qr',      label:'QR quiz',            sub:'lien et QR code par classe', icon:'qr' },
             { view:'practice-results', label:'Suivi entraînement', sub:'qui s\'entraîne, résultats', icon:'book' } ] },
@@ -836,13 +837,13 @@ const isMobile = () => window.matchMedia('(max-width: 720px)').matches;
     top.innerHTML = svg(g.icon) + `<span>${g.label}</span><span class="chev">▸</span>`;
     const panel = document.createElement('div'); panel.className = 'nav-panel'; panel.dataset.panel = g.id;
     if(g.courses) buildCourseBrowser(panel, 'nav');
-    else g.items.forEach(it => { const d = document.createElement('div'); d.className = 'nav-item'; d.dataset.view = it.view; d.innerHTML = svg(it.icon) + `<span>${it.label}</span>`; panel.appendChild(d); });
+    else g.items.forEach(it => { const d = document.createElement(it.href ? 'a' : 'div'); d.className = 'nav-item'; if(it.href){ d.href = it.href; d.style.textDecoration = 'none'; } else d.dataset.view = it.view; d.innerHTML = svg(it.icon) + `<span>${it.label}</span>`; panel.appendChild(d); });
     side.append(top, panel);
     // --- accueil
     const card = document.createElement('div'); card.className = 'home-card';
     card.innerHTML = `<h3><span class="ico">${svg(g.icon, 20)}</span>${g.label}</h3><p class="home-sub">${g.hint}</p>`;
     if(g.courses) buildCourseBrowser(card, 'home');
-    else g.items.forEach(it => { const b = document.createElement('button'); b.type = 'button'; b.className = 'home-btn'; b.dataset.view = it.view; b.innerHTML = `<span>${it.label}<small>${it.sub}</small></span><span class="go">›</span>`; card.appendChild(b); });
+    else g.items.forEach(it => { const b = document.createElement(it.href ? 'a' : 'button'); b.className = 'home-btn'; if(it.href){ b.href = it.href; b.style.textDecoration = 'none'; b.style.boxSizing = 'border-box'; } else { b.type = 'button'; b.dataset.view = it.view; } b.innerHTML = `<span>${it.label}<small>${it.sub}</small></span><span class="go">›</span>`; card.appendChild(b); });
     grid.appendChild(card);
   });
 })();

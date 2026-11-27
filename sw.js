@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quiz-admin-v3';
+const CACHE_NAME = 'quiz-admin-v4';
 const ASSETS = [
   'admin.html',
   'manifest.json',
